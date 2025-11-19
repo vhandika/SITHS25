@@ -46,7 +46,7 @@ const Home: React.FC = () => {
 
             {/* Content */}
             <div className="relative z-10 flex flex-col items-center p-4 text-center">
-                <div className="absolute -top-10 left-0 right-0 mx-auto w-40 border-t-2 border-yellow-400"></div>
+                <div className="absolute -top-8 left-0 right-0 mx-auto w-40 border-t-2 border-yellow-400"></div>
                 
                 <h1 className="text-5xl font-bold uppercase tracking-widest text-white drop-shadow-lg md:text-7xl lg:text-8xl">
                     <span className="text-yellow-400">SITH-S</span> 25
