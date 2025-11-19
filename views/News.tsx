@@ -87,7 +87,7 @@ const App: React.FC = () => {
                             <div className="w-8 h-8 flex items-center justify-center bg-yellow-400 text-black transform -skew-x-12">
                                             <span className="transform skew-x-12"><Newspaper size={32} /></span>
                             </div>
-                            <h2 className="text-3xl font-bold uppercase tracking-wider text-white sm:text-4xl">News</h2>
+                            <h2 className="text-4xl font-bold tracking-wider uppercase text-white sm:text-5xl">News</h2>
                         </div>
                         <div className="mt-4 border-l-4 border-yellow-400 pl-4">
                             <p className="text-sm text-gray-400">{mockNews[currentIndex].date}</p>
