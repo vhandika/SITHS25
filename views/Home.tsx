@@ -51,9 +51,6 @@ const Home: React.FC = () => {
                 <h1 className="text-5xl font-bold uppercase tracking-widest text-white drop-shadow-lg md:text-7xl lg:text-8xl">
                     <span className="text-yellow-400">SITH-S</span> 25
                 </h1>
-                <p className="mt-4 max-w-lg text-lg text-gray-200 drop-shadow-md">
-                    Hai haii... ntah mau yapping apa XD
-                </p>
                 
                 <div className="mt-10 flex flex-col gap-4 sm:flex-row">
                     <SkewedButton icon={<BookOpen />} onClick={() => navigate('/library')}>
