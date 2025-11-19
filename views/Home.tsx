@@ -59,7 +59,7 @@ const Home: React.FC = () => {
                     <SkewedButton 
                         variant="secondary" 
                         icon={<Pen />} 
-                        href="https://youtu.be/K4xLi8IF1FM?si=gazvlgeBaVrsB7ys" // Placeholder Google Forms link
+                        href="https://forms.gle/cztnRJPFPX34NHEX6" // Placeholder Google Forms link
                         target="_blank"
                     >
                         Ada saran?
