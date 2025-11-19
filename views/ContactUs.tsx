@@ -19,7 +19,7 @@ const contacts: Contact[] = [
     id: 1,
     name: 'Vhandika',
     role: '',
-    avatarUrl: '/assets/rem.png',
+    avatarUrl: '../assets/rem.png',
     waLink: 'https://wa.me/62895322783560',
     igLink: 'https://instagram.com/vhandikanizar',
     lineLink: 'https://line.me/ti/p/andhika-nizar',
