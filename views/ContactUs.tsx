@@ -35,7 +35,7 @@ const contacts: Contact[] = [
   },
   {
     id: 3,
-    name: 'Lupa',
+    name: 'Yarvis',
     role: 'Ketua Angkatan',
     avatarUrl: '/assets',
     waLink: 'https://wa.me/9999999',
