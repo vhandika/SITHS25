@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Newspaper } from 'lucide-react';
 
-// SVG Icons to replace lucide-react for self-containment
+// SVG Icons to replace lucide-react for self-containment where needed
 const ChevronLeft: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
       <path d="m15 18-6-6 6-6" />
@@ -43,7 +43,12 @@ const NewsCard: React.FC<{ article: NewsArticle; isFeatured: boolean; onClick: (
         onClick={onClick}
         className={`group relative w-full shrink-0 transform cursor-pointer overflow-hidden transition-all duration-500 ease-in-out ${isFeatured ? 'lg:w-[60%]' : 'lg:w-[18%]'}`}
     >
-        <img src={article.imageUrl} alt={article.title} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
+        {/* Added grayscale and brightness filters when !isFeatured */}
+        <img 
+            src={article.imageUrl} 
+            alt={article.title} 
+            className={`h-full w-full object-cover transition-all duration-500 group-hover:scale-110 ${isFeatured ? '' : 'grayscale brightness-75 group-hover:grayscale-0 group-hover:brightness-100'}`} 
+        />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
         <div className={`absolute bottom-0 left-0 w-full p-4 transition-all duration-500 ${isFeatured ? 'opacity-100' : 'opacity-0 lg:group-hover:opacity-100'}`}>
             <div className="mb-2 bg-yellow-400 px-3 py-1 text-sm font-bold text-black transform -skew-x-12 inline-block">
@@ -87,7 +92,7 @@ const App: React.FC = () => {
                             <div className="w-8 h-8 flex items-center justify-center bg-yellow-400 text-black transform -skew-x-12">
                                             <span className="transform skew-x-12"><Newspaper size={32} /></span>
                             </div>
-                            <h2 className="text-4xl font-bold tracking-wider uppercase text-white sm:text-5xl">News</h2>
+                            <h2 className="text-3xl font-bold uppercase tracking-wider text-white sm:text-4xl">News</h2>
                         </div>
                         <div className="mt-4 border-l-4 border-yellow-400 pl-4">
                             <p className="text-sm text-gray-400">{mockNews[currentIndex].date}</p>
