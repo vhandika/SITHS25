@@ -22,7 +22,7 @@ const contacts: Contact[] = [
     avatarUrl: './assets/rem.png',
     waLink: 'https://wa.me/62895322783560',
     igLink: 'https://instagram.com/vhandikanizar',
-    lineLink: 'https://line.me/ti/p/andhika-nizar',
+    lineLink: 'https://line.me/ti/p/evHX-EYjsU',
   },
   {
     id: 2,
