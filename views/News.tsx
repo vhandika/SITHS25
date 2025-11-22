@@ -232,15 +232,12 @@ const News: React.FC = () => {
         setIsAddModalOpen(true);
     };
 
-    // --- RENDER ---
     if (loading) return <div className="min-h-screen w-full bg-black flex items-center justify-center"><Loader className="animate-spin text-yellow-400"/></div>;
     const currentArticle = newsData.length > 0 ? newsData[currentIndex] : null;
 
     return (
         <div className="min-h-screen w-full bg-black py-16 lg:py-24 px-4 sm:px-6 lg:px-8 mt-16 lg:mt-0 font-sans">
             <div className="mx-auto max-w-7xl">
-                
-                {/* Header */}
                 <div className="flex flex-col items-start md:flex-row md:justify-between md:items-end mb-8 gap-4">
                      <div className="w-full md:w-auto">
                         <div className="flex items-center gap-2 mb-4">
@@ -267,7 +264,6 @@ const News: React.FC = () => {
                 {currentArticle ? (
                     <div className="mt-8">
                         <div className="relative h-[400px] w-full overflow-hidden">
-
                              <div className="lg:hidden flex h-full transition-transform duration-700 ease-in-out" style={{ transform: `translateX(-${currentIndex * 100}%)` }}>
                                 {newsData.map((article) => (
                                     <div key={article.id} className="relative w-full h-full flex-shrink-0 cursor-pointer" onClick={() => setSelectedArticle(article)}>
@@ -275,18 +271,8 @@ const News: React.FC = () => {
                                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
                                         {canManageNews && (
                                             <div className="absolute top-4 left-4 z-20 flex gap-2">
-                                                <button 
-                                                    onClick={(e) => handleEditClick(article, e)} 
-                                                    className="p-2 bg-blue-600 text-white rounded-full hover:bg-blue-500 shadow-lg"
-                                                >
-                                                    <Pencil size={16} />
-                                                </button>
-                                                <button 
-                                                    onClick={(e) => handleDelete(article.id, e)} 
-                                                    className="p-2 bg-red-600 text-white rounded-full hover:bg-red-500 shadow-lg"
-                                                >
-                                                    <Trash2 size={16} />
-                                                </button>
+                                                <button onClick={(e) => handleEditClick(article, e)} className="p-2 bg-blue-600 text-white rounded-full hover:bg-blue-500 shadow-lg"><Pencil size={16} /></button>
+                                                <button onClick={(e) => handleDelete(article.id, e)} className="p-2 bg-red-600 text-white rounded-full hover:bg-red-500 shadow-lg"><Trash2 size={16} /></button>
                                             </div>
                                         )}
 
@@ -311,7 +297,6 @@ const News: React.FC = () => {
                         </div>
                     </div>
                 ) : <div className="text-center text-gray-500 mt-10">Belum ada berita.</div>}
-
                 {newsData.length > 0 && (
                     <div className="mt-8 flex items-center gap-4">
                         <button onClick={handlePrev} className="p-2 border-2 border-gray-600 text-gray-400 hover:border-white hover:text-white"><ChevronLeft /></button>
@@ -324,19 +309,49 @@ const News: React.FC = () => {
                 <span className="text-4xl font-bold tracking-[.2em] text-gray-700 block mb-8">SITH-S 25</span>
                 <p className="text-xs">Copyright © SITES Angkatan 25.</p>
             </footer>
-
             {selectedArticle && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm" onClick={() => setSelectedArticle(null)}>
-                    <div className="relative w-full max-w-3xl h-[90vh] bg-gray-900 shadow-2xl rounded-lg overflow-hidden" onClick={e => e.stopPropagation()}>
-                        <div className="h-full overflow-y-auto custom-scrollbar">
-                             <div className="relative h-1/2 md:h-3/5">
-                                <img src={selectedArticle.image_url} className="w-full h-full object-cover" alt=""/>
-                                <button onClick={() => setSelectedArticle(null)} className="absolute top-4 right-4 bg-black/50 p-2 rounded-full text-white hover:bg-yellow-400 hover:text-black"><X size={20}/></button>
-                             </div>
-                             <div className="p-6 md:p-8">
-                                <h2 className="text-3xl font-bold text-white mb-4">{selectedArticle.title}</h2>
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4 bg-black/95 backdrop-blur-sm transition-opacity" onClick={() => setSelectedArticle(null)}>
+                    <div 
+                        className="relative w-full max-w-4xl h-full md:h-[90vh] bg-gray-900 md:rounded-xl overflow-hidden shadow-2xl flex flex-col" 
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <div className="relative w-full h-[50vh] md:h-[60%] flex-shrink-0">
+                            <img 
+                                src={selectedArticle.image_url || 'https://via.placeholder.com/800x600'} 
+                                className="w-full h-full object-cover" 
+                                alt={selectedArticle.title}
+                            />
+
+                            <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/60 to-transparent"></div>
+
+                            <button 
+                                onClick={() => setSelectedArticle(null)} 
+                                className="absolute top-4 right-4 bg-black/50 backdrop-blur-md p-2 rounded-full text-white hover:bg-yellow-400 hover:text-black transition-all z-50"
+                            >
+                                <X size={24}/>
+                            </button>
+                            <div className="absolute bottom-0 left-0 w-full p-6 md:p-8 z-20">
+                                <div className="flex gap-3 mb-3">
+                                    <span className="bg-yellow-400 px-3 py-1 text-xs font-bold text-black uppercase tracking-wider transform -skew-x-12 inline-block shadow-lg">
+                                        <span className="inline-block transform skew-x-12">{selectedArticle.category}</span>
+                                    </span>
+                                </div>
+                                
+                                <h2 className="text-3xl md:text-5xl font-bold text-white leading-tight drop-shadow-lg mb-2">
+                                    {selectedArticle.title}
+                                </h2>
+                                
+                                <p className="text-gray-300 text-sm font-mono flex items-center gap-2">
+                                    {new Date(selectedArticle.created_at).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                                </p>
+                            </div>
+                        </div>
+                        <div className="flex-1 overflow-y-auto custom-scrollbar bg-gray-900 p-6 md:p-10">
+                            <div className="max-w-3xl mx-auto">
                                 <LinkifiedContent text={selectedArticle.content} />
-                             </div>
+                            </div>
+                            <div className="mt-12 pt-8 border-t border-gray-800 text-center">
+                            </div>
                         </div>
                     </div>
                 </div>
