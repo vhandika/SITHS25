@@ -102,7 +102,7 @@ const Login: React.FC = () => {
                                 onChange={(e) => setNim(e.target.value)}
                                 onKeyDown={handleKeyDown}
                                 className="relative block w-full border-0 bg-white/5 py-3 px-4 text-white ring-1 ring-inset ring-white/10 placeholder:text-gray-500 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-yellow-400 sm:text-sm sm:leading-6"
-                                placeholder="NIM (Contoh: 16125001)"
+                                placeholder="NIM"
                             />
                         </div>
                         <div className="relative">
