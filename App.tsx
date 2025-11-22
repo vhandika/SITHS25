@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { HashRouter, Route, Routes } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
@@ -8,6 +7,7 @@ import AboutUs from './views/AboutUs';
 import ContactUs from './views/ContactUs';
 import Login from './views/Login';
 import News from './views/News';
+import ChangePassword from './views/ChangePassword';
 
 const App: React.FC = () => {
     return (
@@ -22,6 +22,7 @@ const App: React.FC = () => {
                         <Route path="/about" element={<AboutUs />} />
                         <Route path="/contact" element={<ContactUs />} />
                         <Route path="/login" element={<Login />} />
+                        <Route path="/change-password" element={<ChangePassword />} />
                     </Routes>
                 </main>
             </div>
