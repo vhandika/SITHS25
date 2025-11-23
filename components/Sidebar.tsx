@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { 
     Home, Library, Newspaper, Users, Mail, X, Menu, 
-    LogIn, LogOut, KeyRound, UserCircle, CameraIcon
+    LogIn, LogOut, KeyRound, UserCircle, CameraIcon, Search
 } from 'lucide-react';
 
 const staticNavItems = [
@@ -23,9 +23,11 @@ const DesktopNavLinks: React.FC<NavLinksProps> = ({ isExpanded, isLoggedIn, user
     const navItems = [...staticNavItems];
 
     if (isLoggedIn) {
+        navItems.push({ path: '/find-nim', name: 'Cari', icon: Search });
         if (userRole === 'bendahara' || userRole === 'admin' || userRole === 'mahasiswa' || userRole === 'photographer') {
             navItems.push({ path: '/galeri', name: 'Gallery', icon: CameraIcon });
         }
+
         navItems.push({ path: '/change-password', name: 'Ganti Password', icon: KeyRound });
     } else {
         navItems.push({ path: '/login', name: 'Login', icon: LogIn });
@@ -96,7 +98,9 @@ const Sidebar: React.FC = () => {
     const getMobileNavItems = () => {
         const items = [...staticNavItems];
         if (isLoggedIn) {
-           if (userRole === 'bendahara' || userRole === 'admin' || userRole === 'mahasiswa' || userRole === 'photographer') {
+           items.push({ path: '/find-nim', name: 'Cari NIM', icon: Search });
+
+           if (userRole === 'bendahara' || userRole === 'admin' || userRole === 'mahasiswa' || userRole === 'photographer' || userRole === 'humas') {
                items.push({ path: '/galeri', name: 'Gallery', icon: CameraIcon });
            }
            items.push({ path: '/change-password', name: 'Ganti Password', icon: KeyRound });
@@ -158,7 +162,6 @@ const Sidebar: React.FC = () => {
                     </div>
                 )}
             </aside>
-            
             <header className="fixed top-0 left-0 right-0 z-40 flex h-16 items-center justify-between bg-black/80 px-4 backdrop-blur-sm lg:hidden">
                  <div className="text-white font-bold"></div>
                  <button 
@@ -169,14 +172,12 @@ const Sidebar: React.FC = () => {
                     {isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
                 </button>
             </header>
-
             <div
                 className={`fixed inset-0 z-30 bg-black/80 backdrop-blur-sm transition-opacity duration-300 lg:hidden ${
                     isMobileMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
                 }`}
                 onClick={() => setIsMobileMenuOpen(false)}
             />
-
             <div
                 className={`fixed top-0 left-0 z-40 h-full w-64 bg-black border-r border-gray-800 pt-20 pb-6 px-4 transition-transform duration-300 ease-in-out lg:hidden ${
                     isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
