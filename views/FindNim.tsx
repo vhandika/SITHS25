@@ -91,7 +91,6 @@ const FindNim: React.FC = () => {
                 {loading && (
                     <div className="flex flex-col items-center justify-center py-12 text-yellow-400">
                         <Loader className="animate-spin mb-2" size={32} />
-                        <span className="text-sm font-mono">Mencari data...</span>
                     </div>
                 )}
 
@@ -151,5 +150,6 @@ const FindNim: React.FC = () => {
         </div>
     );
 };
+
 
 export default FindNim;
