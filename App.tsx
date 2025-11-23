@@ -8,6 +8,7 @@ import ContactUs from './views/ContactUs';
 import Login from './views/Login';
 import News from './views/News';
 import ChangePassword from './views/ChangePassword';
+import FindNim from './views/FindNim';
 
 const App: React.FC = () => {
     return (
@@ -23,6 +24,7 @@ const App: React.FC = () => {
                         <Route path="/contact" element={<ContactUs />} />
                         <Route path="/login" element={<Login />} />
                         <Route path="/change-password" element={<ChangePassword />} />
+                        <Route path="/find-nim" element={<FindNim />} />
                     </Routes>
                 </main>
             </div>
