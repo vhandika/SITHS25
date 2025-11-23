@@ -23,7 +23,7 @@ const DesktopNavLinks: React.FC<NavLinksProps> = ({ isExpanded, isLoggedIn, user
     const navItems = [...staticNavItems];
 
     if (isLoggedIn) {
-        navItems.push({ path: '/find-nim', name: 'Cari', icon: Search });
+        navItems.push({ path: '/find-nim', name: 'Find', icon: Search });
         if (userRole === 'bendahara' || userRole === 'admin' || userRole === 'mahasiswa' || userRole === 'photographer') {
             navItems.push({ path: '/galeri', name: 'Gallery', icon: CameraIcon });
         }
