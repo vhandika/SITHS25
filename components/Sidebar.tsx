@@ -98,7 +98,7 @@ const Sidebar: React.FC = () => {
     const getMobileNavItems = () => {
         const items = [...staticNavItems];
         if (isLoggedIn) {
-           items.push({ path: '/find-nim', name: 'Cari NIM', icon: Search });
+           items.push({ path: '/find-nim', name: 'Find', icon: Search });
 
            if (userRole === 'bendahara' || userRole === 'admin' || userRole === 'mahasiswa' || userRole === 'photographer' || userRole === 'humas') {
                items.push({ path: '/galeri', name: 'Gallery', icon: CameraIcon });
