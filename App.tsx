@@ -9,7 +9,7 @@ import Login from './views/Login';
 import News from './views/News';
 import ChangePassword from './views/ChangePassword';
 import FindNim from './views/FindNim';
-
+import Attendance from './views/Attendance';
 const App: React.FC = () => {
     return (
         <HashRouter>
@@ -25,6 +25,7 @@ const App: React.FC = () => {
                         <Route path="/login" element={<Login />} />
                         <Route path="/change-password" element={<ChangePassword />} />
                         <Route path="/find-nim" element={<FindNim />} />
+                        <Route path="/attendance" element={<Attendance />} /> 
                     </Routes>
                 </main>
             </div>
