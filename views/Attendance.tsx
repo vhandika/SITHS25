@@ -294,17 +294,19 @@ const Attendance: React.FC = () => {
                                 </div>
 
                                 <div className="flex flex-col sm:flex-row justify-between gap-4 mb-4 shrink-0">
-                                    <div className="flex bg-gray-800 p-1 rounded-lg self-start overflow-x-auto">
-                                        <button onClick={() => setActiveTab('hadir')} className={`px-3 py-2 rounded-md text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'hadir' ? 'bg-green-600 text-white shadow' : 'text-gray-400 hover:text-white'}`}>
+                                    {/* MENU TAB YANG DI PERBAIKI UNTUK MOBILE */}
+                                    <div className="flex bg-gray-800 p-1 rounded-lg overflow-x-auto w-full sm:w-auto">
+                                        <button onClick={() => setActiveTab('hadir')} className={`flex-shrink-0 px-3 py-2 rounded-md text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'hadir' ? 'bg-green-600 text-white shadow' : 'text-gray-400 hover:text-white'}`}>
                                             <div className="flex items-center gap-2"><UserCheck size={16}/> Hadir ({presentUsers.length})</div>
                                         </button>
-                                        <button onClick={() => setActiveTab('pending')} className={`px-3 py-2 rounded-md text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'pending' ? 'bg-yellow-500 text-black shadow' : 'text-gray-400 hover:text-white'}`}>
+                                        <button onClick={() => setActiveTab('pending')} className={`flex-shrink-0 px-3 py-2 rounded-md text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'pending' ? 'bg-yellow-500 text-black shadow' : 'text-gray-400 hover:text-white'}`}>
                                             <div className="flex items-center gap-2"><Clock size={16}/> Pending ({pendingUsers.length})</div>
                                         </button>
-                                        <button onClick={() => setActiveTab('belum')} className={`px-3 py-2 rounded-md text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'belum' ? 'bg-red-600 text-white shadow' : 'text-gray-400 hover:text-white'}`}>
+                                        <button onClick={() => setActiveTab('belum')} className={`flex-shrink-0 px-3 py-2 rounded-md text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'belum' ? 'bg-red-600 text-white shadow' : 'text-gray-400 hover:text-white'}`}>
                                             <div className="flex items-center gap-2"><UserX size={16}/> Belum ({absentUsers.length})</div>
                                         </button>
                                     </div>
+                                    
                                     <div className="relative w-full sm:w-64">
                                         <input placeholder="Cari Nama / NIM..." className="w-full bg-black border border-gray-700 rounded pl-9 pr-3 py-2 text-sm text-white focus:border-yellow-400 outline-none" value={searchFilter} onChange={(e) => setSearchFilter(e.target.value)} />
                                         <Search size={16} className="absolute left-3 top-2.5 text-gray-500"/>
