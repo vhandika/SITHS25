@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { 
     Home, Library, Newspaper, Users, Mail, X, Menu, 
-    LogIn, LogOut, KeyRound, UserCircle, CameraIcon, Search
-} from 'lucide-react';
+    LogIn, LogOut, KeyRound, UserCircle, CameraIcon, Search,  CalendarCheck
+} from 'lucide-react'
 
 const staticNavItems = [
     { path: '/', name: 'Home', icon: Home },
@@ -23,8 +23,9 @@ const DesktopNavLinks: React.FC<NavLinksProps> = ({ isExpanded, isLoggedIn, user
     const navItems = [...staticNavItems];
 
     if (isLoggedIn) {
-        navItems.push({ path: '/find-nim', name: 'Find', icon: Search });
-        if (userRole === 'bendahara' || userRole === 'admin' || userRole === 'mahasiswa' || userRole === 'photographer') {
+        navItems.push({ path: '/find-nim', name: 'Cari', icon: Search });
+        navItems.push({ path: '/attendance', name: 'Absensi', icon: CalendarCheck }); 
+        if (userRole === 'bendahara' || userRole === 'admin' || userRole === 'mahasiswa' || userRole === 'photographer' || userRole === 'sekretaris') {
             navItems.push({ path: '/galeri', name: 'Gallery', icon: CameraIcon });
         }
 
@@ -98,8 +99,8 @@ const Sidebar: React.FC = () => {
     const getMobileNavItems = () => {
         const items = [...staticNavItems];
         if (isLoggedIn) {
-           items.push({ path: '/find-nim', name: 'Find', icon: Search });
-
+           items.push({ path: '/find-nim', name: 'Cari NIM', icon: Search });
+           items.push({ path: '/attendance', name: 'Absensi', icon: CalendarCheck });
            if (userRole === 'bendahara' || userRole === 'admin' || userRole === 'mahasiswa' || userRole === 'photographer' || userRole === 'humas') {
                items.push({ path: '/galeri', name: 'Gallery', icon: CameraIcon });
            }
