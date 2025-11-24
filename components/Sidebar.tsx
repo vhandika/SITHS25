@@ -25,10 +25,7 @@ const DesktopNavLinks: React.FC<NavLinksProps> = ({ isExpanded, isLoggedIn, user
     if (isLoggedIn) {
         navItems.push({ path: '/find-nim', name: 'Cari', icon: Search });
         navItems.push({ path: '/attendance', name: 'Absensi', icon: CalendarCheck }); 
-        if (userRole === 'bendahara' || userRole === 'admin' || userRole === 'mahasiswa' || userRole === 'photographer' || userRole === 'sekretaris') {
-            navItems.push({ path: '/galeri', name: 'Gallery', icon: CameraIcon });
-        }
-
+        navItems.push({ path: '/gallery', name: 'Gallery', icon: CameraIcon });
         navItems.push({ path: '/change-password', name: 'Ganti Password', icon: KeyRound });
     } else {
         navItems.push({ path: '/login', name: 'Login', icon: LogIn });
