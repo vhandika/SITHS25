@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Newspaper, Plus, X, Lock, Globe, Upload, Image as ImageIcon, Loader, Trash2, Pencil, ChevronLeft, ChevronRight } from 'lucide-react';
+import SkewedButton from '../components/SkewedButton'; // Pastikan import ini ada
 
 const API_BASE_URL = 'https://idk-eight.vercel.app/api'; 
 
@@ -238,14 +239,15 @@ const News: React.FC = () => {
     return (
         <div className="min-h-screen w-full bg-black py-16 lg:py-24 px-4 sm:px-6 lg:px-8 mt-16 lg:mt-0 font-sans">
             <div className="mx-auto max-w-7xl">
-                <div className="flex flex-col items-start md:flex-row md:justify-between md:items-end mb-8 gap-4">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                      <div className="w-full md:w-auto">
-                        <div className="flex items-center gap-2 mb-4">
-                            <div className="w-8 h-8 flex items-center justify-center bg-yellow-400 text-black transform -skew-x-12">
+                        <div className="flex items-center gap-4 mb-4">
+                            <div className="w-10 h-10 flex items-center justify-center bg-yellow-400 text-black transform -skew-x-12">
                                 <span className="transform skew-x-12"><Newspaper size={32} /></span>
                             </div>
-                            <h2 className="text-3xl font-bold uppercase tracking-wider text-white sm:text-4xl">News</h2>
+                            <h1 className="text-4xl font-bold tracking-wider uppercase text-white sm:text-5xl">News</h1>
                         </div>
+                        
                         {currentArticle && (
                             <div className="border-l-4 border-yellow-400 pl-4 transition-all duration-300 text-left">
                                 <p className="text-sm text-gray-400 font-mono">{new Date(currentArticle.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
@@ -255,9 +257,9 @@ const News: React.FC = () => {
                     </div>
 
                     {canManageNews && (
-                        <button onClick={openAddModal} className="group relative inline-flex items-center gap-2 px-6 py-2 bg-yellow-400 text-black font-bold uppercase tracking-wider transform -skew-x-12 hover:bg-yellow-300 transition-all flex-shrink-0">
-                            <span className="transform skew-x-12 flex items-center gap-2"><Plus size={18} /> Add News</span>
-                        </button>
+                        <SkewedButton onClick={openAddModal} icon={<Plus size={18} />}>
+                            Add News
+                        </SkewedButton>
                     )}
                 </div>
 
@@ -309,6 +311,7 @@ const News: React.FC = () => {
                 <span className="text-4xl font-bold tracking-[.2em] text-gray-700 block mb-8">SITH-S 25</span>
                 <p className="text-xs">Copyright © SITES Angkatan 25.</p>
             </footer>
+
             {selectedArticle && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4 bg-black/95 backdrop-blur-sm transition-opacity" onClick={() => setSelectedArticle(null)}>
                     <div 
@@ -349,8 +352,6 @@ const News: React.FC = () => {
                         <div className="flex-1 overflow-y-auto custom-scrollbar bg-gray-900 p-6 md:p-10">
                             <div className="max-w-3xl mx-auto">
                                 <LinkifiedContent text={selectedArticle.content} />
-                            </div>
-                            <div className="mt-12 pt-8 border-t border-gray-800 text-center">
                             </div>
                         </div>
                     </div>
