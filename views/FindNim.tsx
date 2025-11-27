@@ -70,7 +70,7 @@ const FindNim: React.FC = () => {
                     <div className="w-10 h-10 flex items-center justify-center bg-yellow-400 text-black transform -skew-x-12">
                          <span className="transform skew-x-12"><Search size={28} /></span>
                     </div>
-                    <h1 className="text-3xl font-bold uppercase tracking-wider text-white">Find NIM / Name</h1>
+                    <h1 className="text-4xl font-bold tracking-wider uppercase text-white sm:text-5xl">Find NIM / Name</h1>
                 </div>
 
                 <div className="relative mb-10 group">
@@ -91,6 +91,7 @@ const FindNim: React.FC = () => {
                 {loading && (
                     <div className="flex flex-col items-center justify-center py-12 text-yellow-400">
                         <Loader className="animate-spin mb-2" size={32} />
+                        <span className="text-sm font-mono">Mencari data...</span>
                     </div>
                 )}
 
@@ -150,6 +151,5 @@ const FindNim: React.FC = () => {
         </div>
     );
 };
-
 
 export default FindNim;
