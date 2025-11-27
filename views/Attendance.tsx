@@ -278,12 +278,7 @@ const Attendance: React.FC = () => {
                     {sessions.length === 0 && !loading && <div className="col-span-full text-center py-10 text-gray-500">Belum ada sesi absensi.</div>}
                 </div>
             </div>
-
-            <footer className="mt-24 border-t border-gray-800 pt-12 pb-8 text-center text-gray-500">
-                <span className="text-4xl font-bold tracking-[.2em] text-gray-700 block mb-8">SITH-S 25</span>
-                <p className="text-xs">Copyright © SITES Angkatan 25.</p>
-            </footer>
-
+            
             {isAdminOrSekretaris && (
                 <button
                     onClick={() => setIsCreateModalOpen(true)}
