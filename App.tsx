@@ -10,7 +10,6 @@ import News from './views/News';
 import ChangePassword from './views/ChangePassword';
 import FindNim from './views/FindNim';
 import Attendance from './views/Attendance';
-import Gallery from './views/Gallery';
 const App: React.FC = () => {
     return (
         <BrowserRouter>
@@ -27,7 +26,6 @@ const App: React.FC = () => {
                         <Route path="/change-password" element={<ChangePassword />} />
                         <Route path="/find-nim" element={<FindNim />} />
                         <Route path="/attendance" element={<Attendance />} /> 
-                        <Route path="/gallery" element={<Gallery />} />
                     </Routes>
                 </main>
             </div>
