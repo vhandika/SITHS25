@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Newspaper, Plus, X, Lock, Globe, Upload, Image as ImageIcon, Loader, Trash2, Pencil, ChevronLeft, ChevronRight } from 'lucide-react';
-import SkewedButton from '../components/SkewedButton'; // Pastikan import ini ada
+import { Newspaper, Plus, X, Lock, Pencil, Trash2, ChevronLeft, ChevronRight, Loader } from 'lucide-react';
+import SkewedButton from '../components/SkewedButton'; 
 
 const API_BASE_URL = 'https://idk-eight.vercel.app/api'; 
 
@@ -8,7 +8,7 @@ const LinkifiedContent: React.FC<{ text: string }> = ({ text }) => {
     if (!text) return null;
     const urlRegex = /(https?:\/\/[^\s]+)/g;
     return (
-        <div className="space-y-4 text-gray-300 leading-relaxed text-base">
+        <div className="space-y-4 text-gray-300 leading-relaxed text-base text-left">
             {text.split('\n').map((paragraph, index) => (
                 <p key={index} className="min-h-[1rem] whitespace-pre-wrap">
                     {paragraph.split(urlRegex).map((part, i) => {
@@ -95,6 +95,8 @@ const News: React.FC = () => {
     const [isUploading, setIsUploading] = useState(false);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [isClosing, setIsClosing] = useState(false);
+
     const [formData, setFormData] = useState({
         title: '',
         content: '',
@@ -139,7 +141,7 @@ const News: React.FC = () => {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
             if (file.size > 5 * 1024 * 1024) {
-                alert("Maksimal ukuran file 5MB (Plis, soalnya database gratisan. Jadi mohon dimaklumi");
+                alert("Maksimal ukuran file 5MB");
                 return;
             }
             setSelectedFile(file);
@@ -181,6 +183,7 @@ const News: React.FC = () => {
         setPreviewUrl(article.image_url);
         setSelectedFile(null);
         setIsAddModalOpen(true);
+        setIsClosing(false);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -214,7 +217,7 @@ const News: React.FC = () => {
             if (!response.ok) throw new Error(result.message || 'Gagal');
 
             alert(`Berita berhasil ${isEditing ? 'diupdate' : 'diposting'}!`);
-            setIsAddModalOpen(false);
+            handleCloseModal();
             fetchNews();
 
         } catch (err: any) {
@@ -231,15 +234,49 @@ const News: React.FC = () => {
         setPreviewUrl(null);
         setSelectedFile(null);
         setIsAddModalOpen(true);
+        setIsClosing(false);
+    };
+
+    const handleOpenDetail = (article: NewsArticle) => {
+        setSelectedArticle(article);
+        setIsClosing(false);
+    };
+
+    const handleCloseModal = () => {
+        setIsClosing(true);
+        setTimeout(() => {
+            setSelectedArticle(null);
+            setIsAddModalOpen(false);
+            setIsClosing(false);
+        }, 300);
     };
 
     if (loading) return <div className="min-h-screen w-full bg-black flex items-center justify-center"><Loader className="animate-spin text-yellow-400"/></div>;
     const currentArticle = newsData.length > 0 ? newsData[currentIndex] : null;
 
     return (
-        <div className="min-h-screen w-full bg-black py-16 lg:py-24 px-4 sm:px-6 lg:px-8 mt-16 lg:mt-0 font-sans">
+        <div className="min-h-screen w-full bg-black py-16 lg:py-24 px-4 sm:px-6 lg:px-8 mt-16 lg:mt-0 font-sans relative">
+            <style>{`
+                @keyframes popUp {
+                    0% { opacity: 0; transform: scale(0.8) translateY(20px); }
+                    100% { opacity: 1; transform: scale(1) translateY(0); }
+                }
+                @keyframes popDown {
+                    0% { opacity: 1; transform: scale(1) translateY(0); }
+                    100% { opacity: 0; transform: scale(0.8) translateY(20px); }
+                }
+                @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+                @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+
+                .animate-pop-in { animation: popUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+                .animate-pop-out { animation: popDown 0.3s ease-in forwards; }
+                
+                .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+                .animate-fade-out { animation: fadeOut 0.3s ease-in forwards; }
+            `}</style>
+
             <div className="mx-auto max-w-7xl">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                <div className="flex flex-col md:flex-row justify-between items-start mb-8 gap-4">
                      <div className="w-full md:w-auto">
                         <div className="flex items-center gap-4 mb-4">
                             <div className="w-10 h-10 flex items-center justify-center bg-yellow-400 text-black transform -skew-x-12">
@@ -257,9 +294,11 @@ const News: React.FC = () => {
                     </div>
 
                     {canManageNews && (
-                        <SkewedButton onClick={openAddModal} icon={<Plus size={18} />}>
-                            Add News
-                        </SkewedButton>
+                        <div className="hidden md:block">
+                            <SkewedButton onClick={openAddModal} icon={<Plus size={18} />}>
+                                Add News
+                            </SkewedButton>
+                        </div>
                     )}
                 </div>
 
@@ -268,7 +307,7 @@ const News: React.FC = () => {
                         <div className="relative h-[400px] w-full overflow-hidden">
                              <div className="lg:hidden flex h-full transition-transform duration-700 ease-in-out" style={{ transform: `translateX(-${currentIndex * 100}%)` }}>
                                 {newsData.map((article) => (
-                                    <div key={article.id} className="relative w-full h-full flex-shrink-0 cursor-pointer" onClick={() => setSelectedArticle(article)}>
+                                    <div key={article.id} className="relative w-full h-full flex-shrink-0 cursor-pointer" onClick={() => handleOpenDetail(article)}>
                                         <img src={article.image_url || 'https://via.placeholder.com/800x600'} alt={article.title} className="w-full h-full object-cover" />
                                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
                                         {canManageNews && (
@@ -289,7 +328,7 @@ const News: React.FC = () => {
                                 {newsData.map((article, index) => (
                                     <NewsCard 
                                         key={article.id} article={article} isFeatured={index === currentIndex} 
-                                        onClick={() => setSelectedArticle(article)}
+                                        onClick={() => handleOpenDetail(article)}
                                         canEdit={canManageNews || false}
                                         onEdit={(e) => handleEditClick(article, e)}
                                         onDelete={(e) => handleDelete(article.id, e)}
@@ -299,6 +338,7 @@ const News: React.FC = () => {
                         </div>
                     </div>
                 ) : <div className="text-center text-gray-500 mt-10">Belum ada berita.</div>}
+                
                 {newsData.length > 0 && (
                     <div className="mt-8 flex items-center gap-4">
                         <button onClick={handlePrev} className="p-2 border-2 border-gray-600 text-gray-400 hover:border-white hover:text-white"><ChevronLeft /></button>
@@ -312,10 +352,21 @@ const News: React.FC = () => {
                 <p className="text-xs">Copyright © SITES Angkatan 25.</p>
             </footer>
 
+            {canManageNews && (
+                <button
+                    onClick={openAddModal}
+                    className="fixed bottom-6 right-6 z-40 md:hidden p-4 bg-yellow-400 text-black rounded-full shadow-lg hover:bg-yellow-300 transition-transform active:scale-95 flex items-center justify-center border-2 border-black"
+                    aria-label="Add News"
+                >
+                    <Plus size={28} />
+                </button>
+            )}
+
             {selectedArticle && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4 bg-black/95 backdrop-blur-sm transition-opacity" onClick={() => setSelectedArticle(null)}>
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4 transition-all" onClick={handleCloseModal}>
+                    <div className={`absolute inset-0 bg-black/95 backdrop-blur-sm ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`}></div>
                     <div 
-                        className="relative w-full max-w-4xl h-full md:h-[90vh] bg-gray-900 md:rounded-xl overflow-hidden shadow-2xl flex flex-col" 
+                        className={`relative w-full max-w-4xl h-full md:h-[90vh] bg-gray-900 md:rounded-xl overflow-hidden shadow-2xl flex flex-col ${isClosing ? 'animate-pop-out' : 'animate-pop-in'}`} 
                         onClick={e => e.stopPropagation()}
                     >
                         <div className="relative w-full h-[50vh] md:h-[60%] flex-shrink-0">
@@ -328,12 +379,12 @@ const News: React.FC = () => {
                             <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/60 to-transparent"></div>
 
                             <button 
-                                onClick={() => setSelectedArticle(null)} 
+                                onClick={handleCloseModal} 
                                 className="absolute top-4 right-4 bg-black/50 backdrop-blur-md p-2 rounded-full text-white hover:bg-yellow-400 hover:text-black transition-all z-50"
                             >
                                 <X size={24}/>
                             </button>
-                            <div className="absolute bottom-0 left-0 w-full p-6 md:p-8 z-20">
+                            <div className="absolute bottom-0 left-0 w-full p-6 md:p-8 z-20 text-left">
                                 <div className="flex gap-3 mb-3">
                                     <span className="bg-yellow-400 px-3 py-1 text-xs font-bold text-black uppercase tracking-wider transform -skew-x-12 inline-block shadow-lg">
                                         <span className="inline-block transform skew-x-12">{selectedArticle.category}</span>
@@ -349,7 +400,7 @@ const News: React.FC = () => {
                                 </p>
                             </div>
                         </div>
-                        <div className="flex-1 overflow-y-auto custom-scrollbar bg-gray-900 p-6 md:p-10">
+                        <div className="flex-1 overflow-y-auto custom-scrollbar bg-gray-900 p-6 md:p-10 text-left">
                             <div className="max-w-3xl mx-auto">
                                 <LinkifiedContent text={selectedArticle.content} />
                             </div>
@@ -359,14 +410,21 @@ const News: React.FC = () => {
             )}
 
             {isAddModalOpen && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
-                     <div className="relative w-full max-w-2xl bg-gray-900 rounded-lg border border-gray-700 shadow-2xl p-6 overflow-y-auto max-h-[90vh]">
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+                     <div 
+                        className={`absolute inset-0 bg-black/90 backdrop-blur-sm ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`} 
+                        onClick={() => !isUploading && handleCloseModal()}
+                     ></div>
+
+                     <div 
+                        className={`relative w-full max-w-2xl bg-gray-900 rounded-lg border border-gray-700 shadow-2xl p-6 overflow-y-auto max-h-[90vh] text-left ${isClosing ? 'animate-pop-out' : 'animate-pop-in'}`}
+                     >
                         <div className="flex justify-between items-center mb-6 border-b border-gray-800 pb-4">
                             <h2 className="text-2xl font-bold text-white flex items-center gap-2">
                                 {isEditing ? <Pencil className="text-blue-400"/> : <Plus className="text-yellow-400" />} 
                                 {isEditing ? 'Edit' : 'Add News'}
                             </h2>
-                            <button onClick={() => !isUploading && setIsAddModalOpen(false)} className="text-gray-400 hover:text-white"><X size={24} /></button>
+                            <button onClick={() => !isUploading && handleCloseModal()} className="text-gray-400 hover:text-white"><X size={24} /></button>
                         </div>
                         <form onSubmit={handleSubmit} className="space-y-5">
                              <div>
@@ -398,7 +456,7 @@ const News: React.FC = () => {
                                 <textarea required rows={5} className="w-full bg-black/50 border border-gray-700 rounded p-3 text-white focus:border-yellow-400 outline-none" value={formData.content} onChange={e=>setFormData({...formData, content: e.target.value})} />
                              </div>
                              <div className="pt-4 flex justify-end gap-3">
-                                <button type="button" onClick={()=>setIsAddModalOpen(false)} className="px-4 py-2 text-gray-400" disabled={isUploading}>Batal</button>
+                                <button type="button" onClick={() => !isUploading && handleCloseModal()} className="px-4 py-2 text-gray-400" disabled={isUploading}>Batal</button>
                                 <button type="submit" disabled={isUploading} className={`px-6 py-2 font-bold uppercase text-white ${isEditing ? 'bg-blue-600 hover:bg-blue-500' : 'bg-yellow-400 text-black hover:bg-yellow-300'}`}>
                                     {isUploading ? 'Proses...' : (isEditing ? 'Update' : 'Posting')}
                                 </button>
