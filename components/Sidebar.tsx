@@ -98,9 +98,7 @@ const Sidebar: React.FC = () => {
         if (isLoggedIn) {
            items.push({ path: '/find-nim', name: 'Cari NIM', icon: Search });
            items.push({ path: '/attendance', name: 'Absensi', icon: CalendarCheck });
-           if (userRole === 'bendahara' || userRole === 'admin' || userRole === 'mahasiswa' || userRole === 'photographer' || userRole === 'humas') {
-               items.push({ path: '/galeri', name: 'Gallery', icon: CameraIcon });
-           }
+           items.push({ path: '/gallery', name: 'Gallery', icon: CameraIcon });
            items.push({ path: '/change-password', name: 'Ganti Password', icon: KeyRound });
         } else {
            items.push({ path: '/login', name: 'Login', icon: LogIn });
@@ -111,13 +109,13 @@ const Sidebar: React.FC = () => {
     return (
         <>
             <aside
-                className={`fixed left-0 top-0 z-50 hidden h-full flex-col justify-between border-r border-gray-800 bg-black/80 py-6 backdrop-blur-sm transition-all duration-300 ease-in-out lg:flex ${
+                className={`fixed left-0 top-0 z-50 hidden h-full flex-col justify-between border-r border-gray-800 bg-black/80 pt-6 pb-0 backdrop-blur-sm transition-all duration-300 ease-in-out lg:flex ${
                     isExpanded ? 'w-64 items-start px-4' : 'w-20 items-center'
                 }`}
                 onMouseEnter={() => setIsExpanded(true)}
                 onMouseLeave={() => setIsExpanded(false)}
             >
-                <div className="flex w-full flex-col items-center gap-8">
+                <div className="flex w-full flex-1 flex-col items-center gap-8">
                     <DesktopNavLinks 
                         isExpanded={isExpanded} 
                         isLoggedIn={isLoggedIn} 
@@ -126,40 +124,41 @@ const Sidebar: React.FC = () => {
                 </div>
 
                 {isLoggedIn && (
-                    <div className={`mt-auto w-full border-t border-gray-800 pt-4 transition-all duration-300`}>
-                        {isExpanded ? (
-                            <div className="flex items-center justify-between px-1">
-                                <div className="flex items-center gap-3 overflow-hidden">
-                                    <div className="bg-yellow-400/20 p-2 rounded-full flex-shrink-0">
-                                        <UserCircle size={24} className="text-yellow-400" />
-                                    </div>
-                                    <div className="overflow-hidden">
-                                        <p className="text-xs text-gray-400">Logged in as</p>
-                                        <p className="text-sm font-bold truncate text-white" title={userNIM || ''}>{userNIM}</p>
-                                    </div>
+                    <div className="mt-auto w-full h-20 border-t border-gray-800 relative overflow-hidden">
+                        <div 
+                            className={`absolute top-0 left-0 h-full flex items-center px-2 w-[80%] transition-all duration-300 ease-in-out ${
+                                isExpanded ? 'translate-x-0 opacity-100' : '-translate-x-10 opacity-0 pointer-events-none'
+                            }`}
+                        >
+                            <div className="flex items-center gap-3 overflow-hidden whitespace-nowrap">
+                                <div className="bg-yellow-400/20 p-2 rounded-full flex-shrink-0">
+                                    <UserCircle size={24} className="text-yellow-400" />
                                 </div>
-                                <button 
-                                    onClick={handleLogout}
-                                    className="p-2 rounded-lg text-red-400 hover:bg-red-900/20 hover:text-red-300 transition-colors"
-                                    title="Logout"
-                                >
-                                    <LogOut size={20} />
-                                </button>
+                                <div className="overflow-hidden">
+                                    <p className="text-xs text-gray-400">Logged in as</p>
+                                    <p className="text-sm font-bold truncate text-white" title={userNIM || ''}>{userNIM}</p>
+                                </div>
                             </div>
-                        ) : (
-                            <div className="flex justify-center w-full">
-                                <button 
-                                    onClick={handleLogout}
-                                    className="p-2 rounded-lg text-red-400 hover:bg-red-900/20 hover:text-red-300 transition-colors"
-                                    title="Logout"
-                                >
-                                    <LogOut size={24} />
-                                </button>
-                            </div>
-                        )}
+                        </div>
+
+                        <div 
+                            className={`absolute top-0 h-full flex items-center justify-center transition-all duration-300 ease-in-out ${
+                                isExpanded ? 'right-2 translate-x-0' : 'left-1/2 -translate-x-1/2'
+                            }`}
+                        >
+                            <button 
+                                onClick={handleLogout}
+                                className="p-2 rounded-lg text-red-400 hover:bg-red-900/20 hover:text-red-300 transition-colors"
+                                title="Logout"
+                            >
+                                <LogOut size={isExpanded ? 20 : 24} />
+                            </button>
+                        </div>
+
                     </div>
                 )}
             </aside>
+
             <header className="fixed top-0 left-0 right-0 z-40 flex h-16 items-center justify-between bg-black/80 px-4 backdrop-blur-sm lg:hidden">
                  <div className="text-white font-bold"></div>
                  <button 
