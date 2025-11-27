@@ -23,13 +23,14 @@ const Attendance: React.FC = () => {
     const [statsRecords, setStatsRecords] = useState<any[]>([]); 
     const [activeTab, setActiveTab] = useState<'hadir' | 'pending' | 'belum'>('hadir'); 
     const [searchFilter, setSearchFilter] = useState(''); 
+    const [attendedSessionIds, setAttendedSessionIds] = useState<number[]>([]);
 
     useEffect(() => {
         const role = localStorage.getItem('userRole');
         const nim = localStorage.getItem('userNIM');
         setUserRole(role);
         setUserNIM(nim);
-        fetchSessions();
+        fetchSessions(nim);
 
         if (role === 'admin' || role === 'sekretaris') {
             fetchAllUsers();
@@ -38,7 +39,7 @@ const Attendance: React.FC = () => {
 
     const isAdminOrSekretaris = userRole === 'admin' || userRole === 'sekretaris';
 
-    const fetchSessions = async () => {
+    const fetchSessions = async (currentNIM: string | null = userNIM) => {
         setLoading(true);
         try {
             const token = localStorage.getItem('userToken');
@@ -46,9 +47,38 @@ const Attendance: React.FC = () => {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const json = await res.json();
-            if (res.ok) setSessions(json.data);
+            if (res.ok) {
+                setSessions(json.data);
+                if (currentNIM) {
+                    checkUserAttendanceStatus(json.data, currentNIM);
+                }
+            }
         } catch (error) { console.error(error); } 
         finally { setLoading(false); }
+    };
+
+    const checkUserAttendanceStatus = async (currentSessions: any[], nim: string) => {
+        const token = localStorage.getItem('userToken');
+        const openSessions = currentSessions.filter(s => s.is_open);
+        const attendedIds: number[] = [];
+        for (const session of openSessions) {
+            try {
+                const res = await fetch(`${API_BASE_URL}/attendance/stats/${session.id}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    const json = await res.json();
+                    const records = json.data || [];
+                    const isAttended = records.some((r: any) => r.user_nim === nim);
+                    if (isAttended) {
+                        attendedIds.push(session.id);
+                    }
+                }
+            } catch (err) {
+                console.error("Error", session.id);
+            }
+        }
+        setAttendedSessionIds(prev => [...new Set([...prev, ...attendedIds])]);
     };
 
     const fetchAllUsers = async () => {
@@ -182,6 +212,9 @@ const Attendance: React.FC = () => {
 
             if (res.ok) {
                 alert(json.message);
+
+                setAttendedSessionIds(prev => [...prev, selectedSession.id]);
+                
                 setSelectedSession(null); setPhotoFile(null); setPreviewUrl(null);
             } else {
                 alert(json.message || "Gagal absen");
@@ -242,43 +275,59 @@ const Attendance: React.FC = () => {
                     {loading ? (
                         <div className="col-span-full flex justify-center py-10"><Loader className="animate-spin text-yellow-400"/></div>
                     ) : (
-                        sessions.map((session) => (
-                            <div key={session.id} className={`relative p-6 rounded-lg border text-left ${session.is_open ? 'border-yellow-400/50 bg-gray-900/60' : 'border-gray-800 bg-black'} transition-all hover:border-yellow-400/80`}>
-                                <div className="flex justify-between items-start mb-4">
-                                    <h3 className="text-xl font-bold text-white line-clamp-1" title={session.title}>{session.title}</h3>
-                                    {session.is_open ? (
-                                        <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded border border-green-500/50 flex items-center gap-1 shrink-0"><CheckCircle size={12}/> Buka</span>
-                                    ) : (
-                                        <span className="px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded border border-red-500/50 flex items-center gap-1 shrink-0"><XCircle size={12}/> Tutup</span>
-                                    )}
-                                </div>
-                                <p className="text-gray-400 text-sm mb-4 min-h-[40px] line-clamp-2">{session.description || 'Tidak ada deskripsi.'}</p>
-                                <div className="flex flex-col gap-2 mt-auto">
-                                    {session.is_open && (
-                                        <button onClick={() => setSelectedSession(session)} className="w-full py-2 bg-yellow-400 text-black font-bold uppercase text-sm hover:bg-yellow-300 transition-colors rounded">
-                                            Isi Kehadiran
-                                        </button>
-                                    )}
-                                    {isAdminOrSekretaris && (
-                                        <div className="flex gap-2 mt-2 pt-2 border-t border-gray-800">
-                                            <button onClick={(e) => handleViewStats(e, session.id)} className="flex-1 py-1.5 text-xs bg-gray-800 hover:bg-gray-700 rounded text-white flex items-center justify-center gap-2">
-                                                <BarChart3 size={14} /> Laporan
+                        sessions.map((session) => {
+                            const isAttended = attendedSessionIds.includes(session.id);
+
+                            return (
+                                <div key={session.id} className={`relative p-6 rounded-lg border text-left ${session.is_open ? 'border-yellow-400/50 bg-gray-900/60' : 'border-gray-800 bg-black'} transition-all hover:border-yellow-400/80`}>
+                                    <div className="flex justify-between items-start mb-4">
+                                        <h3 className="text-xl font-bold text-white line-clamp-1" title={session.title}>{session.title}</h3>
+                                        {session.is_open ? (
+                                            <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded border border-green-500/50 flex items-center gap-1 shrink-0"><CheckCircle size={12}/> Buka</span>
+                                        ) : (
+                                            <span className="px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded border border-red-500/50 flex items-center gap-1 shrink-0"><XCircle size={12}/> Tutup</span>
+                                        )}
+                                    </div>
+                                    <p className="text-gray-400 text-sm mb-4 min-h-[40px] line-clamp-2">{session.description || 'Tidak ada deskripsi.'}</p>
+                                    <div className="flex flex-col gap-2 mt-auto">
+                                        {session.is_open && (
+                                            <button 
+                                                onClick={() => !isAttended && setSelectedSession(session)} 
+                                                disabled={isAttended}
+                                                className={`w-full py-2 font-bold uppercase text-sm rounded transition-colors flex items-center justify-center gap-2
+                                                    ${isAttended 
+                                                        ? 'bg-gray-800 text-gray-500 cursor-not-allowed border border-gray-700' 
+                                                        : 'bg-yellow-400 text-black hover:bg-yellow-300'
+                                                    }`}
+                                            >
+                                                {isAttended ? (
+                                                    <><CheckCircle size={16}/> Sudah Absen</>
+                                                ) : (
+                                                    'Isi Kehadiran'
+                                                )}
                                             </button>
-                                            {session.is_open && (
-                                                <button onClick={(e) => handleCloseSession(e, session.id)} className="flex-1 py-1.5 text-xs bg-red-900/30 hover:bg-red-900/50 text-red-400 rounded flex items-center justify-center gap-2">
-                                                    <Lock size={14} /> Tutup
+                                        )}
+                                        {isAdminOrSekretaris && (
+                                            <div className="flex gap-2 mt-2 pt-2 border-t border-gray-800">
+                                                <button onClick={(e) => handleViewStats(e, session.id)} className="flex-1 py-1.5 text-xs bg-gray-800 hover:bg-gray-700 rounded text-white flex items-center justify-center gap-2">
+                                                    <BarChart3 size={14} /> Laporan
                                                 </button>
-                                            )}
-                                        </div>
-                                    )}
+                                                {session.is_open && (
+                                                    <button onClick={(e) => handleCloseSession(e, session.id)} className="flex-1 py-1.5 text-xs bg-red-900/30 hover:bg-red-900/50 text-red-400 rounded flex items-center justify-center gap-2">
+                                                        <Lock size={14} /> Tutup
+                                                    </button>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-                        ))
+                            );
+                        })
                     )}
                     {sessions.length === 0 && !loading && <div className="col-span-full text-center py-10 text-gray-500">Belum ada sesi absensi.</div>}
                 </div>
             </div>
-            
+
             {isAdminOrSekretaris && (
                 <button
                     onClick={() => setIsCreateModalOpen(true)}
