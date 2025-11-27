@@ -80,7 +80,6 @@ const Attendance: React.FC = () => {
             }
         } catch (error) { alert('Gagal membuat sesi'); }
     };
-
     const handleCloseSession = async (e: React.MouseEvent, id: number) => {
         e.stopPropagation(); 
         if(!window.confirm('Yakin ingin menutup sesi ini?')) return;
@@ -188,6 +187,7 @@ const Attendance: React.FC = () => {
         } catch (error) { alert('Terjadi kesalahan koneksi.'); } 
         finally { setIsSubmitting(false); }
     };
+
     const { presentUsers, pendingUsers, absentUsers, presentPercentage } = useMemo(() => {
         if (!viewStatsId) return { presentUsers: [], pendingUsers: [], absentUsers: [], presentPercentage: 0 };
         const confirmed = statsRecords.filter(r => r.status === 'Hadir' || r.status === 'Dihadirkan');
@@ -219,7 +219,7 @@ const Attendance: React.FC = () => {
     return (
         <div className="min-h-screen w-full bg-black py-16 lg:py-24 px-4 sm:px-6 lg:px-8 mt-16 lg:mt-0 font-sans text-white">
             <div className="mx-auto max-w-6xl">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
                     <div className="flex items-center gap-4">
                         <div className="w-10 h-10 flex items-center justify-center bg-yellow-400 text-black transform -skew-x-12">
                              <span className="transform skew-x-12"><CalendarCheck size={32} /></span>
@@ -228,12 +228,14 @@ const Attendance: React.FC = () => {
                             <h1 className="text-4xl font-bold tracking-wider uppercase text-white sm:text-5xl">Absensi</h1>
                         </div>
                     </div>
+
                     {isAdminOrSekretaris && (
                         <SkewedButton onClick={() => setIsCreateModalOpen(true)} icon={<Plus size={18} />}>
                             Buat Baru
                         </SkewedButton>
                     )}
                 </div>
+
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                     {sessions.map((session) => (
                         <div key={session.id} className={`relative p-6 rounded-lg border ${session.is_open ? 'border-yellow-400/50 bg-gray-900/60' : 'border-gray-800 bg-black'} transition-all`}>
@@ -289,12 +291,9 @@ const Attendance: React.FC = () => {
                                     <div className="w-full bg-gray-700 h-4 rounded-full overflow-hidden">
                                         <div className="bg-green-500 h-full transition-all duration-500" style={{ width: `${presentPercentage > 100 ? 100 : presentPercentage}%` }} />
                                     </div>
-                                    <div className="flex gap-6 mt-3 text-xs text-gray-400">
-                                    </div>
                                 </div>
 
                                 <div className="flex flex-col sm:flex-row justify-between gap-4 mb-4 shrink-0">
-                                    {/* MENU TAB YANG DI PERBAIKI UNTUK MOBILE */}
                                     <div className="flex bg-gray-800 p-1 rounded-lg overflow-x-auto w-full sm:w-auto">
                                         <button onClick={() => setActiveTab('hadir')} className={`flex-shrink-0 px-3 py-2 rounded-md text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'hadir' ? 'bg-green-600 text-white shadow' : 'text-gray-400 hover:text-white'}`}>
                                             <div className="flex items-center gap-2"><UserCheck size={16}/> Hadir ({presentUsers.length})</div>
@@ -353,7 +352,7 @@ const Attendance: React.FC = () => {
                                                             </button>
                                                         </td>
                                                     </tr>
-                                                )) : <tr><td colSpan={3} className="text-center py-8 text-gray-500">Tidak ada antrian verifikasi.</td></tr>
+                                                )) : <tr><td colSpan={3} className="text-center py-8 text-gray-500">Kosong.</td></tr>
                                             )}
 
                                             {activeTab === 'belum' && (
