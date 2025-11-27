@@ -91,7 +91,6 @@ const FindNim: React.FC = () => {
                 {loading && (
                     <div className="flex flex-col items-center justify-center py-12 text-yellow-400">
                         <Loader className="animate-spin mb-2" size={32} />
-                        <span className="text-sm font-mono">Mencari data...</span>
                     </div>
                 )}
 
@@ -128,11 +127,6 @@ const FindNim: React.FC = () => {
                                         <h3 className="text-lg font-bold text-white break-words leading-tight group-hover:text-yellow-400 transition-colors uppercase">
                                             {student.name ? student.name : <span className="text-gray-600 italic">Nama belum diisi</span>}
                                         </h3>
-
-                                        <div className="mt-2 flex gap-2 text-xs text-gray-500">
-                                            {student.jurusan && <span className="border border-gray-700 px-2 py-0.5 rounded">{student.jurusan}</span>}
-                                            {student.angkatan && <span className="border border-gray-700 px-2 py-0.5 rounded">{student.angkatan}</span>}
-                                        </div>
                                     </div>
                                 </div>
                             </div>
