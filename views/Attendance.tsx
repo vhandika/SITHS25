@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
     CalendarCheck, Plus, Upload, Camera, Users, 
-    BarChart3, CheckCircle, XCircle, Search, UserCheck, UserX, Lock, Clock, Loader 
+    BarChart3, CheckCircle, XCircle, Search, UserCheck, UserX, Lock, Clock, Loader, FileText, AlertCircle 
 } from 'lucide-react';
 import SkewedButton from '../components/SkewedButton';
 
@@ -14,6 +14,8 @@ const Attendance: React.FC = () => {
     const [userNIM, setUserNIM] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [selectedSession, setSelectedSession] = useState<any | null>(null);
+    const [selectedSessionPermission, setSelectedSessionPermission] = useState<any | null>(null);
+    const [permissionReason, setPermissionReason] = useState('');
     const [photoFile, setPhotoFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -21,7 +23,7 @@ const Attendance: React.FC = () => {
     const [newSessionData, setNewSessionData] = useState({ title: '', description: '', is_photo_required: false });
     const [viewStatsId, setViewStatsId] = useState<number | null>(null); 
     const [statsRecords, setStatsRecords] = useState<any[]>([]); 
-    const [activeTab, setActiveTab] = useState<'hadir' | 'pending' | 'belum'>('hadir'); 
+    const [activeTab, setActiveTab] = useState<'hadir' | 'izin' | 'pending' | 'belum'>('hadir'); 
     const [searchFilter, setSearchFilter] = useState(''); 
     const [attendedSessionIds, setAttendedSessionIds] = useState<number[]>([]);
 
@@ -61,6 +63,7 @@ const Attendance: React.FC = () => {
         const token = localStorage.getItem('userToken');
         const openSessions = currentSessions.filter(s => s.is_open);
         const attendedIds: number[] = [];
+
         for (const session of openSessions) {
             try {
                 const res = await fetch(`${API_BASE_URL}/attendance/stats/${session.id}`, {
@@ -75,7 +78,7 @@ const Attendance: React.FC = () => {
                     }
                 }
             } catch (err) {
-                console.error("Error", session.id);
+                console.error("Gagal cek status sesi", session.id);
             }
         }
         setAttendedSessionIds(prev => [...new Set([...prev, ...attendedIds])]);
@@ -200,6 +203,7 @@ const Attendance: React.FC = () => {
         const formData = new FormData();
         formData.append('session_id', selectedSession.id);
         formData.append('user_name_input', 'Mahasiswa ' + userNIM); 
+        formData.append('status', 'Hadir'); 
         if (photoFile) formData.append('image', photoFile);
 
         try {
@@ -212,10 +216,8 @@ const Attendance: React.FC = () => {
 
             if (res.ok) {
                 alert(json.message);
-
                 setAttendedSessionIds(prev => [...prev, selectedSession.id]);
-                
-                setSelectedSession(null); setPhotoFile(null); setPreviewUrl(null);
+                closeModals();
             } else {
                 alert(json.message || "Gagal absen");
             }
@@ -223,28 +225,69 @@ const Attendance: React.FC = () => {
         finally { setIsSubmitting(false); }
     };
 
-    const { presentUsers, pendingUsers, absentUsers, presentPercentage } = useMemo(() => {
-        if (!viewStatsId) return { presentUsers: [], pendingUsers: [], absentUsers: [], presentPercentage: 0 };
+    const handleSubmitPermission = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+        const token = localStorage.getItem('userToken');
+        const formData = new FormData();
+        formData.append('session_id', selectedSessionPermission.id);
+        formData.append('user_name_input', 'Mahasiswa ' + userNIM); 
+        
+        formData.append('status', 'Izin'); 
+        formData.append('reason', permissionReason);
+
+        if (photoFile) formData.append('image', photoFile);
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/attendance/submit`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }, 
+                body: formData
+            });
+            const json = await res.json();
+
+            if (res.ok) {
+                alert("Permohonan izin berhasil dikirim!");
+                setAttendedSessionIds(prev => [...prev, selectedSessionPermission.id]);
+                closeModals();
+            } else {
+                alert(json.message || "Gagal mengirim izin");
+            }
+        } catch (error) { alert('Terjadi kesalahan koneksi.'); } 
+        finally { setIsSubmitting(false); }
+    };
+
+    const closeModals = () => {
+        setSelectedSession(null);
+        setSelectedSessionPermission(null);
+        setPhotoFile(null);
+        setPreviewUrl(null);
+        setPermissionReason('');
+    };
+
+    const { presentUsers, permissionUsers, pendingUsers, absentUsers, presentPercentage } = useMemo(() => {
+        if (!viewStatsId) return { presentUsers: [], permissionUsers: [], pendingUsers: [], absentUsers: [], presentPercentage: 0 };
+        
         const confirmed = statsRecords.filter(r => r.status === 'Hadir' || r.status === 'Dihadirkan');
+        const permissions = statsRecords.filter(r => r.status === 'Izin');
         const pending = statsRecords.filter(r => r.status === 'Pending');
+        
         const allRecordedNims = statsRecords.map(r => r.user_nim);
+        
         const absentees = allUsers.filter(u => 
             !allRecordedNims.includes(u.nim) && 
             (u.name.toLowerCase().includes(searchFilter.toLowerCase()) || u.nim.includes(searchFilter))
         );
-        const filteredConfirmed = confirmed.filter(r => 
-            (r.user_name || '').toLowerCase().includes(searchFilter.toLowerCase()) || r.user_nim.includes(searchFilter)
-        );
-        const filteredPending = pending.filter(r => 
-            (r.user_name || '').toLowerCase().includes(searchFilter.toLowerCase()) || r.user_nim.includes(searchFilter)
-        );
+
+        const filterFn = (r: any) => (r.user_name || '').toLowerCase().includes(searchFilter.toLowerCase()) || r.user_nim.includes(searchFilter);
 
         const totalPopulation = allUsers.length || 1; 
-        const pct = Math.round((confirmed.length / totalPopulation) * 100);
+        const pct = Math.round(((confirmed.length + permissions.length) / totalPopulation) * 100);
 
         return { 
-            presentUsers: filteredConfirmed, 
-            pendingUsers: filteredPending, 
+            presentUsers: confirmed.filter(filterFn), 
+            permissionUsers: permissions.filter(filterFn),
+            pendingUsers: pending.filter(filterFn), 
             absentUsers: absentees, 
             presentPercentage: pct 
         };
@@ -254,6 +297,7 @@ const Attendance: React.FC = () => {
     return (
         <div className="min-h-screen w-full bg-black py-16 lg:py-24 px-4 sm:px-6 lg:px-8 mt-16 lg:mt-0 font-sans text-white relative">
             <div className="mx-auto max-w-7xl">
+
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
                     <div className="flex items-center gap-4">
                         <div className="w-10 h-10 flex items-center justify-center bg-yellow-400 text-black transform -skew-x-12">
@@ -279,7 +323,7 @@ const Attendance: React.FC = () => {
                             const isAttended = attendedSessionIds.includes(session.id);
 
                             return (
-                                <div key={session.id} className={`relative p-6 rounded-lg border text-left ${session.is_open ? 'border-yellow-400/50 bg-gray-900/60' : 'border-gray-800 bg-black'} transition-all hover:border-yellow-400/80`}>
+                                <div key={session.id} className={`relative p-6 rounded-lg border text-left ${session.is_open ? 'border-yellow-400/50 bg-gray-900/60' : 'border-gray-800 bg-black'} transition-all hover:border-yellow-400/80 flex flex-col`}>
                                     <div className="flex justify-between items-start mb-4">
                                         <h3 className="text-xl font-bold text-white line-clamp-1" title={session.title}>{session.title}</h3>
                                         {session.is_open ? (
@@ -289,26 +333,36 @@ const Attendance: React.FC = () => {
                                         )}
                                     </div>
                                     <p className="text-gray-400 text-sm mb-4 min-h-[40px] line-clamp-2">{session.description || 'Tidak ada deskripsi.'}</p>
-                                    <div className="flex flex-col gap-2 mt-auto">
+                                    
+                                    <div className="mt-auto pt-4 border-t border-gray-800/50">
                                         {session.is_open && (
-                                            <button 
-                                                onClick={() => !isAttended && setSelectedSession(session)} 
-                                                disabled={isAttended}
-                                                className={`w-full py-2 font-bold uppercase text-sm rounded transition-colors flex items-center justify-center gap-2
-                                                    ${isAttended 
-                                                        ? 'bg-gray-800 text-gray-500 cursor-not-allowed border border-gray-700' 
-                                                        : 'bg-yellow-400 text-black hover:bg-yellow-300'
-                                                    }`}
-                                            >
-                                                {isAttended ? (
-                                                    <><CheckCircle size={16}/> Sudah Absen</>
-                                                ) : (
-                                                    'Isi Kehadiran'
-                                                )}
-                                            </button>
+                                            <>
+                                            {!isAttended ? (
+                                                <div className="flex gap-2">
+                                                    <button 
+                                                        onClick={() => setSelectedSession(session)} 
+                                                        className="flex-1 py-2 bg-yellow-400 text-black font-bold uppercase text-xs sm:text-sm hover:bg-yellow-300 transition-colors rounded flex items-center justify-center gap-1"
+                                                    >
+                                                        <CheckCircle size={16}/> Hadir
+                                                    </button>
+
+                                                    <button 
+                                                        onClick={() => setSelectedSessionPermission(session)} 
+                                                        className="flex-1 py-2 bg-blue-600 text-white font-bold uppercase text-xs sm:text-sm hover:bg-blue-500 transition-colors rounded flex items-center justify-center gap-1"
+                                                    >
+                                                        <FileText size={16}/> Izin
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <button disabled className="w-full py-2 bg-gray-800 text-gray-500 font-bold uppercase text-sm rounded cursor-not-allowed border border-gray-700 flex items-center justify-center gap-2">
+                                                    <CheckCircle size={16}/> Sudah Mengisi
+                                                </button>
+                                            )}
+                                            </>
                                         )}
+
                                         {isAdminOrSekretaris && (
-                                            <div className="flex gap-2 mt-2 pt-2 border-t border-gray-800">
+                                            <div className="flex gap-2 mt-3 pt-2 border-t border-gray-800">
                                                 <button onClick={(e) => handleViewStats(e, session.id)} className="flex-1 py-1.5 text-xs bg-gray-800 hover:bg-gray-700 rounded text-white flex items-center justify-center gap-2">
                                                     <BarChart3 size={14} /> Laporan
                                                 </button>
@@ -343,7 +397,7 @@ const Attendance: React.FC = () => {
                     <div className="w-full max-w-5xl bg-gray-900 border border-gray-700 rounded-lg flex flex-col h-[90vh]">
                         <div className="p-6 border-b border-gray-800 flex justify-between items-center bg-gray-900">
                             <div>
-                                <h2 className="text-xl font-bold text-white flex items-center gap-2"><BarChart3/> Laporan Kehadiran</h2>
+                                <h2 className="text-xl font-bold text-white flex items-center gap-2"><BarChart3/> Laporan</h2>
                             </div>
                             <button onClick={() => setViewStatsId(null)} className="text-gray-400 hover:text-white"><XCircle /></button>
                         </div>
@@ -351,7 +405,7 @@ const Attendance: React.FC = () => {
                         <div className="flex-1 overflow-hidden flex flex-col p-6">
                             <div className="bg-gray-800 p-4 rounded-lg mb-6 shrink-0">
                                 <div className="flex justify-between items-end mb-2">
-                                    <span className="text-white text-sm">Persentase Kehadiran</span>
+                                    <span className="text-white text-sm">Hadir + Izin</span>
                                     <span className="text-yellow-400 font-bold text-xl">{presentPercentage > 100 ? 100 : presentPercentage}%</span>
                                 </div>
                                 <div className="w-full bg-gray-700 h-4 rounded-full overflow-hidden">
@@ -363,6 +417,9 @@ const Attendance: React.FC = () => {
                                 <div className="flex bg-gray-800 p-1 rounded-lg overflow-x-auto w-full sm:w-auto custom-scrollbar">
                                     <button onClick={() => setActiveTab('hadir')} className={`flex-shrink-0 px-3 py-2 rounded-md text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'hadir' ? 'bg-green-600 text-white shadow' : 'text-gray-400 hover:text-white'}`}>
                                         <div className="flex items-center gap-2"><UserCheck size={16}/> Hadir ({presentUsers.length})</div>
+                                    </button>
+                                    <button onClick={() => setActiveTab('izin')} className={`flex-shrink-0 px-3 py-2 rounded-md text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'izin' ? 'bg-blue-600 text-white shadow' : 'text-gray-400 hover:text-white'}`}>
+                                        <div className="flex items-center gap-2"><FileText size={16}/> Izin ({permissionUsers.length})</div>
                                     </button>
                                     <button onClick={() => setActiveTab('pending')} className={`flex-shrink-0 px-3 py-2 rounded-md text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'pending' ? 'bg-yellow-500 text-black shadow' : 'text-gray-400 hover:text-white'}`}>
                                         <div className="flex items-center gap-2"><Clock size={16}/> Pending ({pendingUsers.length})</div>
@@ -384,7 +441,7 @@ const Attendance: React.FC = () => {
                                         <tr>
                                             <th className="px-4 py-3 w-32">NIM</th>
                                             <th className="px-4 py-3">Nama</th>
-                                            <th className="px-4 py-3 text-right">Status</th>
+                                            <th className="px-4 py-3 text-right">status </th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-800">
@@ -394,11 +451,31 @@ const Attendance: React.FC = () => {
                                                     <td className="px-4 py-3 font-mono text-yellow-400">{rec.user_nim}</td>
                                                     <td className="px-4 py-3 text-gray-300">{rec.user_name}</td>
                                                     <td className="px-4 py-3 text-right">
-                                                        <span className="text-xs bg-green-900/20 text-green-400 px-2 py-1 rounded border border-green-900">{rec.status}</span>
+                                                        <span className="text-xs bg-green-900/20 text-green-400 px-2 py-1 rounded border border-green-900">Hadir</span>
                                                         {rec.photo_url && <a href={rec.photo_url} target="_blank" rel="noreferrer" className="ml-2 text-blue-400 hover:underline text-xs">Bukti</a>}
                                                     </td>
                                                 </tr>
-                                            )) : <tr><td colSpan={3} className="text-center py-8 text-gray-500">Tidak ada data.</td></tr>
+                                            )) : <tr><td colSpan={3} className="text-center py-8 text-gray-500">Kosong.</td></tr>
+                                        )}
+                                        
+                                        {activeTab === 'izin' && (
+                                            permissionUsers.length > 0 ? permissionUsers.map((rec, i) => (
+                                                <tr key={i} className="hover:bg-gray-800/40">
+                                                    <td className="px-4 py-3 font-mono text-yellow-400">{rec.user_nim}</td>
+                                                    <td className="px-4 py-3 text-gray-300">
+                                                        <div>{rec.user_name}</div>
+                                                        {rec.reason && (
+                                                            <div className="text-xs text-gray-400 italic mt-0.5">
+                                                                "{rec.reason}"
+                                                            </div>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-right">
+                                                        <span className="text-xs bg-blue-900/20 text-blue-400 px-2 py-1 rounded border border-blue-900">Izin</span>
+                                                        {rec.photo_url && <a href={rec.photo_url} target="_blank" rel="noreferrer" className="ml-2 text-blue-400 hover:underline text-xs">Bukti</a>}
+                                                    </td>
+                                                </tr>
+                                            )) : <tr><td colSpan={3} className="text-center py-8 text-gray-500">Kosong.</td></tr>
                                         )}
 
                                         {activeTab === 'pending' && (
@@ -418,7 +495,7 @@ const Attendance: React.FC = () => {
                                                         </button>
                                                     </td>
                                                 </tr>
-                                            )) : <tr><td colSpan={3} className="text-center py-8 text-gray-500">Tidak ada data.</td></tr>
+                                            )) : <tr><td colSpan={3} className="text-center py-8 text-gray-500">Kosong.</td></tr>
                                         )}
 
                                         {activeTab === 'belum' && (
@@ -432,7 +509,7 @@ const Attendance: React.FC = () => {
                                                         </button>
                                                     </td>
                                                 </tr>
-                                            )) : <tr><td colSpan={3} className="text-center py-8 text-gray-500">Tidak ada data.</td></tr>
+                                            )) : <tr><td colSpan={3} className="text-center py-8 text-gray-500">Kosong.</td></tr>
                                         )}
                                     </tbody>
                                 </table>
@@ -445,9 +522,14 @@ const Attendance: React.FC = () => {
             {selectedSession && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
                     <div className="w-full max-w-md bg-gray-900 border border-gray-700 rounded-lg p-6">
-                        <h2 className="text-xl font-bold text-white mb-4">{selectedSession.title}</h2>
+                        <div className="flex items-center gap-2 mb-4 text-yellow-400">
+                             <CheckCircle />
+                             <h2 className="text-xl font-bold text-white">{selectedSession.title}</h2>
+                        </div>
+                        
                         <form onSubmit={handleSubmitAttendance} className="space-y-4 text-left">
                             <div><label className="block text-gray-400 text-sm mb-1">NIM</label><input disabled value={userNIM || ''} className="w-full bg-black border border-gray-700 rounded p-2 text-gray-500 cursor-not-allowed" /></div>
+                            
                             {selectedSession.is_photo_required ? (
                                 <div>
                                     <label className="block text-yellow-400 text-sm mb-1 font-bold flex items-center gap-1"><Camera size={16}/> Foto Bukti (Wajib)</label>
@@ -459,7 +541,48 @@ const Attendance: React.FC = () => {
                             ) : (
                                 <div><label className="block text-gray-400 text-sm mb-1 flex items-center gap-1"><Camera size={16}/> Foto Bukti (Opsional)</label><input type="file" accept="image/*" onChange={handleFileChange} className="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-yellow-400 file:text-black hover:file:bg-yellow-300"/></div>
                             )}
-                            <div className="flex gap-2 pt-4"><button type="button" onClick={() => { setSelectedSession(null); setPreviewUrl(null); setPhotoFile(null); }} className="flex-1 py-2 bg-gray-800 text-white rounded hover:bg-gray-700">Batal</button><button type="submit" disabled={isSubmitting} className="flex-1 py-2 bg-yellow-400 text-black font-bold rounded hover:bg-yellow-300 disabled:opacity-50">{isSubmitting ? 'Mengirim...' : 'Kirim Kehadiran'}</button></div>
+
+                            <div className="flex gap-2 pt-4">
+                                <button type="button" onClick={closeModals} className="flex-1 py-2 bg-gray-800 text-white rounded hover:bg-gray-700">Batal</button>
+                                <button 
+                                    type="submit" 
+                                    disabled={isSubmitting} 
+                                    className="flex-1 py-2 bg-yellow-400 text-black font-bold rounded hover:bg-yellow-300 disabled:opacity-50"
+                                >
+                                    {isSubmitting ? 'Mengirim...' : 'Kirim Hadir'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {selectedSessionPermission && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
+                    <div className="w-full max-w-md bg-gray-900 border border-gray-700 rounded-lg p-6">
+                        <div className="flex items-center gap-2 mb-4 text-blue-400">
+                             <FileText />
+                             <h2 className="text-xl font-bold text-white">{selectedSessionPermission.title}</h2>
+                        </div>
+                        
+                        <form onSubmit={handleSubmitPermission} className="space-y-4 text-left">
+                            <div><label className="block text-gray-400 text-sm mb-1">NIM</label><input disabled value={userNIM || ''} className="w-full bg-black border border-gray-700 rounded p-2 text-gray-500 cursor-not-allowed" /></div>
+                            
+                            <div>
+                                <label className="block text-gray-400 text-sm mb-1">Alasan Izin (Wajib)</label>
+                                <textarea required value={permissionReason} onChange={e => setPermissionReason(e.target.value)} placeholder="Jelaskan sejelas-jelasnya" className="w-full bg-black border border-gray-700 rounded p-2 text-white focus:border-blue-500 outline-none" rows={3} />
+                            </div>
+
+                            <div>
+                                <label className="block text-gray-400 text-sm mb-1 flex items-center gap-1"><Upload size={16}/> Bukti (Opsional)</label>
+                                <input type="file" accept="image/*" onChange={handleFileChange} className="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-500"/>
+                                {previewUrl && <img src={previewUrl} className="mt-2 max-h-32 rounded border border-gray-700" alt="Preview" />}
+                            </div>
+
+                            <div className="flex gap-2 pt-4">
+                                <button type="button" onClick={closeModals} className="flex-1 py-2 bg-gray-800 text-white rounded hover:bg-gray-700">Batal</button>
+                                <button type="submit" disabled={isSubmitting} className="flex-1 py-2 bg-blue-600 text-white font-bold rounded hover:bg-blue-500 disabled:opacity-50">{isSubmitting ? 'Mengirim...' : 'Kirim Izin'}</button>
+                            </div>
                         </form>
                     </div>
                 </div>
