@@ -1,5 +1,5 @@
 import React from 'react';
-import { HashRouter, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, HashRouter, Route, Routes } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import Home from './views/Home';
 import Library from './views/Library';
@@ -10,9 +10,10 @@ import News from './views/News';
 import ChangePassword from './views/ChangePassword';
 import FindNim from './views/FindNim';
 import Attendance from './views/Attendance';
+import Gallery from './views/Gallery';
 const App: React.FC = () => {
     return (
-        <HashRouter>
+        <BrowserRouter>
             <div className="flex min-h-screen bg-black">
                 <Sidebar />
                 <main className="flex-1 lg:ml-20">
@@ -26,10 +27,11 @@ const App: React.FC = () => {
                         <Route path="/change-password" element={<ChangePassword />} />
                         <Route path="/find-nim" element={<FindNim />} />
                         <Route path="/attendance" element={<Attendance />} /> 
+                        <Route path="/gallery" element={<Gallery />} />
                     </Routes>
                 </main>
             </div>
-        </HashRouter>
+        </BrowserRouter>
     );
 };
 
