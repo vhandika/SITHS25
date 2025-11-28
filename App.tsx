@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { Analytics } from "@vercel/analytics/react";
 import Sidebar from './components/Sidebar';
 import Home from './views/Home';
 import Library from './views/Library';
@@ -11,6 +12,7 @@ import ChangePassword from './views/ChangePassword';
 import FindNim from './views/FindNim';
 import Attendance from './views/Attendance';
 import Gallery from './views/Gallery';
+
 const App: React.FC = () => {
     return (
         <BrowserRouter>
@@ -31,6 +33,8 @@ const App: React.FC = () => {
                     </Routes>
                 </main>
             </div>
+            <Analytics />
+            
         </BrowserRouter>
     );
 };
