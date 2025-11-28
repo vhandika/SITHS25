@@ -22,10 +22,14 @@ const ChangePassword: React.FC = () => {
     const API_URL = 'https://idk-eight.vercel.app/api/change-password';
 
     useEffect(() => {
+        const token = localStorage.getItem('userToken'); 
         const storedNIM = localStorage.getItem('userNIM');
-        if (!storedNIM) {
+        
+        if (!token) {
             navigate('/login');
-        } else {
+        }
+        
+        if (storedNIM) {
             setUserNIM(storedNIM);
         }
     }, [navigate]);
@@ -34,10 +38,13 @@ const ChangePassword: React.FC = () => {
         setError('');
         setSuccess('');
 
-        if (newPassword.length < 6) {
-            setError('Password minimal 6 karakter.');
-            return;
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])/;
+        
+        if (!passwordRegex.test(newPassword) || newPassword.length < 8) {
+             setError('Password minimal 8 karakter, harus ada Huruf Besar, Huruf Kecil, dan Angka.');
+             return;
         }
+
         if (newPassword !== confirmPassword) {
             setError('Password tidak sama');
             return;
@@ -46,11 +53,15 @@ const ChangePassword: React.FC = () => {
         setIsLoading(true);
 
         try {
+            const token = localStorage.getItem('userToken'); 
+
             const response = await fetch(API_URL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}` 
+                },
                 body: JSON.stringify({
-                    nim: userNIM,
                     oldPassword: oldPassword,
                     newPassword: newPassword
                 })
@@ -128,7 +139,7 @@ const ChangePassword: React.FC = () => {
                                     value={newPassword}
                                     onChange={(e) => setNewPassword(e.target.value)}
                                     className="block w-full border-0 bg-white/5 py-3 px-4 pr-10 text-white ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-yellow-400 rounded"
-                                    placeholder="Minimal 6 karakter"
+                                    placeholder="Min 8 karakter (Huruf Besar, Kecil, Angka)"
                                 />
                                 <button
                                     type="button"
