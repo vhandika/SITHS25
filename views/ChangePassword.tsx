@@ -15,7 +15,6 @@ const ChangePassword: React.FC = () => {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [userNIM, setUserNIM] = useState('');
 
     const navigate = useNavigate();
     
@@ -23,14 +22,9 @@ const ChangePassword: React.FC = () => {
 
     useEffect(() => {
         const token = localStorage.getItem('userToken'); 
-        const storedNIM = localStorage.getItem('userNIM');
-        
+
         if (!token) {
             navigate('/login');
-        }
-        
-        if (storedNIM) {
-            setUserNIM(storedNIM);
         }
     }, [navigate]);
 
