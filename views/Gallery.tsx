@@ -125,8 +125,8 @@ const Gallery: React.FC = () => {
                 </div>
 
                 {isLoading ? (
-                    <div className="flex flex-col items-center justify-center py-12 text-yellow-400">
-                        <Loader className="animate-spin mb-2" size={32} />
+                    <div className="flex flex-col items-center justify-center py-10 text-yellow-400">
+                        <Loader className="animate-spin mb-2" size={24} />
                     </div>
                 ) : (
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -160,13 +160,22 @@ const Gallery: React.FC = () => {
                                         />
                                     </div>
 
-                                    <div className="w-full space-y-2">
-                                        <h3 className="text-white text-lg font-bold leading-snug group-hover:text-yellow-400 transition-colors line-clamp-2">
+                                    <div className="w-full space-y-2 overflow-hidden">
+                                        <h3 
+                                            className="text-white text-lg font-bold leading-snug group-hover:text-yellow-400 transition-colors w-full overflow-x-auto whitespace-nowrap [&::-webkit-scrollbar]:hidden"
+                                            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                                        >
                                             {item.title}
                                         </h3>
-                                        <div className="flex items-center justify-center gap-1.5 text-[10px] text-gray-500 uppercase tracking-widest border-t border-gray-800 pt-2 mt-2">
-                                            <User size={10} />
-                                            <span className="truncate max-w-[120px]">{item.user_name || item.user_nim}</span>
+
+                                        <div className="flex items-center justify-center gap-1.5 text-[10px] text-gray-500 uppercase tracking-widest border-t border-gray-800 pt-2 mt-2 w-full">
+                                            <User size={10} className="shrink-0" />
+                                            <span 
+                                                className="overflow-x-auto whitespace-nowrap [&::-webkit-scrollbar]:hidden"
+                                                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                                            >
+                                                {item.user_name || item.user_nim}
+                                            </span>
                                         </div>
                                     </div>
                                 </a>
