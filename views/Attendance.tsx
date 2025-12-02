@@ -100,8 +100,8 @@ const Attendance: React.FC = () => {
     const handleCreateSession = async (e: React.FormEvent) => {
         e.preventDefault();
         
-        if (isSubmitting) return;
-        setIsSubmitting(true);
+        if (isSubmitting) return; 
+        setIsSubmitting(true);    
 
         const token = localStorage.getItem('userToken');
         try {
@@ -114,7 +114,7 @@ const Attendance: React.FC = () => {
             if (res.ok) {
                 alert('Sesi berhasil dibuat!');
                 setIsCreateModalOpen(false);
-                setNewSessionData({ title: '', description: '', is_photo_required: false }); // Reset form
+                setNewSessionData({ title: '', description: '', is_photo_required: false }); 
                 fetchSessions();
             } else {
                 const json = await res.json();
@@ -123,7 +123,7 @@ const Attendance: React.FC = () => {
         } catch (error) { 
             alert('Gagal membuat sesi (Error Koneksi)'); 
         } finally {
-            setIsSubmitting(false);
+            setIsSubmitting(false); 
         }
     };
 
@@ -280,7 +280,7 @@ const Attendance: React.FC = () => {
         setPhotoFile(null);
         setPreviewUrl(null);
         setPermissionReason('');
-        setIsSubmitting(false);
+        setIsSubmitting(false); 
     };
 
     const { presentUsers, permissionUsers, pendingUsers, absentUsers, presentPercentage } = useMemo(() => {
@@ -343,7 +343,13 @@ const Attendance: React.FC = () => {
                             return (
                                 <div key={session.id} className={`relative p-6 rounded-lg border text-left ${session.is_open ? 'border-yellow-400/50 bg-gray-900/60' : 'border-gray-800 bg-black'} transition-all hover:border-yellow-400/80 flex flex-col`}>
                                     <div className="flex justify-between items-start mb-4">
-                                        <h3 className="text-xl font-bold text-white line-clamp-1" title={session.title}>{session.title}</h3>
+                                        <h3 
+                                            className="text-xl font-bold text-white overflow-x-auto whitespace-nowrap mr-2 [&::-webkit-scrollbar]:hidden"
+                                            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                                        >
+                                            {session.title}
+                                        </h3>
+                                        
                                         {session.is_open ? (
                                             <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded border border-green-500/50 flex items-center gap-1 shrink-0"><CheckCircle size={12}/> Buka</span>
                                         ) : (
@@ -541,8 +547,8 @@ const Attendance: React.FC = () => {
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
                     <div className="w-full max-w-md bg-gray-900 border border-gray-700 rounded-lg p-6">
                         <div className="flex items-center gap-2 mb-4 text-yellow-400">
-                             <CheckCircle />
-                             <h2 className="text-xl font-bold text-white">{selectedSession.title}</h2>
+                             <CheckCircle className="shrink-0" />
+                             <h2 className="text-xl font-bold text-white truncate">{selectedSession.title}</h2>
                         </div>
                         
                         <form onSubmit={handleSubmitAttendance} className="space-y-4 text-left">
@@ -579,8 +585,8 @@ const Attendance: React.FC = () => {
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
                     <div className="w-full max-w-md bg-gray-900 border border-gray-700 rounded-lg p-6">
                         <div className="flex items-center gap-2 mb-4 text-blue-400">
-                             <FileText />
-                             <h2 className="text-xl font-bold text-white">{selectedSessionPermission.title}</h2>
+                             <FileText className="shrink-0" />
+                             <h2 className="text-xl font-bold text-white truncate">{selectedSessionPermission.title}</h2>
                         </div>
                         
                         <form onSubmit={handleSubmitPermission} className="space-y-4 text-left">
@@ -614,11 +620,12 @@ const Attendance: React.FC = () => {
                             <div><label className="block text-gray-400 text-sm mb-1">Judul</label><input required value={newSessionData.title} onChange={e => setNewSessionData({...newSessionData, title: e.target.value})} className="w-full bg-black border border-gray-700 rounded p-2 text-white focus:border-yellow-400 outline-none" /></div>
                             <div><label className="block text-gray-400 text-sm mb-1">Deskripsi</label><textarea value={newSessionData.description} onChange={e => setNewSessionData({...newSessionData, description: e.target.value})} className="w-full bg-black border border-gray-700 rounded p-2 text-white focus:border-yellow-400 outline-none" rows={3} /></div>
                             <div className="flex items-center gap-2"><input type="checkbox" id="reqPhoto" checked={newSessionData.is_photo_required} onChange={e => setNewSessionData({...newSessionData, is_photo_required: e.target.checked})} className="w-4 h-4 rounded text-yellow-400 bg-gray-800" /><label htmlFor="reqPhoto" className="text-white text-sm cursor-pointer">Wajib Upload Foto?</label></div>
+                            
                             <div className="flex gap-2 pt-4">
                                 <button type="button" onClick={() => setIsCreateModalOpen(false)} className="flex-1 py-2 bg-gray-800 text-white rounded hover:bg-gray-700">Batal</button>
                                 <button 
                                     type="submit" 
-                                    disabled={isSubmitting}
+                                    disabled={isSubmitting} 
                                     className="flex-1 py-2 bg-yellow-400 text-black font-bold rounded hover:bg-yellow-300 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     {isSubmitting ? 'Memproses...' : 'Buat Sesi'}
