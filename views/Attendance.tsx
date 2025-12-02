@@ -342,20 +342,24 @@ const Attendance: React.FC = () => {
 
                             return (
                                 <div key={session.id} className={`relative p-6 rounded-lg border text-left ${session.is_open ? 'border-yellow-400/50 bg-gray-900/60' : 'border-gray-800 bg-black'} transition-all hover:border-yellow-400/80 flex flex-col`}>
-                                    <div className="flex justify-between items-start mb-4">
-                                        <h3 
-                                            className="text-xl font-bold text-white overflow-x-auto whitespace-nowrap mr-2 [&::-webkit-scrollbar]:hidden"
-                                            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-                                        >
-                                            {session.title}
-                                        </h3>
-                                        
+                                    
+                                    <div className="flex justify-between items-start mb-4 gap-3">
+                                        <div className="flex-1 w-0"> 
+                                            <h3 
+                                                className="text-xl font-bold text-white overflow-x-auto whitespace-nowrap [&::-webkit-scrollbar]:hidden"
+                                                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                                            >
+                                                {session.title}
+                                            </h3>
+                                        </div>
+
                                         {session.is_open ? (
                                             <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded border border-green-500/50 flex items-center gap-1 shrink-0"><CheckCircle size={12}/> Buka</span>
                                         ) : (
                                             <span className="px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded border border-red-500/50 flex items-center gap-1 shrink-0"><XCircle size={12}/> Tutup</span>
                                         )}
                                     </div>
+
                                     <p className="text-gray-400 text-sm mb-4 min-h-[40px] line-clamp-2">{session.description || 'Tidak ada deskripsi.'}</p>
                                     
                                     <div className="mt-auto pt-4 border-t border-gray-800/50">
