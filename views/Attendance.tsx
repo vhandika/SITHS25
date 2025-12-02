@@ -99,6 +99,10 @@ const Attendance: React.FC = () => {
 
     const handleCreateSession = async (e: React.FormEvent) => {
         e.preventDefault();
+        
+        if (isSubmitting) return;
+        setIsSubmitting(true);
+
         const token = localStorage.getItem('userToken');
         try {
             const res = await fetch(`${API_BASE_URL}/attendance/sessions`, {
@@ -106,12 +110,21 @@ const Attendance: React.FC = () => {
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify(newSessionData)
             });
+            
             if (res.ok) {
                 alert('Sesi berhasil dibuat!');
                 setIsCreateModalOpen(false);
+                setNewSessionData({ title: '', description: '', is_photo_required: false }); // Reset form
                 fetchSessions();
+            } else {
+                const json = await res.json();
+                alert(json.message || 'Gagal membuat sesi');
             }
-        } catch (error) { alert('Gagal membuat sesi'); }
+        } catch (error) { 
+            alert('Gagal membuat sesi (Error Koneksi)'); 
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const handleCloseSession = async (e: React.MouseEvent, id: number) => {
@@ -198,6 +211,8 @@ const Attendance: React.FC = () => {
 
     const handleSubmitAttendance = async (e: React.FormEvent) => {
         e.preventDefault();
+        if(isSubmitting) return;
+
         setIsSubmitting(true);
         const token = localStorage.getItem('userToken');
         const formData = new FormData();
@@ -227,6 +242,8 @@ const Attendance: React.FC = () => {
 
     const handleSubmitPermission = async (e: React.FormEvent) => {
         e.preventDefault();
+        if(isSubmitting) return;
+
         setIsSubmitting(true);
         const token = localStorage.getItem('userToken');
         const formData = new FormData();
@@ -263,6 +280,7 @@ const Attendance: React.FC = () => {
         setPhotoFile(null);
         setPreviewUrl(null);
         setPermissionReason('');
+        setIsSubmitting(false);
     };
 
     const { presentUsers, permissionUsers, pendingUsers, absentUsers, presentPercentage } = useMemo(() => {
@@ -596,7 +614,16 @@ const Attendance: React.FC = () => {
                             <div><label className="block text-gray-400 text-sm mb-1">Judul</label><input required value={newSessionData.title} onChange={e => setNewSessionData({...newSessionData, title: e.target.value})} className="w-full bg-black border border-gray-700 rounded p-2 text-white focus:border-yellow-400 outline-none" /></div>
                             <div><label className="block text-gray-400 text-sm mb-1">Deskripsi</label><textarea value={newSessionData.description} onChange={e => setNewSessionData({...newSessionData, description: e.target.value})} className="w-full bg-black border border-gray-700 rounded p-2 text-white focus:border-yellow-400 outline-none" rows={3} /></div>
                             <div className="flex items-center gap-2"><input type="checkbox" id="reqPhoto" checked={newSessionData.is_photo_required} onChange={e => setNewSessionData({...newSessionData, is_photo_required: e.target.checked})} className="w-4 h-4 rounded text-yellow-400 bg-gray-800" /><label htmlFor="reqPhoto" className="text-white text-sm cursor-pointer">Wajib Upload Foto?</label></div>
-                            <div className="flex gap-2 pt-4"><button type="button" onClick={() => setIsCreateModalOpen(false)} className="flex-1 py-2 bg-gray-800 text-white rounded hover:bg-gray-700">Batal</button><button type="submit" className="flex-1 py-2 bg-yellow-400 text-black font-bold rounded hover:bg-yellow-300">Buat Sesi</button></div>
+                            <div className="flex gap-2 pt-4">
+                                <button type="button" onClick={() => setIsCreateModalOpen(false)} className="flex-1 py-2 bg-gray-800 text-white rounded hover:bg-gray-700">Batal</button>
+                                <button 
+                                    type="submit" 
+                                    disabled={isSubmitting}
+                                    className="flex-1 py-2 bg-yellow-400 text-black font-bold rounded hover:bg-yellow-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {isSubmitting ? 'Memproses...' : 'Buat Sesi'}
+                                </button>
+                            </div>
                         </form>
                     </div>
                 </div>
