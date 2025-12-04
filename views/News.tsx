@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Newspaper, Plus, X, Lock, Pencil, Trash2, ChevronLeft, ChevronRight, Loader } from 'lucide-react';
+import { Newspaper, Plus, X, Lock, Pencil, Trash2, ChevronLeft, ChevronRight, Loader, Instagram } from 'lucide-react';
 import SkewedButton from '../components/SkewedButton'; 
 
 const API_BASE_URL = 'https://idk-eight.vercel.app/api'; 
@@ -255,7 +255,7 @@ const News: React.FC = () => {
     const currentArticle = newsData.length > 0 ? newsData[currentIndex] : null;
 
     return (
-        <div className="min-h-screen w-full bg-black py-16 lg:py-24 px-4 sm:px-6 lg:px-8 mt-16 lg:mt-0 font-sans relative">
+        <div className="min-h-screen w-full bg-black py-16 lg:py-24 px-4 sm:px-6 lg:px-8 mt-16 lg:mt-0 font-sans relative selection:bg-yellow-400 selection:text-black">
             <style>{`
                 @keyframes popUp {
                     0% { opacity: 0; transform: scale(0.8) translateY(20px); }
@@ -347,9 +347,20 @@ const News: React.FC = () => {
                 )}
             </div>
 
-            <footer className="mt-24 border-t border-gray-800 pt-12 pb-8 text-center text-gray-500">
-                <span className="text-4xl font-bold tracking-[.2em] text-gray-700 block mb-8">SITH-S 25</span>
-                <p className="text-xs">Copyright © SITES Angkatan 25.</p>
+            <footer className="mt-12 border-t border-gray-800 pt-12 pb-8 text-center text-gray-500">
+                <span className="text-4xl font-bold tracking-[.2em] text-gray-700 block mb-4">SITH-S 25</span>
+                <p className="text-xs mb-6">Copyright © SITES Angkatan 25.</p>
+                <div className="flex justify-center">
+                    <a 
+                        href="https://www.instagram.com/sithsitb25?igsh=Mmg2Nm43aW4zYW91" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-gray-500 transition-colors duration-300 hover:text-white"
+                        title="Visit our Instagram"
+                    >
+                        <Instagram size={20} />
+                    </a>
+                </div>
             </footer>
 
             {canManageNews && (
