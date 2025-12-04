@@ -1,24 +1,124 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SkewedButton from '../components/SkewedButton';
-import { BookOpen, Pen, ImagePlus, Trash2 } from 'lucide-react';
+import { BookOpen, Pen, ImagePlus, Trash2, Gift, X } from 'lucide-react';
+import confetti from 'canvas-confetti';
+
+interface User {
+    name: string;
+    tanggal_lahir: string | null;
+    avatar_url?: string;
+}
 
 const Home: React.FC = () => {
     const navigate = useNavigate();
-
     const DEFAULT_BG = "https://itb.ac.id/files/cover/170125-Kolam-Intel.jpg";
     
     const [backgroundImageUrl, setBackgroundImageUrl] = useState(DEFAULT_BG);
+    const [birthdayUsers, setBirthdayUsers] = useState<User[]>([]);
+    const [showBirthdayModal, setShowBirthdayModal] = useState(false);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
-
     const isCustomBackground = backgroundImageUrl !== DEFAULT_BG;
 
     useEffect(() => {
-        const storedImage = localStorage.getItem('homeBackgroundImage');
-        if (storedImage) {
-            setBackgroundImageUrl(storedImage);
+        audioRef.current = new Audio('/sounds/HBD.mp3');
+        if (audioRef.current) {
+            audioRef.current.volume = 0.5;
+            audioRef.current.loop = true;
         }
+        return () => {
+            if (audioRef.current) {
+                audioRef.current.pause();
+                audioRef.current.currentTime = 0;
+            }
+        };
     }, []);
+
+    useEffect(() => {
+        const storedImage = localStorage.getItem('homeBackgroundImage');
+        if (storedImage) setBackgroundImageUrl(storedImage);
+    }, []);
+
+    useEffect(() => {
+        const checkBirthdays = async () => {
+            const token = localStorage.getItem('userToken');
+            if (!token) return;
+
+            try {
+                const response = await fetch('https://idk-eight.vercel.app/api/users', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (response.ok) {
+                    const json = await response.json();
+                    const users: User[] = json.data || [];
+                    const today = new Date();
+                    const currentDay = today.getDate();
+                    const currentMonth = today.getMonth() + 1;
+
+                    const celebrants = users.filter(user => {
+                        if (!user.tanggal_lahir) return false;
+                        const dateParts = user.tanggal_lahir.split('-'); 
+                        if (dateParts.length !== 3) return false;
+                        return parseInt(dateParts[2]) === currentDay && parseInt(dateParts[1]) === currentMonth;
+                    });
+
+                    setBirthdayUsers(celebrants);
+                }
+            } catch (error) {
+                console.error("Gagal memuat data ulang tahun:", error);
+            }
+        };
+        checkBirthdays();
+    }, []);
+
+    const triggerConfetti = () => {
+        const duration = 3000;
+        const animationEnd = Date.now() + duration;
+        const colors = ['#FACC15', '#FFFFFF', '#000000', '#ff0000ff', '#00eeffff'];
+
+        (function frame() {
+            const timeLeft = animationEnd - Date.now();
+
+            if (timeLeft <= 0) {
+                return;
+            }
+
+            const particleCount = 50 * (timeLeft / duration);
+
+            confetti({
+                particleCount,
+                startVelocity: 30,
+                spread: 360,
+                ticks: 60,
+                origin: { x: Math.random(), y: 0 },
+                colors: colors,
+                zIndex: 60
+            });
+
+            requestAnimationFrame(frame);
+        }());
+    };
+
+    const handleOpenModal = () => {
+        setShowBirthdayModal(true);
+
+        if (audioRef.current) {
+            audioRef.current.currentTime = 0;
+            audioRef.current.play().catch(e => console.log("Audio error:", e));
+        }
+
+        triggerConfetti();
+    };
+
+    const handleCloseModal = () => {
+        setShowBirthdayModal(false);
+        if (audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current.currentTime = 0;
+        }
+    };
 
     const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -44,7 +144,7 @@ const Home: React.FC = () => {
     };
 
     return (
-        <div className="relative flex h-screen min-h-[600px] w-full items-center justify-center overflow-hidden">
+        <div className="relative flex h-screen min-h-[600px] w-full items-center justify-center overflow-hidden selection:bg-yellow-400 selection:text-black">
             <div
                 className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-all duration-500"
                 style={{ backgroundImage: `url('${backgroundImageUrl}')` }}
@@ -76,14 +176,19 @@ const Home: React.FC = () => {
                 </div>
             </div>
 
-            <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleImageUpload}
-                accept="image/*"
-                className="hidden"
-                id="bg-upload"
-            />
+            {birthdayUsers.length > 0 && (
+                <div className="absolute bottom-5 left-5 z-30 animate-bounce">
+                    <button 
+                        onClick={handleOpenModal} 
+                        className="flex items-center gap-2 bg-yellow-400 text-black px-4 py-2 rounded-full font-bold shadow-[0_0_20px_rgba(250,204,21,0.6)] hover:scale-105 transition-transform border-2 border-white/20 text-sm"
+                    >
+                        <Gift size={18} className="animate-pulse shrink-0" />
+                        <span>Ada yang Ulang Tahun!</span>
+                    </button>
+                </div>
+            )}
+
+            <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" id="bg-upload" />
 
             <button
                 onClick={handleBackgroundAction}
@@ -91,11 +196,46 @@ const Home: React.FC = () => {
                 title={isCustomBackground ? "Reset background ke default" : "Ganti gambar background"}
             >
                 {isCustomBackground ? <Trash2 className="h-6 w-6" /> : <ImagePlus className="h-6 w-6" />}
-                
                 <span className="max-w-0 overflow-hidden whitespace-nowrap text-sm font-medium transition-all duration-300 ease-in-out group-hover:max-w-xs">
                     {isCustomBackground ? "Hapus Background" : "Ganti Background"}
                 </span>
             </button>
+
+            {showBirthdayModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm animate-fade-in">
+                    <div className="relative w-full max-w-sm bg-gray-900 border border-yellow-400 rounded-xl p-8 text-center shadow-[0_0_50px_rgba(250,204,21,0.2)] animate-pop-in">
+                        
+                        <button onClick={handleCloseModal} className="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors">
+                            <X size={24} />
+                        </button>
+                        
+                        <h2 className="text-3xl font-bold text-white uppercase tracking-wider mb-2 mt-2">Happy Birthday!</h2>
+                        <p className="text-gray-400 mb-8 text-sm">Selamat ulang tahun yaa buat:</p>
+
+                        <div className="flex flex-col gap-4 max-h-[300px] overflow-y-auto custom-scrollbar px-2">
+                            {birthdayUsers.map((user, index) => (
+                                <div key={index} className="bg-white/5 p-4 rounded-lg">
+                                    <h3 className="text-xl font-bold text-white tracking-wide">{user.name}</h3>
+                                    <p className="text-sm text-yellow-400 mt-1 italic">Wish you all the best!</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            <style>{`
+                @keyframes popUp {
+                    0% { opacity: 0; transform: scale(0.9); }
+                    100% { opacity: 1; transform: scale(1); }
+                }
+                .animate-pop-in { animation: popUp 0.3s ease-out forwards; }
+                .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+                @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+                .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+                .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background: #555; border-radius: 10px; }
+            `}</style>
         </div>
     );
 };
