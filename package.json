@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@vercel/analytics": "^1.5.0",
+    "canvas-confetti": "^1.9.4",
     "lucide-react": "^0.554.0",
     "react": "^19.2.0",
     "react-chessboard": "^5.8.4",
@@ -17,6 +18,7 @@
     "react-router-dom": "^7.9.6"
   },
   "devDependencies": {
+    "@types/canvas-confetti": "^1.9.0",
     "@types/node": "^22.14.0",
     "@vitejs/plugin-react": "^5.0.0",
     "rollup-plugin-javascript-obfuscator": "^1.0.4",
