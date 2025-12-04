@@ -72,7 +72,7 @@ const Login: React.FC = () => {
     };
 
     return (
-        <div className="relative flex min-h-screen w-full items-center justify-center bg-black py-16 px-4 mt-16 lg:mt-0">
+        <div className="relative flex min-h-screen w-full items-center justify-center bg-black py-16 px-4 mt-16 lg:mt-0 selection:bg-yellow-400 selection:text-black">
             <div className="relative z-10 w-full max-w-md space-y-8 rounded-lg border border-gray-800 bg-black/80 p-8 shadow-2xl shadow-yellow-500/5 backdrop-blur-sm">
                 <div className="text-center">
                     <div className="flex justify-center items-center gap-4 mb-4">
