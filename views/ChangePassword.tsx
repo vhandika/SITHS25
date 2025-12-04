@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import SkewedButton from '../components/SkewedButton';
 import { KeyRound, Save, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -15,6 +15,10 @@ const ChangePassword: React.FC = () => {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+
+    // Ref untuk navigasi antar input
+    const newPasswordRef = useRef<HTMLInputElement>(null);
+    const confirmPasswordRef = useRef<HTMLInputElement>(null);
 
     const navigate = useNavigate();
     
@@ -78,8 +82,20 @@ const ChangePassword: React.FC = () => {
         }
     };
 
+    // Fungsi untuk handle tombol Enter
+    const handleKeyDown = (e: React.KeyboardEvent, nextRef?: React.RefObject<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            if (nextRef && nextRef.current) {
+                nextRef.current.focus();
+            } else {
+                handleChangePassword();
+            }
+        }
+    };
+
     return (
-        <div className="relative flex min-h-screen w-full items-center justify-center bg-black py-16 px-4 mt-16 lg:mt-0">
+        <div className="relative flex min-h-screen w-full items-center justify-center bg-black py-16 px-4 mt-16 lg:mt-0 selection:bg-yellow-400 selection:text-black">
             <div className="relative z-10 w-full max-w-md space-y-8 rounded-lg border border-gray-800 bg-black/80 p-8 shadow-2xl shadow-yellow-500/5 backdrop-blur-sm">
                 <div className="text-center">
                     <div className="flex justify-center items-center gap-4 mb-4">
@@ -113,8 +129,11 @@ const ChangePassword: React.FC = () => {
                                     type={showOldPassword ? "text" : "password"}
                                     value={oldPassword}
                                     onChange={(e) => setOldPassword(e.target.value)}
+                                    // Enter -> Pindah ke New Password
+                                    onKeyDown={(e) => handleKeyDown(e, newPasswordRef)}
                                     className="block w-full border-0 bg-white/5 py-3 px-4 pr-10 text-white ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-yellow-400 rounded"
                                     placeholder="Masukkan password lama"
+                                    autoFocus
                                 />
                                 <button
                                     type="button"
@@ -129,9 +148,12 @@ const ChangePassword: React.FC = () => {
                             <label className="block text-sm font-medium text-gray-400 mb-1">Password Baru</label>
                             <div className="relative">
                                 <input
+                                    ref={newPasswordRef}
                                     type={showNewPassword ? "text" : "password"}
                                     value={newPassword}
                                     onChange={(e) => setNewPassword(e.target.value)}
+                                    // Enter -> Pindah ke Confirm Password
+                                    onKeyDown={(e) => handleKeyDown(e, confirmPasswordRef)}
                                     className="block w-full border-0 bg-white/5 py-3 px-4 pr-10 text-white ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-yellow-400 rounded"
                                     placeholder="Min 8 karakter (Huruf Besar, Kecil, Angka)"
                                 />
@@ -148,9 +170,12 @@ const ChangePassword: React.FC = () => {
                             <label className="block text-sm font-medium text-gray-400 mb-1">Konfirmasi Password Baru</label>
                             <div className="relative">
                                 <input
+                                    ref={confirmPasswordRef}
                                     type={showConfirmPassword ? "text" : "password"}
                                     value={confirmPassword}
                                     onChange={(e) => setConfirmPassword(e.target.value)}
+                                    // Enter -> Submit Form
+                                    onKeyDown={(e) => handleKeyDown(e)}
                                     className="block w-full border-0 bg-white/5 py-3 px-4 pr-10 text-white ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-yellow-400 rounded"
                                     placeholder="Ulangi password baru"
                                 />
