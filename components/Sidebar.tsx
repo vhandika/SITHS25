@@ -109,7 +109,7 @@ const Sidebar: React.FC = () => {
     return (
         <>
             <aside
-                className={`fixed left-0 top-0 z-50 hidden h-full flex-col justify-between border-r border-gray-800 bg-black/80 pt-6 pb-0 backdrop-blur-sm transition-all duration-300 ease-in-out lg:flex ${
+                className={`fixed left-0 top-0 z-50 hidden h-full flex-col justify-between border-r border-gray-800 bg-black/80 pt-6 pb-0 backdrop-blur-sm transition-all duration-300 ease-in-out lg:flex selection:bg-yellow-400 selection:text-black ${
                     isExpanded ? 'w-64 items-start px-4' : 'w-20 items-center'
                 }`}
                 onMouseEnter={() => setIsExpanded(true)}
@@ -159,7 +159,7 @@ const Sidebar: React.FC = () => {
                 )}
             </aside>
 
-            <header className="fixed top-0 left-0 right-0 z-40 flex h-16 items-center justify-between bg-black/80 px-4 backdrop-blur-sm lg:hidden">
+            <header className="fixed top-0 left-0 right-0 z-40 flex h-16 items-center justify-between bg-black/80 px-4 backdrop-blur-sm lg:hidden ">
                  <div className="text-white font-bold"></div>
                  <button 
                     onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
