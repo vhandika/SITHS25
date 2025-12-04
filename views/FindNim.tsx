@@ -63,7 +63,7 @@ const FindNim: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen w-full bg-black py-16 lg:py-24 px-4 sm:px-6 lg:px-8 mt-16 lg:mt-0 font-sans text-white">
+        <div className="min-h-screen w-full bg-black py-16 lg:py-24 px-4 sm:px-6 lg:px-8 mt-16 lg:mt-0 font-sans overflow-x-hidden selection:bg-yellow-400 selection:text-black">
             <div className="mx-auto max-w-4xl">
 
                 <div className="flex items-center gap-4 mb-8">
