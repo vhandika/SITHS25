@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
     CalendarCheck, Plus, Upload, Camera, Users, 
-    BarChart3, CheckCircle, XCircle, Search, UserCheck, UserX, Lock, Clock, Loader, FileText, AlertCircle 
+    BarChart3, CheckCircle, XCircle, Search, UserCheck, UserX, Lock, Clock, Loader, FileText, 
+    FileSpreadsheet 
 } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import SkewedButton from '../components/SkewedButton';
 
 const API_BASE_URL = 'https://idk-eight.vercel.app/api'; 
@@ -22,6 +24,7 @@ const Attendance: React.FC = () => {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [newSessionData, setNewSessionData] = useState({ title: '', description: '', is_photo_required: false });
     const [viewStatsId, setViewStatsId] = useState<number | null>(null); 
+    const [viewStatsTitle, setViewStatsTitle] = useState<string>(''); // <--- BARU: Simpan judul sesi untuk nama file
     const [statsRecords, setStatsRecords] = useState<any[]>([]); 
     const [activeTab, setActiveTab] = useState<'hadir' | 'izin' | 'pending' | 'belum'>('hadir'); 
     const [searchFilter, setSearchFilter] = useState(''); 
@@ -99,7 +102,6 @@ const Attendance: React.FC = () => {
 
     const handleCreateSession = async (e: React.FormEvent) => {
         e.preventDefault();
-        
         if (isSubmitting) return; 
         setIsSubmitting(true);    
 
@@ -141,13 +143,14 @@ const Attendance: React.FC = () => {
         } catch (err) { alert("Terjadi kesalahan."); }
     };
 
-    const handleViewStats = async (e: React.MouseEvent, sessionId: number) => {
+    const handleViewStats = async (e: React.MouseEvent, session: any) => {
         e.stopPropagation(); 
-        setViewStatsId(sessionId);
+        setViewStatsId(session.id);
+        setViewStatsTitle(session.title);
         setActiveTab('hadir'); 
         const token = localStorage.getItem('userToken');
         
-        const res = await fetch(`${API_BASE_URL}/attendance/stats/${sessionId}`, {
+        const res = await fetch(`${API_BASE_URL}/attendance/stats/${session.id}`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const json = await res.json();
@@ -291,26 +294,80 @@ const Attendance: React.FC = () => {
         const pending = statsRecords.filter(r => r.status === 'Pending');
         
         const allRecordedNims = statsRecords.map(r => r.user_nim);
-        
+
+        const filterFn = (r: any) => (r.user_name || '').toLowerCase().includes(searchFilter.toLowerCase()) || r.user_nim.includes(searchFilter);
+        const sortByNIM = (a: any, b: any) => {
+            const nimA = a.user_nim || a.nim || "0";
+            const nimB = b.user_nim || b.nim || "0";
+            return nimA.toString().localeCompare(nimB.toString(), undefined, { numeric: true });
+        };
+
         const absentees = allUsers.filter(u => 
             !allRecordedNims.includes(u.nim) && 
             (u.name.toLowerCase().includes(searchFilter.toLowerCase()) || u.nim.includes(searchFilter))
         );
 
-        const filterFn = (r: any) => (r.user_name || '').toLowerCase().includes(searchFilter.toLowerCase()) || r.user_nim.includes(searchFilter);
-
         const totalPopulation = allUsers.length || 1; 
         const pct = Math.round(((confirmed.length + permissions.length) / totalPopulation) * 100);
 
         return { 
-            presentUsers: confirmed.filter(filterFn), 
-            permissionUsers: permissions.filter(filterFn),
-            pendingUsers: pending.filter(filterFn), 
-            absentUsers: absentees, 
+            presentUsers: confirmed.filter(filterFn).sort(sortByNIM), 
+            permissionUsers: permissions.filter(filterFn).sort(sortByNIM),
+            pendingUsers: pending.filter(filterFn).sort(sortByNIM), 
+            absentUsers: absentees.sort(sortByNIM), 
             presentPercentage: pct 
         };
     }, [allUsers, statsRecords, viewStatsId, searchFilter]);
 
+    const handleExportExcel = () => {
+        const combinedData = [
+            ...presentUsers.map(u => ({...u, finalStatus: 'Hadir'})),
+            ...permissionUsers.map(u => ({...u, finalStatus: 'Izin'})),
+            ...pendingUsers.map(u => ({...u, finalStatus: 'Pending'})),
+            ...absentUsers.map(u => ({...u, finalStatus: 'Belum Absen'}))
+        ];
+
+        if (combinedData.length === 0) {
+            alert("Ngga ada data bang");
+            return;
+        }
+
+        combinedData.sort((a, b) => {
+            const nimA = a.user_nim || a.nim || "0";
+            const nimB = b.user_nim || b.nim || "0";
+            return nimA.toString().localeCompare(nimB.toString(), undefined, { numeric: true });
+        });
+
+        const excelData = combinedData.map((item, index) => ({
+            "No": index + 1,
+            "NIM": item.user_nim || item.nim,
+            "Nama": item.user_name || item.name,
+            "Status": item.finalStatus,
+            "Alasan": item.reason || "-",
+            "Waktu Input": item.created_at ? new Date(item.created_at).toLocaleString('id-ID') : "-",
+            "Link Foto": item.photo_url || "-"
+        }));
+
+        const worksheet = XLSX.utils.json_to_sheet(excelData);
+        const wscols = [
+            { wch: 5 },
+            { wch: 10 },
+            { wch: 40 },
+            { wch: 15 },
+            { wch: 30 },
+            { wch: 20 },
+            { wch: 30 }
+        ];
+        worksheet['!cols'] = wscols;
+
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Data Absensi");
+
+        const cleanTitle = viewStatsTitle.replace(/[^a-zA-Z0-9]/g, "_");
+        const fileName = `${cleanTitle}_${new Date().toISOString().split('T')[0]}.xlsx`;
+
+        XLSX.writeFile(workbook, fileName);
+    };
 
     return (
         <div className="min-h-screen w-full bg-black py-16 lg:py-24 px-4 sm:px-6 lg:px-8 mt-16 lg:mt-0 font-sans text-white relative selection:bg-yellow-400 selection:text-black">
@@ -391,7 +448,7 @@ const Attendance: React.FC = () => {
 
                                         {isAdminOrSekretaris && (
                                             <div className="flex gap-2 mt-3 pt-2 border-t border-gray-800">
-                                                <button onClick={(e) => handleViewStats(e, session.id)} className="flex-1 py-1.5 text-xs bg-gray-800 hover:bg-gray-700 rounded text-white flex items-center justify-center gap-2">
+                                                <button onClick={(e) => handleViewStats(e, session)} className="flex-1 py-1.5 text-xs bg-gray-800 hover:bg-gray-700 rounded text-white flex items-center justify-center gap-2">
                                                     <BarChart3 size={14} /> Laporan
                                                 </button>
                                                 {session.is_open && (
@@ -457,9 +514,19 @@ const Attendance: React.FC = () => {
                                     </button>
                                 </div>
                                 
-                                <div className="relative w-full sm:w-64">
-                                    <input placeholder="Cari Nama / NIM..." className="w-full bg-black border border-gray-700 rounded pl-9 pr-3 py-2 text-sm text-white focus:border-yellow-400 outline-none" value={searchFilter} onChange={(e) => setSearchFilter(e.target.value)} />
-                                    <Search size={16} className="absolute left-3 top-2.5 text-gray-500"/>
+                                <div className="flex gap-2 w-full sm:w-auto">
+                                    <div className="relative flex-1 sm:w-64">
+                                        <input placeholder="Cari Nama / NIM..." className="w-full bg-black border border-gray-700 rounded pl-9 pr-3 py-2 text-sm text-white focus:border-yellow-400 outline-none" value={searchFilter} onChange={(e) => setSearchFilter(e.target.value)} />
+                                        <Search size={16} className="absolute left-3 top-2.5 text-gray-500"/>
+                                    </div>
+
+                                    <button 
+                                        onClick={handleExportExcel}
+                                        title="Download Excel"
+                                        className="bg-green-700 hover:bg-green-600 text-white p-2 rounded flex items-center justify-center shrink-0 border border-green-500 transition-colors"
+                                    >
+                                        <FileSpreadsheet size={20} />
+                                    </button>
                                 </div>
                             </div>
 
