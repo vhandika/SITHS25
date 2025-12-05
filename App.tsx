@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { Analytics } from "@vercel/analytics/react";
 import Sidebar from './components/Sidebar';
 import Home from './views/Home';
 import Library from './views/Library';
@@ -31,7 +32,9 @@ const App: React.FC = () => {
                         <Route path="/gallery" element={<Gallery />} />
                     </Routes>
                 </main>
-            </div>         
+            </div>
+            <Analytics />
+            
         </BrowserRouter>
     );
 };
