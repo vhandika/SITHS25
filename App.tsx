@@ -13,7 +13,6 @@ import ChangePassword from './views/ChangePassword';
 import FindNim from './views/FindNim';
 import Attendance from './views/Attendance';
 import Gallery from './views/Gallery';
-import PDFTools from './views/PDFTools';
 
 const App: React.FC = () => {
     return (
@@ -32,7 +31,6 @@ const App: React.FC = () => {
                         <Route path="/find-nim" element={<FindNim />} />
                         <Route path="/attendance" element={<Attendance />} /> 
                         <Route path="/gallery" element={<Gallery />} />
-                        <Route path="/PDFTools" element={<PDFTools />} />
                     </Routes>
                 </main>
             </div>
