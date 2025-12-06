@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next"
 import Sidebar from './components/Sidebar';
 import Home from './views/Home';
 import Library from './views/Library';
@@ -12,6 +13,7 @@ import ChangePassword from './views/ChangePassword';
 import FindNim from './views/FindNim';
 import Attendance from './views/Attendance';
 import Gallery from './views/Gallery';
+import PDFTools from './views/PDFTools';
 
 const App: React.FC = () => {
     return (
@@ -30,10 +32,12 @@ const App: React.FC = () => {
                         <Route path="/find-nim" element={<FindNim />} />
                         <Route path="/attendance" element={<Attendance />} /> 
                         <Route path="/gallery" element={<Gallery />} />
+                        <Route path="/PDFTools" element={<PDFTools />} />
                     </Routes>
                 </main>
             </div>
             <Analytics />
+            <SpeedInsights />
             
         </BrowserRouter>
     );
