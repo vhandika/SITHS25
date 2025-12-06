@@ -42,10 +42,15 @@ export default defineConfig(({ mode }) => {
       },
       build: {
         sourcemap: false,
+        chunkSizeWarningLimit: 1500, 
+        
         rollupOptions: {
             output: {
                 manualChunks(id) {
                     if (id.includes('node_modules')) {
+                        if (id.includes('react') || id.includes('react-dom') || id.includes('scheduler')) {
+                            return 'vendor-react';
+                        }
                         return 'vendor';
                     }
                 }
