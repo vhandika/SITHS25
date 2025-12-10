@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Loader, User, AlertCircle } from 'lucide-react';
+import ProfileModal from '../components/ProfileModal';
 
 interface Student {
     id: number;
     nim: string;
     name: string | null;
+    avatar_url?: string | null; // Tambahkan ini
 }
 
 const API_BASE_URL = 'https://idk-eight.vercel.app/api'; 
@@ -16,6 +18,11 @@ const FindNim: React.FC = () => {
     const [results, setResults] = useState<Student[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    
+    // State untuk Profile Modal
+    const [selectedNimProfile, setSelectedNimProfile] = useState<string | null>(null);
+    const currentUserNIM = localStorage.getItem('userNIM');
+
     useEffect(() => {
         const token = localStorage.getItem('userToken');
         if (!token) {
@@ -107,18 +114,29 @@ const FindNim: React.FC = () => {
                         <p className="text-xs mt-2 text-gray-600">Coba cari dengan kata kunci lain atau NIM.</p>
                     </div>
                 )}
+                
                 {!loading && results.length > 0 && (
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
                         {results.map((student) => (
                             <div 
                                 key={student.id || student.nim} 
-                                className="group relative overflow-hidden rounded-lg border border-gray-800 bg-gray-900/40 p-5 hover:border-gray-600 hover:bg-gray-800/60 transition-all duration-300"
+                                onClick={() => setSelectedNimProfile(student.nim)}
+                                className="group relative overflow-hidden rounded-lg border border-gray-800 bg-gray-900/40 p-5 hover:border-gray-600 hover:bg-gray-800/60 transition-all duration-300 cursor-pointer"
                             >
                                 <div className="flex items-start gap-4">
                                     <div className="flex-shrink-0">
-                                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-yellow-400/10 text-yellow-400 group-hover:bg-yellow-400 group-hover:text-black transition-colors duration-300">
-                                            <User size={24} />
-                                        </div>
+                                        {/* Tampilkan Avatar jika ada, jika tidak tampilkan Icon User */}
+                                        {student.avatar_url ? (
+                                            <img 
+                                                src={student.avatar_url} 
+                                                alt="Profile" 
+                                                className="w-12 h-12 rounded-full object-cover border-2 border-yellow-400/50 group-hover:border-yellow-400 transition-colors"
+                                            />
+                                        ) : (
+                                            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-yellow-400/10 text-yellow-400 group-hover:bg-yellow-400 group-hover:text-black transition-colors duration-300">
+                                                <User size={24} />
+                                            </div>
+                                        )}
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <p className="text-sm font-medium text-gray-400 mb-1">
@@ -142,6 +160,19 @@ const FindNim: React.FC = () => {
                 )}
 
             </div>
+
+            {/* Render Modal jika ada NIM yang dipilih */}
+            {selectedNimProfile && (
+                <ProfileModal 
+                    targetNim={selectedNimProfile} 
+                    currentUserNim={currentUserNIM}
+                    onClose={() => setSelectedNimProfile(null)}
+                    onChatClick={(nim) => {
+                        setSelectedNimProfile(null);
+                        navigate('/chat');
+                    }}
+                />
+            )}
         </div>
     );
 };
