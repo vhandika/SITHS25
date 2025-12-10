@@ -37,12 +37,12 @@ const Attendance: React.FC = () => {
         setUserNIM(nim);
         fetchSessions(nim);
 
-        if (role === 'admin' || role === 'sekretaris') {
+        if (role === 'admin' || role === 'sekretaris' || role === 'dev') {
             fetchAllUsers();
         }
     }, []);
 
-    const isAdminOrSekretaris = userRole === 'admin' || userRole === 'sekretaris';
+    const isAdminOrSekretaris = userRole === 'admin' || userRole === 'sekretaris' || userRole === 'dev';
 
     const fetchSessions = async (currentNIM: string | null = userNIM) => {
         setLoading(true);
