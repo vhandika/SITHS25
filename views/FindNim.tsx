@@ -7,7 +7,7 @@ interface Student {
     id: number;
     nim: string;
     name: string | null;
-    avatar_url?: string | null; // Tambahkan ini
+    avatar_url?: string | null;
 }
 
 const API_BASE_URL = 'https://idk-eight.vercel.app/api'; 
@@ -125,7 +125,6 @@ const FindNim: React.FC = () => {
                             >
                                 <div className="flex items-start gap-4">
                                     <div className="flex-shrink-0">
-                                        {/* Tampilkan Avatar jika ada, jika tidak tampilkan Icon User */}
                                         {student.avatar_url ? (
                                             <img 
                                                 src={student.avatar_url} 
@@ -161,7 +160,6 @@ const FindNim: React.FC = () => {
 
             </div>
 
-            {/* Render Modal jika ada NIM yang dipilih */}
             {selectedNimProfile && (
                 <ProfileModal 
                     targetNim={selectedNimProfile} 
