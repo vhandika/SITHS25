@@ -36,6 +36,26 @@ const Home: React.FC = () => {
     }, []);
 
     useEffect(() => {
+        const handleVisibilityChange = () => {
+            if (document.hidden) {
+                if (audioRef.current) {
+                    audioRef.current.pause();
+                }
+            } else {
+                if (showBirthdayModal && audioRef.current) {
+                    audioRef.current.play().catch(e => console.log("Resume error:", e));
+                }
+            }
+        };
+
+        document.addEventListener("visibilitychange", handleVisibilityChange);
+
+        return () => {
+            document.removeEventListener("visibilitychange", handleVisibilityChange);
+        };
+    }, [showBirthdayModal]);
+
+    useEffect(() => {
         const storedImage = localStorage.getItem('homeBackgroundImage');
         if (storedImage) setBackgroundImageUrl(storedImage);
     }, []);
