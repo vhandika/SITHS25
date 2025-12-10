@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { 
     Home, Library, Newspaper, Users, Mail, X, Menu, 
-    LogIn, LogOut, KeyRound, UserCircle, CameraIcon, Search,  CalendarCheck
+    LogIn, LogOut, KeyRound, UserCircle, CameraIcon, Search,  CalendarCheck, FileText
 } from 'lucide-react'
 
 const staticNavItems = [
@@ -11,6 +11,7 @@ const staticNavItems = [
     { path: '/news', name: 'News', icon: Newspaper },
     { path: '/about', name: 'About Us', icon: Users },
     { path: '/contact', name: 'Contact Us', icon: Mail },
+    { path: '/PDFTools', name: 'PDF Tools', icon: FileText }
 ];
 
 interface NavLinksProps {
@@ -23,7 +24,7 @@ const DesktopNavLinks: React.FC<NavLinksProps> = ({ isExpanded, isLoggedIn, user
     const navItems = [...staticNavItems];
 
     if (isLoggedIn) {
-        navItems.push({ path: '/find-nim', name: 'Cari', icon: Search });
+        navItems.push({ path: '/find-nim', name: 'Find', icon: Search });
         navItems.push({ path: '/attendance', name: 'Absensi', icon: CalendarCheck }); 
         navItems.push({ path: '/gallery', name: 'Gallery', icon: CameraIcon });
         navItems.push({ path: '/change-password', name: 'Ganti Password', icon: KeyRound });
@@ -96,7 +97,7 @@ const Sidebar: React.FC = () => {
     const getMobileNavItems = () => {
         const items = [...staticNavItems];
         if (isLoggedIn) {
-           items.push({ path: '/find-nim', name: 'Cari NIM', icon: Search });
+           items.push({ path: '/find-nim', name: 'Find', icon: Search });
            items.push({ path: '/attendance', name: 'Absensi', icon: CalendarCheck });
            items.push({ path: '/gallery', name: 'Gallery', icon: CameraIcon });
            items.push({ path: '/change-password', name: 'Ganti Password', icon: KeyRound });
