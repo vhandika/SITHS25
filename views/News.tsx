@@ -110,7 +110,7 @@ const News: React.FC = () => {
     }, []);
 
     const isLoggedIn = !!userToken;
-    const canManageNews = isLoggedIn && (userRole === 'admin' || userRole === 'humas');
+    const canManageNews = isLoggedIn && (userRole === 'admin' || userRole === 'humas' || userRole === 'dev');
 
     const fetchNews = async () => {
         setLoading(true);
