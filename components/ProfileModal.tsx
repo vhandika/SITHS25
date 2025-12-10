@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Camera, Instagram, Phone, MessageCircle, Globe, Loader, AlertCircle, Save, Edit2 } from 'lucide-react';
+import { X, Camera, Instagram, Phone, MessageCircle, Globe, Loader, AlertCircle, Save, Edit2, Palette } from 'lucide-react';
 
 const API_BASE_URL = 'https://idk-eight.vercel.app/api'; 
 
@@ -18,11 +18,11 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, 
     const [loading, setLoading] = useState(true);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
     const [isEditing, setIsEditing] = useState(false);
-    
+
     const [formData, setFormData] = useState({
         bio: '', instagram: '', whatsapp: '', line: '', jurusan: '', other_links: ''
     });
-    
+
     const [avatarFile, setAvatarFile] = useState<File | null>(null);
     const [bannerFile, setBannerFile] = useState<File | null>(null);
     const [previewAvatar, setPreviewAvatar] = useState<string | null>(null);
@@ -32,7 +32,9 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, 
     const isOwnProfile = targetNim === currentUserNim;
 
     useEffect(() => {
-        if (targetNim) fetchProfile();
+        if (targetNim) {
+            fetchProfile();
+        }
     }, [targetNim]);
 
     const fetchProfile = async () => {
@@ -83,7 +85,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, 
             });
             if (res.ok) {
                 setIsEditing(false);
-                fetchProfile(); 
+                fetchProfile();
             } else {
                 alert("Gagal update profil");
             }
@@ -123,42 +125,55 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
             <div className="w-full max-w-md bg-gray-900 text-white rounded-xl overflow-hidden relative shadow-2xl flex flex-col h-[90vh] border border-gray-800">
-                
+
                 {loading && (
                     <div className="flex-1 flex flex-col items-center justify-center gap-2">
                         <Loader className="animate-spin text-yellow-400" size={32} />
-                        <p className="text-sm text-gray-400">Memuat profil...</p>
                     </div>
                 )}
 
                 {!loading && errorMsg && (
                     <div className="flex-1 flex flex-col items-center justify-center text-center gap-4 p-8">
-                        <AlertCircle size={48} className="text-red-500" />
-                        <p className="text-gray-400">{errorMsg}</p>
-                        <button onClick={onClose} className="px-4 py-2 bg-gray-800 rounded-lg hover:bg-gray-700">Tutup</button>
+                        <div className="w-16 h-16 bg-red-900/20 text-red-500 rounded-full flex items-center justify-center border border-red-500/20">
+                            <AlertCircle size={32} />
+                        </div>
+                        <h3 className="text-lg font-bold text-white">Gagal Memuat</h3>
+                        <p className="text-gray-400 text-sm">{errorMsg}</p>
+                        <button onClick={onClose} className="px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg hover:bg-gray-700 font-bold text-sm">
+                            Tutup
+                        </button>
                     </div>
                 )}
 
                 {!loading && !errorMsg && userData && (
                     <div className="flex flex-col h-full overflow-hidden">
                         <div className="flex-1 overflow-y-auto custom-scrollbar relative">
-
                             <div className="h-32 bg-gray-800 relative group w-full shrink-0">
                                 <img 
                                     src={previewBanner || userData.banner_url || "https://placehold.co/600x200/1f2937/FFF?text=Background Ceritanya :v"} 
                                     className="w-full h-full object-cover" 
                                     alt="Banner" 
+                                    onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/600x200/1f2937/FFF?text=No+Image'; }}
                                 />
                                 {isEditing && (
                                     <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                         <label className="cursor-pointer flex flex-col items-center text-white mb-3 hover:text-yellow-400 transition-colors">
-                                            <div className="bg-white/10 p-2 rounded-full mb-1"><Camera size={20} /></div>
+                                            <div className="bg-white/10 p-2 rounded-full mb-1">
+                                                <Camera size={20} />
+                                            </div>
                                             <span className="text-[10px] font-bold">Upload Foto</span>
                                             <input type="file" hidden accept="image/*" onChange={(e) => handleFileChange(e, 'banner')} />
                                         </label>
                                         <div className="flex gap-2 bg-black/50 p-2 rounded-full backdrop-blur-sm">
                                             {SOLID_COLORS.map((color) => (
-                                                <button key={color} type="button" onClick={() => handleColorSelect(color)} className="w-5 h-5 rounded-full border border-white/30 hover:scale-110 transition-transform shadow-sm" style={{ backgroundColor: color }} />
+                                                <button
+                                                    key={color}
+                                                    type="button"
+                                                    onClick={() => handleColorSelect(color)}
+                                                    className="w-5 h-5 rounded-full border border-white/30 hover:scale-110 transition-transform shadow-sm"
+                                                    style={{ backgroundColor: color }}
+                                                    title={color}
+                                                />
                                             ))}
                                         </div>
                                     </div>
@@ -174,7 +189,8 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, 
                                         <img 
                                             src={previewAvatar || userData.avatar_url || `https://ui-avatars.com/api/?name=${userData.name}&background=random`} 
                                             className="w-full h-full object-cover" 
-                                            alt="Profile" 
+                                            alt="Profile"
+                                            onError={(e) => { (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${userData.name}`; }} 
                                         />
                                         {isEditing && (
                                             <label className="absolute inset-0 bg-black/60 flex items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity">
@@ -185,45 +201,93 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, 
                                     </div>
                                 </div>
 
+                                {/* NAME & JURUSAN */}
                                 <div className="text-center sm:text-left mb-6">
                                     <h2 className="text-2xl font-bold text-white leading-tight">{userData.name}</h2>
                                     <p className="text-gray-500 text-sm font-mono mb-2">{userData.nim}</p>
+                                    
                                     {isEditing ? (
-                                        <input className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:border-yellow-400 outline-none" placeholder="Jurusan" value={formData.jurusan} onChange={e => setFormData({...formData, jurusan: e.target.value})} />
+                                        <input 
+                                            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:border-yellow-400 outline-none"
+                                            placeholder="Jurusan"
+                                            value={formData.jurusan}
+                                            onChange={e => setFormData({...formData, jurusan: e.target.value})}
+                                        />
                                     ) : (
                                         <p className="text-yellow-400 font-semibold text-sm">{userData.jurusan || 'NULL'}</p>
                                     )}
                                 </div>
-
                                 <div className="mb-6">
                                     {isEditing ? (
                                         <div className="space-y-4">
                                             <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Kontak & Sosmed</h3>
+                                            
                                             <div className="flex items-center gap-3">
                                                 <div className="w-8 flex justify-center text-green-500"><Phone size={20} /></div>
-                                                <div className="flex-1"><input className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:border-green-500 outline-none transition-colors" placeholder="WhatsApp (Tanpa angka 0 di depan)" value={formData.whatsapp} onChange={e => setFormData({...formData, whatsapp: e.target.value})} /></div>
+                                                <div className="flex-1">
+                                                     <input 
+                                                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:border-green-500 outline-none transition-colors"
+                                                        placeholder="WhatsApp (Tanpa angka 0 di depan)"
+                                                        value={formData.whatsapp}
+                                                        onChange={e => setFormData({...formData, whatsapp: e.target.value})}
+                                                    />
+                                                </div>
                                             </div>
+
                                             <div className="flex items-center gap-3">
                                                 <div className="w-8 flex justify-center text-white"><MessageCircle size={20} /></div>
-                                                <div className="flex-1"><input className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:border-white outline-none transition-colors" placeholder="Paste url line kalian" value={formData.line} onChange={e => setFormData({...formData, line: e.target.value})} /></div>
+                                                <div className="flex-1">
+                                                     <input 
+                                                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:border-white outline-none transition-colors"
+                                                        placeholder="Paste link line kalian"
+                                                        value={formData.line}
+                                                        onChange={e => setFormData({...formData, line: e.target.value})}
+                                                    />
+                                                </div>
                                             </div>
+
                                             <div className="flex items-center gap-3">
                                                 <div className="w-8 flex justify-center text-pink-500"><Instagram size={20} /></div>
-                                                <div className="flex-1"><input className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:border-pink-500 outline-none transition-colors" placeholder="Instagram Username (tanpa @)" value={formData.instagram} onChange={e => setFormData({...formData, instagram: e.target.value})} /></div>
+                                                <div className="flex-1">
+                                                     <input 
+                                                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:border-pink-500 outline-none transition-colors"
+                                                        placeholder="Instagram Username (tanpa @)"
+                                                        value={formData.instagram}
+                                                        onChange={e => setFormData({...formData, instagram: e.target.value})}
+                                                    />
+                                                </div>
                                             </div>
                                         </div>
                                     ) : (
                                         <div className="flex justify-center sm:justify-start gap-4">
                                             <div className={`flex flex-col items-center gap-1 ${userData.whatsapp ? 'flex' : 'hidden'}`}>
-                                                <a href={`https://wa.me/+62${userData.whatsapp}`} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full border border-gray-700 bg-gray-800 flex items-center justify-center text-green-500 hover:border-green-500 transition-colors group"><Phone size={20} /></a>
+                                                <a href={`https://wa.me/+62${userData.whatsapp}`} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full border border-gray-700 bg-gray-800 flex items-center justify-center text-green-500 hover:border-green-500 transition-colors group">
+                                                    <Phone size={20} />
+                                                </a>
                                                 <span className="text-[10px] text-gray-500">WhatsApp</span>
                                             </div>
+                                            
                                             <div className={`flex flex-col items-center gap-1 ${userData.line ? 'flex' : 'hidden'}`}>
-                                                <a href={`${userData.line}`} target='_blank' rel="noreferrer" className="w-10 h-10 rounded-full border border-gray-700 bg-gray-800 flex items-center justify-center text-white hover:border-white transition-colors group"><MessageCircle size={20} /></a>
+                                                <a 
+                                                    href={`${userData.line}`} 
+                                                    target='_blank' 
+                                                    rel="noreferrer"
+                                                    className="w-10 h-10 rounded-full border border-gray-700 bg-gray-800 flex items-center justify-center text-white hover:border-white transition-colors group"
+                                                >
+                                                    <MessageCircle size={20} />
+                                                </a>
                                                 <span className="text-[10px] text-gray-500">Line</span>
                                             </div>
+
                                             <div className={`flex flex-col items-center gap-1 ${userData.instagram ? 'flex' : 'hidden'}`}>
-                                                <a href={`https://instagram.com/${userData.instagram}`} target='_blank' rel="noreferrer" className="w-10 h-10 rounded-full border border-gray-700 bg-gray-800 flex items-center justify-center text-pink-500 hover:border-pink-500 transition-colors group"><Instagram size={20} /></a>
+                                                <a 
+                                                    href={`https://instagram.com/${userData.instagram}`} 
+                                                    target='_blank'
+                                                    rel="noreferrer" 
+                                                    className="w-10 h-10 rounded-full border border-gray-700 bg-gray-800 flex items-center justify-center text-pink-500 hover:border-pink-500 transition-colors group"
+                                                >
+                                                    <Instagram size={20} />
+                                                </a>
                                                 <span className="text-[10px] text-gray-500">Instagram</span>
                                             </div>
                                         </div>
@@ -231,11 +295,28 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, 
                                 </div>
 
                                 <div className="mb-6">
-                                    <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">About Me</h3>
+                                    <div className="flex justify-between items-center mb-2">
+                                        <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">About Me</h3>
+                                        {isEditing && (
+                                            <span className={`text-[10px] ${formData.bio.length >= 100 ? 'text-red-500' : 'text-gray-500'}`}>
+                                                {formData.bio.length}/100
+                                            </span>
+                                        )}
+                                    </div>
+                                    
                                     {isEditing ? (
-                                        <textarea className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-sm focus:border-yellow-400 outline-none text-white resize-none" rows={3} placeholder="Tulis sesuatu..." value={formData.bio} onChange={e => setFormData({...formData, bio: e.target.value})} />
+                                        <textarea 
+                                            className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-sm focus:border-yellow-400 outline-none text-white resize-none"
+                                            rows={3}
+                                            maxLength={100}
+                                            placeholder="..."
+                                            value={formData.bio}
+                                            onChange={e => setFormData({...formData, bio: e.target.value})}
+                                        />
                                     ) : (
-                                        <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-line">{userData.bio || ""}</p>
+                                        <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-line">
+                                            {userData.bio || ""}
+                                        </p>
                                     )}
                                     <div className="h-px bg-gray-800 w-full my-4"></div>
                                 </div>
@@ -243,7 +324,12 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, 
                                 <div className="mb-4">
                                     <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Link Lainnya</h3>
                                     {isEditing ? (
-                                        <textarea className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-sm focus:border-yellow-400 outline-none text-white resize-none" placeholder="Judul: URL (di ujung tambakan koma)" value={formData.other_links} onChange={e => setFormData({...formData, other_links: e.target.value})} />
+                                        <textarea 
+                                            className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-sm focus:border-yellow-400 outline-none text-white resize-none"
+                                            placeholder="Judul: URL (pisahkan dengan koma)"
+                                            value={formData.other_links}
+                                            onChange={e => setFormData({...formData, other_links: e.target.value})}
+                                        />
                                     ) : (
                                         <ul className="space-y-2">
                                             {userData.other_links ? userData.other_links.split(',').map((link: string, i: number) => {
@@ -270,11 +356,36 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, 
                             <div className="p-4 border-t border-gray-800 bg-gray-900 z-20 shrink-0">
                                 {isEditing ? (
                                     <div className="flex gap-3">
-                                        <button onClick={() => { setIsEditing(false); setFormData({ bio: userData.bio || '', instagram: userData.instagram || '', whatsapp: userData.whatsapp || '', line: userData.line || '', jurusan: userData.jurusan || '', other_links: userData.other_links || '' }); }} disabled={isSaving} className="flex-1 py-3 bg-gray-800 border border-gray-700 text-gray-300 rounded-lg text-sm font-bold hover:bg-gray-700 transition-colors">Batal</button>
-                                        <button onClick={handleSave} disabled={isSaving} className="flex-1 py-3 bg-yellow-400 text-black rounded-lg text-sm font-bold hover:bg-yellow-300 flex items-center justify-center gap-2 shadow-lg shadow-yellow-400/20 disabled:opacity-50 transition-colors">{isSaving ? <Loader size={18} className="animate-spin"/> : <Save size={18}/>} Simpan</button>
+                                        <button 
+                                            onClick={() => {
+                                                setIsEditing(false);
+                                                setFormData({
+                                                    bio: userData.bio || '',
+                                                    instagram: userData.instagram || '',
+                                                    whatsapp: userData.whatsapp || '',
+                                                    line: userData.line || '',
+                                                    jurusan: userData.jurusan || '',
+                                                    other_links: userData.other_links || ''
+                                                });
+                                            }} 
+                                            disabled={isSaving}
+                                            className="flex-1 py-3 bg-gray-800 border border-gray-700 text-gray-300 rounded-lg text-sm font-bold hover:bg-gray-700 transition-colors"
+                                        >
+                                            Batal
+                                        </button>
+                                        <button 
+                                            onClick={handleSave} 
+                                            disabled={isSaving} 
+                                            className="flex-1 py-3 bg-yellow-400 text-black rounded-lg text-sm font-bold hover:bg-yellow-300 flex items-center justify-center gap-2 shadow-lg shadow-yellow-400/20 disabled:opacity-50 transition-colors"
+                                        >
+                                            {isSaving ? <Loader size={18} className="animate-spin"/> : <Save size={18}/>} Simpan
+                                        </button>
                                     </div>
                                 ) : (
-                                    <button onClick={() => setIsEditing(true)} className="w-full py-3 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2">
+                                    <button 
+                                        onClick={() => setIsEditing(true)} 
+                                        className="w-full py-3 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2"
+                                    >
                                         <Edit2 size={16} /> Edit Profile
                                     </button>
                                 )}
