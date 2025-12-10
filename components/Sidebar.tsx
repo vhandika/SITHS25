@@ -2,8 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { 
     Home, Library, Newspaper, Users, Mail, X, Menu, 
-    LogIn, LogOut, KeyRound, UserCircle, CameraIcon, Search,  CalendarCheck, FileText
+    LogIn, LogOut, KeyRound, UserCircle, CameraIcon, Search,  
+    CalendarCheck, FileText, Flag
 } from 'lucide-react'
+import ProfileModal from '../components/ProfileModal';
+import ReportModal from '../components/ReportModal';
+
+const API_BASE_URL = 'https://idk-eight.vercel.app/api'; 
 
 const staticNavItems = [
     { path: '/', name: 'Home', icon: Home },
@@ -18,9 +23,10 @@ interface NavLinksProps {
     isExpanded: boolean;
     isLoggedIn: boolean;
     userRole: string | null;
+    onReportClick: () => void; // Prop baru
 }
 
-const DesktopNavLinks: React.FC<NavLinksProps> = ({ isExpanded, isLoggedIn, userRole }) => {
+const DesktopNavLinks: React.FC<NavLinksProps> = ({ isExpanded, isLoggedIn, userRole, onReportClick }) => {
     const navItems = [...staticNavItems];
 
     if (isLoggedIn) {
@@ -61,6 +67,20 @@ const DesktopNavLinks: React.FC<NavLinksProps> = ({ isExpanded, isLoggedIn, user
                     )}
                 </NavLink>
             ))}
+
+            <button
+                onClick={onReportClick}
+                className="group relative flex w-full items-center rounded-lg p-3 transition-colors duration-200 text-gray-400 hover:bg-gray-800 hover:text-red-400"
+            >
+                <Flag className="h-6 w-6 flex-shrink-0" />
+                <span
+                    className={`absolute left-12 whitespace-nowrap text-sm font-medium transition-all duration-300 ${
+                        isExpanded ? 'translate-x-0 opacity-100' : '-translate-x-4 opacity-0'
+                    }`}
+                >
+                    Laporkan
+                </span>
+            </button>
         </nav>
     );
 };
@@ -70,6 +90,9 @@ const Sidebar: React.FC = () => {
     const [isExpanded, setIsExpanded] = useState(false);
     const [userNIM, setUserNIM] = useState<string | null>(null);
     const [userRole, setUserRole] = useState<string | null>(null);
+    const [showMyProfile, setShowMyProfile] = useState(false);
+    const [showReport, setShowReport] = useState(false); // State Modal Report
+    const [userAvatar, setUserAvatar] = useState<string | null>(null);
     
     const location = useLocation();
     const navigate = useNavigate();
@@ -79,7 +102,24 @@ const Sidebar: React.FC = () => {
         const storedRole = localStorage.getItem('userRole');
         setUserNIM(storedNIM);
         setUserRole(storedRole);
+
+        if (storedNIM) {
+            fetchUserAvatar(storedNIM);
+        }
     }, [location]);
+
+    const fetchUserAvatar = async (nim: string) => {
+        try {
+            const token = localStorage.getItem('userToken');
+            const res = await fetch(`${API_BASE_URL}/user/${nim}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const json = await res.json();
+            if (res.ok && json.data) {
+                setUserAvatar(json.data.avatar_url);
+            }
+        } catch (e) { console.error("Gagal load avatar sidebar", e); }
+    };
 
     const handleLogout = () => {
         if (window.confirm("Yakin ingin logout?")) {
@@ -88,11 +128,19 @@ const Sidebar: React.FC = () => {
             localStorage.removeItem('userRole');
             setUserNIM(null);
             setUserRole(null);
+            setUserAvatar(null);
             navigate('/login');
         }
     };
 
     const isLoggedIn = !!userNIM;
+
+    const renderAvatar = (sizeClass: string = "w-6 h-6", iconSize: number = 24) => {
+        if (userAvatar) {
+            return <img src={userAvatar} alt="Profile" className={`${sizeClass} rounded-full object-cover border border-gray-700`} />;
+        }
+        return <UserCircle size={iconSize} className="text-yellow-400" />;
+    };
 
     const getMobileNavItems = () => {
         const items = [...staticNavItems];
@@ -121,19 +169,21 @@ const Sidebar: React.FC = () => {
                         isExpanded={isExpanded} 
                         isLoggedIn={isLoggedIn} 
                         userRole={userRole}
+                        onReportClick={() => setShowReport(true)}
                     />
                 </div>
 
                 {isLoggedIn && (
                     <div className="mt-auto w-full h-20 border-t border-gray-800 relative overflow-hidden">
                         <div 
-                            className={`absolute top-0 left-0 h-full flex items-center px-2 w-[80%] transition-all duration-300 ease-in-out ${
+                            onClick={() => setShowMyProfile(true)}
+                            className={`absolute top-0 left-0 h-full flex items-center px-2 w-[80%] transition-all duration-300 ease-in-out cursor-pointer hover:bg-white/5 rounded-l-lg ${
                                 isExpanded ? 'translate-x-0 opacity-100' : '-translate-x-10 opacity-0 pointer-events-none'
                             }`}
                         >
                             <div className="flex items-center gap-3 overflow-hidden whitespace-nowrap">
-                                <div className="bg-yellow-400/20 p-2 rounded-full flex-shrink-0">
-                                    <UserCircle size={24} className="text-yellow-400" />
+                                <div className={`rounded-full flex-shrink-0 flex items-center justify-center ${userAvatar ? 'overflow-hidden' : 'bg-yellow-400/20 p-2'}`}>
+                                    {renderAvatar(userAvatar ? "w-10 h-10" : "w-6 h-6", 24)}
                                 </div>
                                 <div className="overflow-hidden">
                                     <p className="text-xs text-gray-400">Logged in as</p>
@@ -148,14 +198,13 @@ const Sidebar: React.FC = () => {
                             }`}
                         >
                             <button 
-                                onClick={handleLogout}
+                                onClick={(e) => { e.stopPropagation(); handleLogout(); }}
                                 className="p-2 rounded-lg text-red-400 hover:bg-red-900/20 hover:text-red-300 transition-colors"
                                 title="Logout"
                             >
                                 <LogOut size={isExpanded ? 20 : 24} />
                             </button>
                         </div>
-
                     </div>
                 )}
             </aside>
@@ -198,14 +247,23 @@ const Sidebar: React.FC = () => {
                                 {item.name}
                             </NavLink>
                         ))}
+                        <button
+                            onClick={() => { setShowReport(true); setIsMobileMenuOpen(false); }}
+                            className="flex items-center gap-3 rounded-lg p-3 text-sm font-medium transition-colors text-gray-400 hover:bg-gray-800 hover:text-red-400"
+                        >
+                            <Flag size={20} /> Laporkan
+                        </button>
                     </nav>
 
                     {isLoggedIn && (
-                         <div className="border-t border-gray-800 pt-4 mt-4">
+                        <div className="border-t border-gray-800 pt-4 mt-4">
                             <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3 overflow-hidden">
-                                    <div className="bg-yellow-400/20 p-2 rounded-full flex-shrink-0">
-                                        <UserCircle size={20} className="text-yellow-400" />
+                                <div 
+                                    className="flex items-center gap-3 overflow-hidden cursor-pointer"
+                                    onClick={() => { setShowMyProfile(true); setIsMobileMenuOpen(false); }}
+                                >
+                                    <div className={`rounded-full flex-shrink-0 flex items-center justify-center ${userAvatar ? 'overflow-hidden' : 'bg-yellow-400/20 p-2'}`}>
+                                        {renderAvatar(userAvatar ? "w-9 h-9" : "w-5 h-5", 20)}
                                     </div>
                                     <div className="overflow-hidden">
                                         <p className="text-xs text-gray-400">Logged in as</p>
@@ -213,7 +271,7 @@ const Sidebar: React.FC = () => {
                                     </div>
                                 </div>
                                 <button 
-                                    onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }}
+                                    onClick={(e) => { e.stopPropagation(); handleLogout(); setIsMobileMenuOpen(false); }}
                                     className="p-2 rounded-lg text-red-400 hover:bg-red-900/20 hover:text-red-300 transition-colors"
                                 >
                                     <LogOut size={20} />
@@ -223,6 +281,18 @@ const Sidebar: React.FC = () => {
                     )}
                 </div>
             </div>
+
+            {showMyProfile && userNIM && (
+                <ProfileModal 
+                    targetNim={userNIM} 
+                    currentUserNim={userNIM}
+                    onClose={() => setShowMyProfile(false)}
+                />
+            )}
+
+            {showReport && (
+                <ReportModal onClose={() => setShowReport(false)} />
+            )}
         </>
     );
 };
