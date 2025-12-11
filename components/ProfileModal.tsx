@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Camera, Instagram, Phone, MessageCircle, Globe, Loader, AlertCircle, Save, Edit2, Palette } from 'lucide-react';
+import { X, Camera, Instagram, Phone, MessageCircle, Globe, Loader, AlertCircle, Save, Edit2, Palette, Trash2 } from 'lucide-react';
 
 const API_BASE_URL = 'https://idk-eight.vercel.app/api'; 
 
@@ -27,6 +27,9 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, 
     const [bannerFile, setBannerFile] = useState<File | null>(null);
     const [previewAvatar, setPreviewAvatar] = useState<string | null>(null);
     const [previewBanner, setPreviewBanner] = useState<string | null>(null);
+    const [deleteAvatar, setDeleteAvatar] = useState(false);
+    const [deleteBanner, setDeleteBanner] = useState(false);
+
     const [isSaving, setIsSaving] = useState(false);
 
     const isOwnProfile = targetNim === currentUserNim;
@@ -74,8 +77,12 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, 
         const data = new FormData();
         
         Object.keys(formData).forEach(key => data.append(key, (formData as any)[key]));
+        
         if (avatarFile) data.append('avatar', avatarFile);
         if (bannerFile) data.append('banner', bannerFile);
+
+        if (deleteAvatar) data.append('delete_avatar', 'true');
+        if (deleteBanner) data.append('delete_banner', 'true');
 
         try {
             const res = await fetch(`${API_BASE_URL}/user/profile`, {
@@ -85,6 +92,12 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, 
             });
             if (res.ok) {
                 setIsEditing(false);
+                setAvatarFile(null);
+                setBannerFile(null);
+                setPreviewAvatar(null);
+                setPreviewBanner(null);
+                setDeleteAvatar(false);
+                setDeleteBanner(false);
                 fetchProfile();
             } else {
                 alert("Gagal update profil");
@@ -97,8 +110,27 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, 
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
             const url = URL.createObjectURL(file);
-            if (type === 'avatar') { setAvatarFile(file); setPreviewAvatar(url); }
-            else { setBannerFile(file); setPreviewBanner(url); }
+            if (type === 'avatar') { 
+                setAvatarFile(file); 
+                setPreviewAvatar(url);
+                setDeleteAvatar(false);
+            } else { 
+                setBannerFile(file); 
+                setPreviewBanner(url);
+                setDeleteBanner(false);
+            }
+        }
+    };
+
+    const handleDeleteImage = (type: 'avatar' | 'banner') => {
+        if (type === 'avatar') {
+            setAvatarFile(null);
+            setPreviewAvatar(null);
+            setDeleteAvatar(true);
+        } else {
+            setBannerFile(null);
+            setPreviewBanner(null);
+            setDeleteBanner(true);
         }
     };
 
@@ -115,10 +147,14 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, 
                     const file = new File([blob], "solid_color.png", { type: "image/png" });
                     setBannerFile(file);
                     setPreviewBanner(URL.createObjectURL(file));
+                    setDeleteBanner(false);
                 }
             });
         }
     };
+
+    const currentBannerUrl = previewBanner || (!deleteBanner ? userData?.banner_url : null);
+    const currentAvatarUrl = previewAvatar || (!deleteAvatar ? userData?.avatar_url : null);
 
     if (!targetNim) return null;
 
@@ -149,21 +185,42 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, 
                     <div className="flex flex-col h-full overflow-hidden">
                         <div className="flex-1 overflow-y-auto custom-scrollbar relative">
                             <div className="h-32 bg-gray-800 relative group w-full shrink-0">
-                                <img 
-                                    src={previewBanner || userData.banner_url || "https://placehold.co/600x200/1f2937/FFF?text=Background Ceritanya :v"} 
-                                    className="w-full h-full object-cover" 
-                                    alt="Banner" 
-                                    onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/600x200/1f2937/FFF?text=No+Image'; }}
-                                />
+                                {currentBannerUrl ? (
+                                    <img 
+                                        src={currentBannerUrl} 
+                                        className="w-full h-full object-cover" 
+                                        alt="Banner" 
+                                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                    />
+                                ) : (
+                                    <div className="w-full h-full bg-gray-700" />
+                                )}
+
                                 {isEditing && (
                                     <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <label className="cursor-pointer flex flex-col items-center text-white mb-3 hover:text-yellow-400 transition-colors">
-                                            <div className="bg-white/10 p-2 rounded-full mb-1">
-                                                <Camera size={20} />
-                                            </div>
-                                            <span className="text-[10px] font-bold">Upload Foto</span>
-                                            <input type="file" hidden accept="image/*" onChange={(e) => handleFileChange(e, 'banner')} />
-                                        </label>
+                                        <div className="flex items-center gap-3 mb-3">
+                                            <label className="cursor-pointer flex flex-col items-center text-white hover:text-yellow-400 transition-colors">
+                                                <div className="bg-white/10 p-2 rounded-full mb-1">
+                                                    <Camera size={20} />
+                                                </div>
+                                                <span className="text-[10px] font-bold">Upload</span>
+                                                <input type="file" hidden accept="image/*" onChange={(e) => handleFileChange(e, 'banner')} />
+                                            </label>
+                                            
+                                            {/* Tombol Hapus Banner */}
+                                            {currentBannerUrl && (
+                                                <button 
+                                                    onClick={() => handleDeleteImage('banner')}
+                                                    className="flex flex-col items-center text-white hover:text-red-400 transition-colors"
+                                                >
+                                                    <div className="bg-white/10 p-2 rounded-full mb-1">
+                                                        <Trash2 size={20} />
+                                                    </div>
+                                                    <span className="text-[10px] font-bold">Hapus</span>
+                                                </button>
+                                            )}
+                                        </div>
+
                                         <div className="flex gap-2 bg-black/50 p-2 rounded-full backdrop-blur-sm">
                                             {SOLID_COLORS.map((color) => (
                                                 <button
@@ -187,21 +244,30 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, 
                                 <div className="relative -mt-12 mb-3 w-24 h-24 mx-auto sm:mx-0 z-10">
                                     <div className="w-24 h-24 rounded-full border-4 border-gray-900 overflow-hidden bg-gray-800 shadow-xl relative group">
                                         <img 
-                                            src={previewAvatar || userData.avatar_url || `https://ui-avatars.com/api/?name=${userData.name}&background=random`} 
+                                            src={currentAvatarUrl || `https://ui-avatars.com/api/?name=${userData.name}&background=random`} 
                                             className="w-full h-full object-cover" 
                                             alt="Profile"
                                             onError={(e) => { (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${userData.name}`; }} 
                                         />
                                         {isEditing && (
-                                            <label className="absolute inset-0 bg-black/60 flex items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <Camera className="text-white" size={20} />
-                                                <input type="file" hidden accept="image/*" onChange={(e) => handleFileChange(e, 'avatar')} />
-                                            </label>
+                                            <div className="absolute inset-0 bg-black/60 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <label className="cursor-pointer text-white hover:text-yellow-400">
+                                                    <Camera size={20} />
+                                                    <input type="file" hidden accept="image/*" onChange={(e) => handleFileChange(e, 'avatar')} />
+                                                </label>
+                                                {currentAvatarUrl && (
+                                                    <button 
+                                                        onClick={() => handleDeleteImage('avatar')}
+                                                        className="text-white hover:text-red-400"
+                                                    >
+                                                        <Trash2 size={20} />
+                                                    </button>
+                                                )}
+                                            </div>
                                         )}
                                     </div>
                                 </div>
 
-                                {/* NAME & JURUSAN */}
                                 <div className="text-center sm:text-left mb-6">
                                     <h2 className="text-2xl font-bold text-white leading-tight">{userData.name}</h2>
                                     <p className="text-gray-500 text-sm font-mono mb-2">{userData.nim}</p>
@@ -367,6 +433,12 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, 
                                                     jurusan: userData.jurusan || '',
                                                     other_links: userData.other_links || ''
                                                 });
+                                                setAvatarFile(null);
+                                                setBannerFile(null);
+                                                setPreviewAvatar(null);
+                                                setPreviewBanner(null);
+                                                setDeleteAvatar(false);
+                                                setDeleteBanner(false);
                                             }} 
                                             disabled={isSaving}
                                             className="flex-1 py-3 bg-gray-800 border border-gray-700 text-gray-300 rounded-lg text-sm font-bold hover:bg-gray-700 transition-colors"
