@@ -23,7 +23,7 @@ interface NavLinksProps {
     isExpanded: boolean;
     isLoggedIn: boolean;
     userRole: string | null;
-    onReportClick: () => void; // Prop baru
+    onReportClick: () => void;
 }
 
 const DesktopNavLinks: React.FC<NavLinksProps> = ({ isExpanded, isLoggedIn, userRole, onReportClick }) => {
@@ -91,7 +91,7 @@ const Sidebar: React.FC = () => {
     const [userNIM, setUserNIM] = useState<string | null>(null);
     const [userRole, setUserRole] = useState<string | null>(null);
     const [showMyProfile, setShowMyProfile] = useState(false);
-    const [showReport, setShowReport] = useState(false); // State Modal Report
+    const [showReport, setShowReport] = useState(false);
     const [userAvatar, setUserAvatar] = useState<string | null>(null);
     
     const location = useLocation();
@@ -157,6 +157,16 @@ const Sidebar: React.FC = () => {
 
     return (
         <>
+            <style>{`
+                .no-scrollbar::-webkit-scrollbar {
+                    display: none;
+                }
+                .no-scrollbar {
+                    -ms-overflow-style: none;
+                    scrollbar-width: none;
+                }
+            `}</style>
+
             <aside
                 className={`fixed left-0 top-0 z-50 hidden h-full flex-col justify-between border-r border-gray-800 bg-black/80 pt-6 pb-0 backdrop-blur-sm transition-all duration-300 ease-in-out lg:flex selection:bg-yellow-400 selection:text-black ${
                     isExpanded ? 'w-64 items-start px-4' : 'w-20 items-center'
@@ -164,7 +174,7 @@ const Sidebar: React.FC = () => {
                 onMouseEnter={() => setIsExpanded(true)}
                 onMouseLeave={() => setIsExpanded(false)}
             >
-                <div className="flex w-full flex-1 flex-col items-center gap-8">
+                <div className="flex w-full flex-1 flex-col items-center gap-8 overflow-y-auto no-scrollbar pb-4">
                     <DesktopNavLinks 
                         isExpanded={isExpanded} 
                         isLoggedIn={isLoggedIn} 
@@ -174,7 +184,7 @@ const Sidebar: React.FC = () => {
                 </div>
 
                 {isLoggedIn && (
-                    <div className="mt-auto w-full h-20 border-t border-gray-800 relative overflow-hidden">
+                    <div className="mt-auto w-full h-20 border-t border-gray-800 relative overflow-hidden flex-shrink-0 bg-black/80">
                         <div 
                             onClick={() => setShowMyProfile(true)}
                             className={`absolute top-0 left-0 h-full flex items-center px-2 w-[80%] transition-all duration-300 ease-in-out cursor-pointer hover:bg-white/5 rounded-l-lg ${
@@ -231,13 +241,13 @@ const Sidebar: React.FC = () => {
                 }`}
             >
                 <div className="flex h-full flex-col justify-between">
-                    <nav className="flex flex-col gap-2">
+                    <nav className="flex flex-col gap-2 flex-1 overflow-y-auto no-scrollbar pb-4">
                          {getMobileNavItems().map((item) => (
                             <NavLink
                                 key={item.path}
                                 to={item.path}
                                 className={({ isActive }) =>
-                                    `flex items-center gap-3 rounded-lg p-3 text-sm font-medium transition-colors ${
+                                    `flex items-center gap-3 rounded-lg p-3 text-sm font-medium transition-colors flex-shrink-0 ${
                                         isActive ? 'bg-yellow-400/10 text-yellow-400' : 'text-gray-400 hover:bg-gray-800 hover:text-white'
                                     }`
                                 }
@@ -249,14 +259,14 @@ const Sidebar: React.FC = () => {
                         ))}
                         <button
                             onClick={() => { setShowReport(true); setIsMobileMenuOpen(false); }}
-                            className="flex items-center gap-3 rounded-lg p-3 text-sm font-medium transition-colors text-gray-400 hover:bg-gray-800 hover:text-red-400"
+                            className="flex items-center gap-3 rounded-lg p-3 text-sm font-medium transition-colors text-gray-400 hover:bg-gray-800 hover:text-red-400 flex-shrink-0"
                         >
                             <Flag size={20} /> Laporkan
                         </button>
                     </nav>
 
                     {isLoggedIn && (
-                        <div className="border-t border-gray-800 pt-4 mt-4">
+                        <div className="border-t border-gray-800 pt-4 mt-4 flex-shrink-0">
                             <div className="flex items-center justify-between">
                                 <div 
                                     className="flex items-center gap-3 overflow-hidden cursor-pointer"
