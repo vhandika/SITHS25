@@ -2,10 +2,11 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { 
     CalendarCheck, Plus, Upload, Camera, Users, 
     BarChart3, CheckCircle, XCircle, Search, UserCheck, UserX, Lock, Clock, Loader, FileText, 
-    FileSpreadsheet 
+    FileSpreadsheet, ArrowRightCircle 
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import SkewedButton from '../components/SkewedButton';
+import imageCompression from 'browser-image-compression';
 
 const API_BASE_URL = 'https://idk-eight.vercel.app/api'; 
 
@@ -15,20 +16,30 @@ const Attendance: React.FC = () => {
     const [userRole, setUserRole] = useState<string | null>(null);
     const [userNIM, setUserNIM] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
+    
+    // Modal & Form States
     const [selectedSession, setSelectedSession] = useState<any | null>(null);
     const [selectedSessionPermission, setSelectedSessionPermission] = useState<any | null>(null);
     const [permissionReason, setPermissionReason] = useState('');
+    const [isMenyusul, setIsMenyusul] = useState(false); 
     const [photoFile, setPhotoFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    
+    // Process States
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isCompressing, setIsCompressing] = useState(false);
+    
+    // Admin States
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [newSessionData, setNewSessionData] = useState({ title: '', description: '', is_photo_required: false });
     const [viewStatsId, setViewStatsId] = useState<number | null>(null); 
-    const [viewStatsTitle, setViewStatsTitle] = useState<string>(''); // <--- BARU: Simpan judul sesi untuk nama file
+    const [viewStatsTitle, setViewStatsTitle] = useState<string>('');
     const [statsRecords, setStatsRecords] = useState<any[]>([]); 
     const [activeTab, setActiveTab] = useState<'hadir' | 'izin' | 'pending' | 'belum'>('hadir'); 
     const [searchFilter, setSearchFilter] = useState(''); 
-    const [attendedSessionIds, setAttendedSessionIds] = useState<number[]>([]);
+    
+    // User Status Tracking
+    const [userStatusMap, setUserStatusMap] = useState<{[key: number]: { status: string, reason: string | null }}>({});
 
     useEffect(() => {
         const role = localStorage.getItem('userRole');
@@ -65,7 +76,7 @@ const Attendance: React.FC = () => {
     const checkUserAttendanceStatus = async (currentSessions: any[], nim: string) => {
         const token = localStorage.getItem('userToken');
         const openSessions = currentSessions.filter(s => s.is_open);
-        const attendedIds: number[] = [];
+        const statusMap: {[key: number]: { status: string, reason: string | null }} = {};
 
         for (const session of openSessions) {
             try {
@@ -75,16 +86,20 @@ const Attendance: React.FC = () => {
                 if (res.ok) {
                     const json = await res.json();
                     const records = json.data || [];
-                    const isAttended = records.some((r: any) => r.user_nim === nim);
-                    if (isAttended) {
-                        attendedIds.push(session.id);
+                    const myRecord = records.find((r: any) => r.user_nim === nim);
+                    
+                    if (myRecord) {
+                        statusMap[session.id] = {
+                            status: myRecord.status,
+                            reason: myRecord.reason
+                        };
                     }
                 }
             } catch (err) {
                 console.error("Gagal cek status sesi", session.id);
             }
         }
-        setAttendedSessionIds(prev => [...new Set([...prev, ...attendedIds])]);
+        setUserStatusMap(prev => ({ ...prev, ...statusMap }));
     };
 
     const fetchAllUsers = async () => {
@@ -205,16 +220,28 @@ const Attendance: React.FC = () => {
         }
     };
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
-            setPhotoFile(e.target.files[0]);
-            setPreviewUrl(URL.createObjectURL(e.target.files[0]));
+            const originalFile = e.target.files[0];
+            const options = {
+                maxSizeMB: 0.2, maxWidthOrHeight: 1024, useWebWorker: true, fileType: 'image/jpeg'
+            };
+            try {
+                setIsCompressing(true);
+                const compressedFile = await imageCompression(originalFile, options);
+                setPhotoFile(compressedFile);
+                setPreviewUrl(URL.createObjectURL(compressedFile));
+            } catch (error) {
+                console.error("Gagal kompres gambar:", error);
+                setPhotoFile(originalFile);
+                setPreviewUrl(URL.createObjectURL(originalFile));
+            } finally { setIsCompressing(false); }
         }
     };
 
     const handleSubmitAttendance = async (e: React.FormEvent) => {
         e.preventDefault();
-        if(isSubmitting) return;
+        if(isSubmitting || isCompressing) return;
 
         setIsSubmitting(true);
         const token = localStorage.getItem('userToken');
@@ -234,7 +261,10 @@ const Attendance: React.FC = () => {
 
             if (res.ok) {
                 alert(json.message);
-                setAttendedSessionIds(prev => [...prev, selectedSession.id]);
+                setUserStatusMap(prev => ({
+                    ...prev,
+                    [selectedSession.id]: { status: 'Pending', reason: null } 
+                }));
                 closeModals();
             } else {
                 alert(json.message || "Gagal absen");
@@ -245,7 +275,7 @@ const Attendance: React.FC = () => {
 
     const handleSubmitPermission = async (e: React.FormEvent) => {
         e.preventDefault();
-        if(isSubmitting) return;
+        if(isSubmitting || isCompressing) return;
 
         setIsSubmitting(true);
         const token = localStorage.getItem('userToken');
@@ -254,7 +284,12 @@ const Attendance: React.FC = () => {
         formData.append('user_name_input', 'Mahasiswa ' + userNIM); 
         
         formData.append('status', 'Izin'); 
-        formData.append('reason', permissionReason);
+        
+        let finalReason = permissionReason;
+        if (isMenyusul) {
+            finalReason = `[MENYUSUL] ${finalReason}`;
+        }
+        formData.append('reason', finalReason);
 
         if (photoFile) formData.append('image', photoFile);
 
@@ -268,7 +303,10 @@ const Attendance: React.FC = () => {
 
             if (res.ok) {
                 alert("Permohonan izin berhasil dikirim!");
-                setAttendedSessionIds(prev => [...prev, selectedSessionPermission.id]);
+                setUserStatusMap(prev => ({
+                    ...prev,
+                    [selectedSessionPermission.id]: { status: 'Izin', reason: finalReason }
+                }));
                 closeModals();
             } else {
                 alert(json.message || "Gagal mengirim izin");
@@ -283,15 +321,38 @@ const Attendance: React.FC = () => {
         setPhotoFile(null);
         setPreviewUrl(null);
         setPermissionReason('');
+        setIsMenyusul(false); 
         setIsSubmitting(false); 
+        setIsCompressing(false);
     };
 
     const { presentUsers, permissionUsers, pendingUsers, absentUsers, presentPercentage } = useMemo(() => {
         if (!viewStatsId) return { presentUsers: [], permissionUsers: [], pendingUsers: [], absentUsers: [], presentPercentage: 0 };
         
+        const currentSession = sessions.find(s => s.id === viewStatsId);
+        const isSessionClosed = currentSession ? !currentSession.is_open : false;
+
         const confirmed = statsRecords.filter(r => r.status === 'Hadir' || r.status === 'Dihadirkan');
-        const permissions = statsRecords.filter(r => r.status === 'Izin');
         const pending = statsRecords.filter(r => r.status === 'Pending');
+        
+        const realPermissions: any[] = [];
+        const failedMenyusulNims: string[] = [];
+
+        statsRecords.forEach(r => {
+            if (r.status === 'Izin') {
+                const isMenyusulRecord = r.reason && r.reason.includes('[MENYUSUL]');
+                
+                if (isMenyusulRecord) {
+                    if (isSessionClosed) {
+                        failedMenyusulNims.push(r.user_nim);
+                    } else {
+                        realPermissions.push(r);
+                    }
+                } else {
+                    realPermissions.push(r);
+                }
+            }
+        });
         
         const allRecordedNims = statsRecords.map(r => r.user_nim);
 
@@ -303,21 +364,21 @@ const Attendance: React.FC = () => {
         };
 
         const absentees = allUsers.filter(u => 
-            !allRecordedNims.includes(u.nim) && 
+            (!allRecordedNims.includes(u.nim) || failedMenyusulNims.includes(u.nim)) && 
             (u.name.toLowerCase().includes(searchFilter.toLowerCase()) || u.nim.includes(searchFilter))
         );
 
         const totalPopulation = allUsers.length || 1; 
-        const pct = Math.round(((confirmed.length + permissions.length) / totalPopulation) * 100);
+        const pct = Math.round(((confirmed.length + realPermissions.length) / totalPopulation) * 100);
 
         return { 
             presentUsers: confirmed.filter(filterFn).sort(sortByNIM), 
-            permissionUsers: permissions.filter(filterFn).sort(sortByNIM),
+            permissionUsers: realPermissions.filter(filterFn).sort(sortByNIM),
             pendingUsers: pending.filter(filterFn).sort(sortByNIM), 
             absentUsers: absentees.sort(sortByNIM), 
             presentPercentage: pct 
         };
-    }, [allUsers, statsRecords, viewStatsId, searchFilter]);
+    }, [allUsers, statsRecords, viewStatsId, searchFilter, sessions]);
 
     const handleExportExcel = () => {
         const combinedData = [
@@ -395,7 +456,9 @@ const Attendance: React.FC = () => {
                         <div className="col-span-full flex justify-center py-10"><Loader className="animate-spin text-yellow-400"/></div>
                     ) : (
                         sessions.map((session) => {
-                            const isAttended = attendedSessionIds.includes(session.id);
+                            const userRecord = userStatusMap[session.id];
+                            const isIzinMenyusul = userRecord?.status === 'Izin' && userRecord?.reason?.includes('[MENYUSUL]');
+                            const isDone = userRecord && !isIzinMenyusul;
 
                             return (
                                 <div key={session.id} className={`relative p-6 rounded-lg border text-left ${session.is_open ? 'border-yellow-400/50 bg-gray-900/60' : 'border-gray-800 bg-black'} transition-all hover:border-yellow-400/80 flex flex-col`}>
@@ -422,25 +485,36 @@ const Attendance: React.FC = () => {
                                     <div className="mt-auto pt-4 border-t border-gray-800/50">
                                         {session.is_open && (
                                             <>
-                                            {!isAttended ? (
+                                            {!isDone ? (
                                                 <div className="flex gap-2">
-                                                    <button 
-                                                        onClick={() => setSelectedSession(session)} 
-                                                        className="flex-1 py-2 bg-yellow-400 text-black font-bold uppercase text-xs sm:text-sm hover:bg-yellow-300 transition-colors rounded flex items-center justify-center gap-1"
-                                                    >
-                                                        <CheckCircle size={16}/> Hadir
-                                                    </button>
+                                                    {isIzinMenyusul ? (
+                                                        <button 
+                                                            onClick={() => setSelectedSession(session)} 
+                                                            className="w-full py-2 bg-yellow-600 text-white font-bold uppercase text-xs sm:text-sm hover:bg-yellow-500 transition-colors rounded flex items-center justify-center gap-1 animate-pulse"
+                                                        >
+                                                            <ArrowRightCircle size={16}/> Menyusul Sekarang
+                                                        </button>
+                                                    ) : (
+                                                        <>
+                                                            <button 
+                                                                onClick={() => setSelectedSession(session)} 
+                                                                className="flex-1 py-2 bg-yellow-400 text-black font-bold uppercase text-xs sm:text-sm hover:bg-yellow-300 transition-colors rounded flex items-center justify-center gap-1"
+                                                            >
+                                                                <CheckCircle size={16}/> Hadir
+                                                            </button>
 
-                                                    <button 
-                                                        onClick={() => setSelectedSessionPermission(session)} 
-                                                        className="flex-1 py-2 bg-blue-600 text-white font-bold uppercase text-xs sm:text-sm hover:bg-blue-500 transition-colors rounded flex items-center justify-center gap-1"
-                                                    >
-                                                        <FileText size={16}/> Izin
-                                                    </button>
+                                                            <button 
+                                                                onClick={() => setSelectedSessionPermission(session)} 
+                                                                className="flex-1 py-2 bg-blue-600 text-white font-bold uppercase text-xs sm:text-sm hover:bg-blue-500 transition-colors rounded flex items-center justify-center gap-1"
+                                                            >
+                                                                <FileText size={16}/> Izin
+                                                            </button>
+                                                        </>
+                                                    )}
                                                 </div>
                                             ) : (
                                                 <button disabled className="w-full py-2 bg-gray-800 text-gray-500 font-bold uppercase text-sm rounded cursor-not-allowed border border-gray-700 flex items-center justify-center gap-2">
-                                                    <CheckCircle size={16}/> Sudah Mengisi
+                                                    <CheckCircle size={16}/> {userRecord?.status === 'Izin' ? 'Sudah Izin' : 'Sudah Hadir'}
                                                 </button>
                                             )}
                                             </>
@@ -561,12 +635,17 @@ const Attendance: React.FC = () => {
                                                         <div>{rec.user_name}</div>
                                                         {rec.reason && (
                                                             <div className="text-xs text-gray-400 italic mt-0.5">
-                                                                "{rec.reason}"
+                                                                {rec.reason.replace('[MENYUSUL]', '')}
                                                             </div>
                                                         )}
                                                     </td>
                                                     <td className="px-4 py-3 text-right">
-                                                        <span className="text-xs bg-blue-900/20 text-blue-400 px-2 py-1 rounded border border-blue-900">Izin</span>
+                                                        {rec.reason && rec.reason.includes('[MENYUSUL]') ? (
+                                                            <span className="text-xs bg-yellow-900/20 text-yellow-400 px-2 py-1 rounded border border-yellow-900">Menyusul</span>
+                                                        ) : (
+                                                            <span className="text-xs bg-blue-900/20 text-blue-400 px-2 py-1 rounded border border-blue-900">Izin</span>
+                                                        )}
+
                                                         {rec.photo_url && <a href={rec.photo_url} target="_blank" rel="noreferrer" className="ml-2 text-blue-400 hover:underline text-xs">Bukti</a>}
                                                     </td>
                                                 </tr>
@@ -630,7 +709,16 @@ const Attendance: React.FC = () => {
                                     <label className="block text-yellow-400 text-sm mb-1 font-bold flex items-center gap-1"><Camera size={16}/> Foto Bukti (Wajib)</label>
                                     <div className="border-2 border-dashed border-gray-700 rounded-lg p-4 text-center hover:border-yellow-400 transition-colors cursor-pointer relative">
                                         <input required type="file" accept="image/*" onChange={handleFileChange} className="absolute inset-0 opacity-0 cursor-pointer" />
-                                        {previewUrl ? <img src={previewUrl} className="max-h-40 mx-auto rounded" alt="Preview" /> : <div className="text-gray-500 text-sm flex flex-col items-center"><Upload size={24} className="mb-2"/>Klik untuk upload foto</div>}
+                                        {isCompressing ? (
+                                            <div className="text-yellow-400 text-sm flex flex-col items-center">
+                                                <Loader className="animate-spin mb-2" />
+                                                Memproses gambar...
+                                            </div>
+                                        ) : previewUrl ? (
+                                            <img src={previewUrl} className="max-h-40 mx-auto rounded" alt="Preview" />
+                                        ) : (
+                                            <div className="text-gray-500 text-sm flex flex-col items-center"><Upload size={24} className="mb-2"/>Klik untuk upload foto</div>
+                                        )}
                                     </div>
                                 </div>
                             ) : (
@@ -641,10 +729,10 @@ const Attendance: React.FC = () => {
                                 <button type="button" onClick={closeModals} className="flex-1 py-2 bg-gray-800 text-white rounded hover:bg-gray-700">Batal</button>
                                 <button 
                                     type="submit" 
-                                    disabled={isSubmitting} 
+                                    disabled={isSubmitting || isCompressing} 
                                     className="flex-1 py-2 bg-yellow-400 text-black font-bold rounded hover:bg-yellow-300 disabled:opacity-50"
                                 >
-                                    {isSubmitting ? 'Mengirim...' : 'Kirim Hadir'}
+                                    {isSubmitting ? 'Mengirim...' : isCompressing ? 'Memproses...' : 'Kirim Hadir'}
                                 </button>
                             </div>
                         </form>
@@ -668,15 +756,33 @@ const Attendance: React.FC = () => {
                                 <textarea required value={permissionReason} onChange={e => setPermissionReason(e.target.value)} placeholder="Jelaskan sejelas-jelasnya" className="w-full bg-black border border-gray-700 rounded p-2 text-white focus:border-blue-500 outline-none" rows={3} />
                             </div>
 
+                            <div className="flex items-center gap-3 bg-gray-800 p-3 rounded border border-gray-700 hover:border-blue-500/50 transition-colors">
+                                <input 
+                                    type="checkbox" 
+                                    id="menyusul-check"
+                                    checked={isMenyusul}
+                                    onChange={(e) => setIsMenyusul(e.target.checked)}
+                                    className="w-5 h-5 rounded text-blue-600 focus:ring-blue-500 bg-gray-900 border-gray-600 cursor-pointer"
+                                />
+                                <label htmlFor="menyusul-check" className="text-sm text-gray-200 cursor-pointer select-none">
+                                    Saya akan <strong>menyusul</strong> nanti.
+                                    <p className="text-xs text-gray-400 mt-0.5">Centang jika anda berencana hadir terlambat.</p>
+                                </label>
+                            </div>
+
                             <div>
                                 <label className="block text-gray-400 text-sm mb-1 flex items-center gap-1"><Upload size={16}/> Bukti (Opsional)</label>
                                 <input type="file" accept="image/*" onChange={handleFileChange} className="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-500"/>
-                                {previewUrl && <img src={previewUrl} className="mt-2 max-h-32 rounded border border-gray-700" alt="Preview" />}
+                                {isCompressing ? (
+                                    <div className="text-sm text-blue-400 mt-2">Mengkompres gambar...</div>
+                                ) : previewUrl && (
+                                    <img src={previewUrl} className="mt-2 max-h-32 rounded border border-gray-700" alt="Preview" />
+                                )}
                             </div>
 
                             <div className="flex gap-2 pt-4">
                                 <button type="button" onClick={closeModals} className="flex-1 py-2 bg-gray-800 text-white rounded hover:bg-gray-700">Batal</button>
-                                <button type="submit" disabled={isSubmitting} className="flex-1 py-2 bg-blue-600 text-white font-bold rounded hover:bg-blue-500 disabled:opacity-50">{isSubmitting ? 'Mengirim...' : 'Kirim Izin'}</button>
+                                <button type="submit" disabled={isSubmitting || isCompressing} className="flex-1 py-2 bg-blue-600 text-white font-bold rounded hover:bg-blue-500 disabled:opacity-50">{isSubmitting ? 'Mengirim...' : 'Kirim Izin'}</button>
                             </div>
                         </form>
                     </div>
