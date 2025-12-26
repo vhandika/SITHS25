@@ -128,10 +128,9 @@ const Music: React.FC = () => {
 
         setIsSearching(true);
         setIsRecommendation(false);
-        setShowSuggestions(false); // Hide suggestions
+        setShowSuggestions(false);
         setSelectedPlaylist(null);
 
-        // Update input if searched via click
         if (queryOverride) setSearchQuery(queryOverride);
 
         try {
@@ -255,8 +254,8 @@ const Music: React.FC = () => {
 
     const handleSelectPlaylist = (playlist: Playlist) => {
         setSelectedPlaylist(playlist);
-        setEditTitle(playlist.title); // Initialize edit title
-        setIsEditing(false); // Reset edit mode
+        setEditTitle(playlist.title);
+        setIsEditing(false);
         fetchTracks(playlist.id);
         fetchTracks(playlist.id);
     };
@@ -289,7 +288,6 @@ const Music: React.FC = () => {
         const newTracks = [...tracks].sort(() => Math.random() - 0.5);
         setTracks(newTracks);
 
-        // Save to backend
         if (selectedPlaylist) {
             try {
                 const trackIds = newTracks.map(t => t.id);
@@ -334,7 +332,6 @@ const Music: React.FC = () => {
     return (
         <div className="h-[calc(100vh-4rem)] lg:h-screen w-full bg-black text-white flex flex-col mt-16 lg:mt-0">
 
-            {/* Mobile Tab Navigation */}
             <div className="flex lg:hidden bg-gray-900 border-b border-gray-800 flex-shrink-0">
                 <button
                     onClick={() => setActiveMobileTab('playlists')}
@@ -350,12 +347,9 @@ const Music: React.FC = () => {
                 </button>
             </div>
 
-            <div className="flex flex-col lg:flex-row flex-1 overflow-hidden relative">
-                {/* Left Sidebar - Playlists */}
+            <div className="flex flex-col lg:flex-row flex-1 overflow-hidden relative">}
                 <div className={`border-r border-gray-800 p-4 overflow-y-auto transition-all duration-300 flex-shrink-0 ${
-                    // Mobile: strictly controlled by activeMobileTab
                     (activeMobileTab === 'playlists' ? 'block w-full h-full' : 'hidden') + ' ' +
-                    // Desktop: overrides mobile hidden/block classes
                     'lg:block lg:w-64'
                     }`}>
                     <div className="flex justify-between items-center mb-4">
@@ -400,15 +394,12 @@ const Music: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Main Content Area (Search & Results) */}
                 <div
                     className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 min-w-0 ${
-                        // Mobile
                         (activeMobileTab === 'search' ? 'block' : 'hidden') + ' ' +
                         'lg:flex '
                         }`}
                 >
-                    {/* Search Bar */}
                     <div className="p-4 border-b border-gray-800 relative z-50">
                         <div className="flex gap-2 relative">
                             <div className="flex-1 relative">
@@ -423,7 +414,6 @@ const Music: React.FC = () => {
                                     placeholder="Search..."
                                     className="w-full bg-gray-900 border border-gray-700 rounded px-4 pl-10 py-2 text-white focus:border-yellow-400 outline-none"
                                 />
-                                {/* Suggestions Dropdown */}
                                 {showSuggestions && suggestions.length > 0 && (
                                     <div className="absolute top-full left-0 right-0 mt-2 bg-gray-800 rounded-xl shadow-xl overflow-hidden border border-gray-700">
                                         {suggestions.map((s, idx) => (
@@ -431,7 +421,7 @@ const Music: React.FC = () => {
                                                 key={idx}
                                                 className="px-4 py-2 hover:bg-gray-700 cursor-pointer text-gray-300 hover:text-white flex items-center gap-2"
                                                 onMouseDown={(e) => {
-                                                    e.preventDefault(); // Prevent input blur
+                                                    e.preventDefault();
                                                     handleSearch(s);
                                                 }}
                                             >
@@ -453,7 +443,6 @@ const Music: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Search Results List */}
                     <div className="flex-1 overflow-y-auto p-2 sm:p-4 overflow-x-hidden no-scrollbar">
                         {searchResults.length > 0 ? (
                             <div>
@@ -494,7 +483,6 @@ const Music: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Right Panel - Playlist Detail (Animated Expand) */}
                 <div
                     className={`absolute lg:relative top-0 right-0 h-full bg-black border-l border-gray-800 overflow-y-auto z-30 transition-all duration-300 flex-shrink-0 ${showPlaylistDetail
                         ? (activeMobileTab === 'search' ? 'hidden lg:block lg:w-96 translate-x-0' : 'w-full lg:w-96 translate-x-0')
@@ -529,7 +517,7 @@ const Music: React.FC = () => {
                                         <Trash2 size={20} />
                                     </button>
                                     <button
-                                        onMouseDown={(e) => e.preventDefault()} // Prevent blur so click works
+                                        onMouseDown={(e) => e.preventDefault()}
                                         onClick={() => {
                                             if (isEditing) {
                                                 handleUpdatePlaylist();
@@ -546,7 +534,7 @@ const Music: React.FC = () => {
                                     <button
                                         onClick={() => {
                                             if (isEditing) {
-                                                setIsEditing(false); // Cancel edit
+                                                setIsEditing(false); 
                                                 setEditTitle(selectedPlaylist.title);
                                             } else {
                                                 setSelectedPlaylist(null);
@@ -560,8 +548,6 @@ const Music: React.FC = () => {
                                 </div>
                             </div>
 
-
-                            {/* Shuffle Button */}
                             <div className="flex justify-end mb-2">
                                 <button
                                     onClick={shuffleTracks}
@@ -579,7 +565,6 @@ const Music: React.FC = () => {
                                         key={track.id}
                                         className="flex items-center gap-2 p-2 bg-black rounded hover:bg-gray-800 group transition-colors"
                                     >
-                                        {/* Move Up/Down Buttons */}
                                         <div className="flex flex-col gap-0.5">
                                             <button
                                                 onClick={(e) => { e.stopPropagation(); moveTrack(idx, 'up'); }}
@@ -629,7 +614,6 @@ const Music: React.FC = () => {
                 </div>
             </div>
 
-            {/* Create Playlist Modal */}
             {showCreateModal && (
                 <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
                     <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 w-full max-w-md">
@@ -669,7 +653,6 @@ const Music: React.FC = () => {
             )
             }
 
-            {/* Add to Playlist Modal */}
             {
                 showAddToPlaylistModal && (
                     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
