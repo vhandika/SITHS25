@@ -1,52 +1,66 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { 
-    CalendarCheck, Plus, Upload, Camera, Users, 
-    BarChart3, CheckCircle, XCircle, Search, UserCheck, UserX, Lock, Clock, Loader, FileText, AlertCircle 
+import {
+    CalendarCheck, Plus, Upload, Camera, Users,
+    BarChart3, CheckCircle, XCircle, Search, UserCheck, UserX, Lock, Clock, Loader, FileText,
+    FileSpreadsheet, ArrowRightCircle
 } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import SkewedButton from '../components/SkewedButton';
+import imageCompression from 'browser-image-compression';
+import { fetchWithAuth } from '../src/utils/api';
 
-const API_BASE_URL = 'https://idk-eight.vercel.app/api'; 
+const API_BASE_URL = 'https://idk-eight.vercel.app/api';
+
+const getCookie = (name: string) => {
+    return document.cookie.split('; ').reduce((r, v) => {
+        const parts = v.split('=');
+        return parts[0].trim() === name ? decodeURIComponent(parts[1]) : r;
+    }, '');
+};
 
 const Attendance: React.FC = () => {
     const [sessions, setSessions] = useState<any[]>([]);
-    const [allUsers, setAllUsers] = useState<any[]>([]); 
+    const [allUsers, setAllUsers] = useState<any[]>([]);
     const [userRole, setUserRole] = useState<string | null>(null);
     const [userNIM, setUserNIM] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [selectedSession, setSelectedSession] = useState<any | null>(null);
     const [selectedSessionPermission, setSelectedSessionPermission] = useState<any | null>(null);
     const [permissionReason, setPermissionReason] = useState('');
+    const [isMenyusul, setIsMenyusul] = useState(false);
     const [photoFile, setPhotoFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isCompressing, setIsCompressing] = useState(false);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [newSessionData, setNewSessionData] = useState({ title: '', description: '', is_photo_required: false });
-    const [viewStatsId, setViewStatsId] = useState<number | null>(null); 
-    const [statsRecords, setStatsRecords] = useState<any[]>([]); 
-    const [activeTab, setActiveTab] = useState<'hadir' | 'izin' | 'pending' | 'belum'>('hadir'); 
-    const [searchFilter, setSearchFilter] = useState(''); 
-    const [attendedSessionIds, setAttendedSessionIds] = useState<number[]>([]);
+    const [viewStatsId, setViewStatsId] = useState<number | null>(null);
+    const [viewStatsTitle, setViewStatsTitle] = useState<string>('');
+    const [statsRecords, setStatsRecords] = useState<any[]>([]);
+    const [activeTab, setActiveTab] = useState<'hadir' | 'izin' | 'pending' | 'belum'>('hadir');
+    const [searchFilter, setSearchFilter] = useState('');
+    const [userStatusMap, setUserStatusMap] = useState<{ [key: number]: { status: string, reason: string | null } }>({});
 
     useEffect(() => {
-        const role = localStorage.getItem('userRole');
-        const nim = localStorage.getItem('userNIM');
-        setUserRole(role);
-        setUserNIM(nim);
-        fetchSessions(nim);
+        const role = getCookie('userRole');
+        const nim = getCookie('userNIM');
+        setUserRole(role || null);
+        setUserNIM(nim || null);
+        fetchSessions(nim || null);
 
-        if (role === 'admin' || role === 'sekretaris') {
+        if (role === 'admin' || role === 'sekretaris' || role === 'dev') {
             fetchAllUsers();
         }
     }, []);
 
-    const isAdminOrSekretaris = userRole === 'admin' || userRole === 'sekretaris';
+    const isAdminOrSekretaris = userRole === 'admin' || userRole === 'sekretaris' || userRole === 'dev';
 
     const fetchSessions = async (currentNIM: string | null = userNIM) => {
         setLoading(true);
         try {
-            const token = localStorage.getItem('userToken');
+            const token = getCookie('userToken');
             const res = await fetch(`${API_BASE_URL}/attendance/sessions`, {
-                headers: { 'Authorization': `Bearer ${token}` }
+                headers: {}, credentials: 'include'
             });
             const json = await res.json();
             if (res.ok) {
@@ -55,102 +69,115 @@ const Attendance: React.FC = () => {
                     checkUserAttendanceStatus(json.data, currentNIM);
                 }
             }
-        } catch (error) { console.error(error); } 
+        } catch (error) { }
         finally { setLoading(false); }
     };
 
     const checkUserAttendanceStatus = async (currentSessions: any[], nim: string) => {
-        const token = localStorage.getItem('userToken');
+        const token = getCookie('userToken');
         const openSessions = currentSessions.filter(s => s.is_open);
-        const attendedIds: number[] = [];
+        const statusMap: { [key: number]: { status: string, reason: string | null } } = {};
 
         for (const session of openSessions) {
             try {
                 const res = await fetch(`${API_BASE_URL}/attendance/stats/${session.id}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
+                    headers: {}, credentials: 'include'
                 });
                 if (res.ok) {
                     const json = await res.json();
                     const records = json.data || [];
-                    const isAttended = records.some((r: any) => r.user_nim === nim);
-                    if (isAttended) {
-                        attendedIds.push(session.id);
+                    const myRecord = records.find((r: any) => r.user_nim === nim);
+
+                    if (myRecord) {
+                        statusMap[session.id] = {
+                            status: myRecord.status,
+                            reason: myRecord.reason
+                        };
                     }
                 }
             } catch (err) {
-                console.error("Gagal cek status sesi", session.id);
             }
         }
-        setAttendedSessionIds(prev => [...new Set([...prev, ...attendedIds])]);
+        setUserStatusMap(prev => ({ ...prev, ...statusMap }));
     };
 
     const fetchAllUsers = async () => {
         try {
-            const token = localStorage.getItem('userToken');
+            const token = getCookie('userToken');
             const res = await fetch(`${API_BASE_URL}/users`, {
-                headers: { 'Authorization': `Bearer ${token}` }
+                headers: {}, credentials: 'include'
             });
-            if(res.ok) {
+            if (res.ok) {
                 const json = await res.json();
                 setAllUsers(json.data || []);
             }
-        } catch (error) { console.error("Error load user", error); }
+        } catch (error) { }
     };
 
     const handleCreateSession = async (e: React.FormEvent) => {
         e.preventDefault();
-        const token = localStorage.getItem('userToken');
+        if (isSubmitting) return;
+        setIsSubmitting(true);
+
+        const token = getCookie('userToken');
         try {
-            const res = await fetch(`${API_BASE_URL}/attendance/sessions`, {
+            const res = await fetchWithAuth(`${API_BASE_URL}/attendance/sessions`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify(newSessionData)
             });
+
             if (res.ok) {
                 alert('Sesi berhasil dibuat!');
                 setIsCreateModalOpen(false);
+                setNewSessionData({ title: '', description: '', is_photo_required: false });
                 fetchSessions();
+            } else {
+                const json = await res.json();
+                alert(json.message || 'Gagal membuat sesi');
             }
-        } catch (error) { alert('Gagal membuat sesi'); }
+        } catch (error) {
+            alert('Gagal membuat sesi (Error Koneksi)');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const handleCloseSession = async (e: React.MouseEvent, id: number) => {
-        e.stopPropagation(); 
-        if(!window.confirm('Yakin ingin menutup sesi ini?')) return;
-        
+        e.stopPropagation();
+        if (!window.confirm('Yakin ingin menutup sesi ini?')) return;
+
         try {
-            const token = localStorage.getItem('userToken');
-            const res = await fetch(`${API_BASE_URL}/attendance/close/${id}`, {
-                method: 'PUT',
-                headers: { 'Authorization': `Bearer ${token}` }
+            const token = getCookie('userToken');
+            const res = await fetchWithAuth(`${API_BASE_URL}/attendance/close/${id}`, {
+                method: 'PUT'
             });
             if (res.ok) { alert("Sesi berhasil ditutup."); fetchSessions(); }
         } catch (err) { alert("Terjadi kesalahan."); }
     };
 
-    const handleViewStats = async (e: React.MouseEvent, sessionId: number) => {
-        e.stopPropagation(); 
-        setViewStatsId(sessionId);
-        setActiveTab('hadir'); 
-        const token = localStorage.getItem('userToken');
-        
-        const res = await fetch(`${API_BASE_URL}/attendance/stats/${sessionId}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
+    const handleViewStats = async (e: React.MouseEvent, session: any) => {
+        e.stopPropagation();
+        setViewStatsId(session.id);
+        setViewStatsTitle(session.title);
+        setActiveTab('hadir');
+        const token = getCookie('userToken');
+
+        const res = await fetch(`${API_BASE_URL}/attendance/stats/${session.id}`, {
+            headers: {}, credentials: 'include'
         });
         const json = await res.json();
-        if(res.ok) setStatsRecords(json.data);
+        if (res.ok) setStatsRecords(json.data);
     };
 
     const handleApproveUser = async (recordId: number) => {
-        const token = localStorage.getItem('userToken');
+        const token = getCookie('userToken');
         try {
-            const res = await fetch(`${API_BASE_URL}/attendance/approve/${recordId}`, {
-                method: 'PUT',
-                headers: { 'Authorization': `Bearer ${token}` }
+            const res = await fetchWithAuth(`${API_BASE_URL}/attendance/approve/${recordId}`, {
+                method: 'PUT'
             });
 
             if (res.ok) {
-                setStatsRecords(prev => prev.map(r => 
+                setStatsRecords(prev => prev.map(r =>
                     r.id === recordId ? { ...r, status: 'Hadir' } : r
                 ));
             } else {
@@ -160,21 +187,20 @@ const Attendance: React.FC = () => {
     };
 
     const handleChecklistUser = async (targetUser: any) => {
-        if(!window.confirm(`Hadirkan ${targetUser.name}`)) return;
+        if (!window.confirm(`Hadirkan ${targetUser.name}`)) return;
 
-        const token = localStorage.getItem('userToken');
-        const res = await fetch(`${API_BASE_URL}/attendance/manual`, {
+        const token = getCookie('userToken');
+        const res = await fetchWithAuth(`${API_BASE_URL}/attendance/manual`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify({
                 session_id: viewStatsId,
                 target_nim: targetUser.nim,
                 target_name: targetUser.name,
-                status: 'Dihadirkan' 
+                status: 'Dihadirkan'
             })
         });
 
-        if(res.ok) {
+        if (res.ok) {
             const newRecord = {
                 id: Date.now(),
                 user_nim: targetUser.nim,
@@ -183,77 +209,128 @@ const Attendance: React.FC = () => {
                 photo_url: null,
                 created_at: new Date().toISOString()
             };
-            setStatsRecords([...statsRecords, newRecord]); 
+            setStatsRecords([...statsRecords, newRecord]);
         } else {
             alert("Gagal menghadirkan user.");
         }
     };
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
-            setPhotoFile(e.target.files[0]);
-            setPreviewUrl(URL.createObjectURL(e.target.files[0]));
+            const originalFile = e.target.files[0];
+
+            const options = {
+                maxSizeMB: 0.5, maxWidthOrHeight: 1280, useWebWorker: true, fileType: 'image/jpeg'
+            };
+
+            const aggressiveOptions = {
+                maxSizeMB: 0.15, maxWidthOrHeight: 800, useWebWorker: true, fileType: 'image/jpeg'
+            };
+
+            try {
+                setIsCompressing(true);
+
+                let compressedFile = await imageCompression(originalFile, options);
+
+                if (compressedFile.size > 2 * 1024 * 1024) {
+                    compressedFile = await imageCompression(originalFile, aggressiveOptions);
+                }
+
+                if (compressedFile.size > 5 * 1024 * 1024) {
+                    alert("Gambarnya kegedean buset (> 5MB). Server nolak bang.");
+                    setPhotoFile(null);
+                    setPreviewUrl(null);
+                    e.target.value = '';
+                } else {
+                    setPhotoFile(compressedFile);
+                    setPreviewUrl(URL.createObjectURL(compressedFile));
+                }
+
+            } catch (error) {
+                if (originalFile.size > 5 * 1024 * 1024) {
+                    alert("Gagal kompres & File Asli > 5MB. Ganti foto lain.");
+                    setPhotoFile(null);
+                    setPreviewUrl(null);
+                    e.target.value = '';
+                } else {
+                    setPhotoFile(originalFile);
+                    setPreviewUrl(URL.createObjectURL(originalFile));
+                }
+            } finally { setIsCompressing(false); }
         }
     };
 
     const handleSubmitAttendance = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (isSubmitting || isCompressing) return;
+
         setIsSubmitting(true);
-        const token = localStorage.getItem('userToken');
+        const token = getCookie('userToken');
         const formData = new FormData();
         formData.append('session_id', selectedSession.id);
-        formData.append('user_name_input', 'Mahasiswa ' + userNIM); 
-        formData.append('status', 'Hadir'); 
+        formData.append('user_name_input', 'Mahasiswa ' + userNIM);
+        formData.append('status', 'Hadir');
         if (photoFile) formData.append('image', photoFile);
 
         try {
-            const res = await fetch(`${API_BASE_URL}/attendance/submit`, {
+            const res = await fetchWithAuth(`${API_BASE_URL}/attendance/submit`, {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}` }, 
                 body: formData
             });
             const json = await res.json();
 
             if (res.ok) {
                 alert(json.message);
-                setAttendedSessionIds(prev => [...prev, selectedSession.id]);
+                setUserStatusMap(prev => ({
+                    ...prev,
+                    [selectedSession.id]: { status: 'Pending', reason: null }
+                }));
                 closeModals();
             } else {
                 alert(json.message || "Gagal absen");
             }
-        } catch (error) { alert('Terjadi kesalahan koneksi.'); } 
+        } catch (error) { alert('Terjadi kesalahan koneksi.'); }
         finally { setIsSubmitting(false); }
     };
 
     const handleSubmitPermission = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (isSubmitting || isCompressing) return;
+
         setIsSubmitting(true);
-        const token = localStorage.getItem('userToken');
+        const token = getCookie('userToken');
         const formData = new FormData();
         formData.append('session_id', selectedSessionPermission.id);
-        formData.append('user_name_input', 'Mahasiswa ' + userNIM); 
-        
-        formData.append('status', 'Izin'); 
-        formData.append('reason', permissionReason);
+        formData.append('user_name_input', 'Mahasiswa ' + userNIM);
+
+        formData.append('status', 'Izin');
+
+        let finalReason = permissionReason;
+        if (isMenyusul) {
+            finalReason = `[MENYUSUL] ${finalReason}`;
+        }
+        formData.append('reason', finalReason);
 
         if (photoFile) formData.append('image', photoFile);
 
         try {
-            const res = await fetch(`${API_BASE_URL}/attendance/submit`, {
+            const res = await fetchWithAuth(`${API_BASE_URL}/attendance/submit`, {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}` }, 
                 body: formData
             });
             const json = await res.json();
 
             if (res.ok) {
                 alert("Permohonan izin berhasil dikirim!");
-                setAttendedSessionIds(prev => [...prev, selectedSessionPermission.id]);
+                setUserStatusMap(prev => ({
+                    ...prev,
+                    [selectedSessionPermission.id]: { status: 'Izin', reason: finalReason }
+                }));
                 closeModals();
             } else {
                 alert(json.message || "Gagal mengirim izin");
             }
-        } catch (error) { alert('Terjadi kesalahan koneksi.'); } 
+        } catch (error) { alert('Terjadi kesalahan koneksi.'); }
         finally { setIsSubmitting(false); }
     };
 
@@ -263,45 +340,123 @@ const Attendance: React.FC = () => {
         setPhotoFile(null);
         setPreviewUrl(null);
         setPermissionReason('');
+        setIsMenyusul(false);
+        setIsSubmitting(false);
+        setIsCompressing(false);
     };
 
     const { presentUsers, permissionUsers, pendingUsers, absentUsers, presentPercentage } = useMemo(() => {
         if (!viewStatsId) return { presentUsers: [], permissionUsers: [], pendingUsers: [], absentUsers: [], presentPercentage: 0 };
-        
+
+        const currentSession = sessions.find(s => s.id === viewStatsId);
+        const isSessionClosed = currentSession ? !currentSession.is_open : false;
+
         const confirmed = statsRecords.filter(r => r.status === 'Hadir' || r.status === 'Dihadirkan');
-        const permissions = statsRecords.filter(r => r.status === 'Izin');
         const pending = statsRecords.filter(r => r.status === 'Pending');
-        
+
+        const realPermissions: any[] = [];
+        const failedMenyusulNims: string[] = [];
+
+        statsRecords.forEach(r => {
+            if (r.status === 'Izin') {
+                const isMenyusulRecord = r.reason && r.reason.includes('[MENYUSUL]');
+
+                if (isMenyusulRecord) {
+                    if (isSessionClosed) {
+                        failedMenyusulNims.push(r.user_nim);
+                    } else {
+                        realPermissions.push(r);
+                    }
+                } else {
+                    realPermissions.push(r);
+                }
+            }
+        });
+
         const allRecordedNims = statsRecords.map(r => r.user_nim);
-        
-        const absentees = allUsers.filter(u => 
-            !allRecordedNims.includes(u.nim) && 
+
+        const filterFn = (r: any) => (r.user_name || '').toLowerCase().includes(searchFilter.toLowerCase()) || r.user_nim.includes(searchFilter);
+        const sortByNIM = (a: any, b: any) => {
+            const nimA = a.user_nim || a.nim || "0";
+            const nimB = b.user_nim || b.nim || "0";
+            return nimA.toString().localeCompare(nimB.toString(), undefined, { numeric: true });
+        };
+
+        const absentees = allUsers.filter(u =>
+            (!allRecordedNims.includes(u.nim) || failedMenyusulNims.includes(u.nim)) &&
             (u.name.toLowerCase().includes(searchFilter.toLowerCase()) || u.nim.includes(searchFilter))
         );
 
-        const filterFn = (r: any) => (r.user_name || '').toLowerCase().includes(searchFilter.toLowerCase()) || r.user_nim.includes(searchFilter);
+        const totalPopulation = allUsers.length || 1;
+        const pct = Math.round(((confirmed.length + realPermissions.length) / totalPopulation) * 100);
 
-        const totalPopulation = allUsers.length || 1; 
-        const pct = Math.round(((confirmed.length + permissions.length) / totalPopulation) * 100);
-
-        return { 
-            presentUsers: confirmed.filter(filterFn), 
-            permissionUsers: permissions.filter(filterFn),
-            pendingUsers: pending.filter(filterFn), 
-            absentUsers: absentees, 
-            presentPercentage: pct 
+        return {
+            presentUsers: confirmed.filter(filterFn).sort(sortByNIM),
+            permissionUsers: realPermissions.filter(filterFn).sort(sortByNIM),
+            pendingUsers: pending.filter(filterFn).sort(sortByNIM),
+            absentUsers: absentees.sort(sortByNIM),
+            presentPercentage: pct
         };
-    }, [allUsers, statsRecords, viewStatsId, searchFilter]);
+    }, [allUsers, statsRecords, viewStatsId, searchFilter, sessions]);
 
+    const handleExportExcel = () => {
+        const combinedData = [
+            ...presentUsers.map(u => ({ ...u, finalStatus: 'Hadir' })),
+            ...permissionUsers.map(u => ({ ...u, finalStatus: 'Izin' })),
+            ...pendingUsers.map(u => ({ ...u, finalStatus: 'Pending' })),
+            ...absentUsers.map(u => ({ ...u, finalStatus: 'Belum Absen' }))
+        ];
+
+        if (combinedData.length === 0) {
+            alert("Ngga ada data bang");
+            return;
+        }
+
+        combinedData.sort((a, b) => {
+            const nimA = a.user_nim || a.nim || "0";
+            const nimB = b.user_nim || b.nim || "0";
+            return nimA.toString().localeCompare(nimB.toString(), undefined, { numeric: true });
+        });
+
+        const excelData = combinedData.map((item, index) => ({
+            "No": index + 1,
+            "NIM": item.user_nim || item.nim,
+            "Nama": item.user_name || item.name,
+            "Status": item.finalStatus,
+            "Alasan": item.reason || "-",
+            "Waktu Input": item.created_at ? new Date(item.created_at).toLocaleString('id-ID') : "-",
+            "Link Foto": item.photo_url || "-"
+        }));
+
+        const worksheet = XLSX.utils.json_to_sheet(excelData);
+        const wscols = [
+            { wch: 5 },
+            { wch: 10 },
+            { wch: 40 },
+            { wch: 15 },
+            { wch: 30 },
+            { wch: 20 },
+            { wch: 30 }
+        ];
+        worksheet['!cols'] = wscols;
+
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Data Absensi");
+
+        const cleanTitle = viewStatsTitle.replace(/[^a-zA-Z0-9]/g, "_");
+        const fileName = `${cleanTitle}_${new Date().toISOString().split('T')[0]}.xlsx`;
+
+        XLSX.writeFile(workbook, fileName);
+    };
 
     return (
-        <div className="min-h-screen w-full bg-black py-16 lg:py-24 px-4 sm:px-6 lg:px-8 mt-16 lg:mt-0 font-sans text-white relative">
+        <div className="min-h-screen w-full bg-black py-16 lg:py-24 px-4 sm:px-6 lg:px-8 mt-16 lg:mt-0 font-sans text-white relative selection:bg-yellow-400 selection:text-black">
             <div className="mx-auto max-w-7xl">
 
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
                     <div className="flex items-center gap-4">
                         <div className="w-10 h-10 flex items-center justify-center bg-yellow-400 text-black transform -skew-x-12">
-                             <span className="transform skew-x-12"><CalendarCheck size={32} /></span>
+                            <span className="transform skew-x-12"><CalendarCheck size={32} /></span>
                         </div>
                         <h1 className="text-4xl font-bold tracking-wider uppercase text-white sm:text-5xl">Absensi</h1>
                     </div>
@@ -317,53 +472,76 @@ const Attendance: React.FC = () => {
 
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                     {loading ? (
-                        <div className="col-span-full flex justify-center py-10"><Loader className="animate-spin text-yellow-400"/></div>
+                        <div className="col-span-full flex justify-center py-10"><Loader className="animate-spin text-yellow-400" /></div>
                     ) : (
                         sessions.map((session) => {
-                            const isAttended = attendedSessionIds.includes(session.id);
+                            const userRecord = userStatusMap[session.id];
+                            const isIzinMenyusul = userRecord?.status === 'Izin' && userRecord?.reason?.includes('[MENYUSUL]');
+                            const isDone = userRecord && !isIzinMenyusul;
 
                             return (
                                 <div key={session.id} className={`relative p-6 rounded-lg border text-left ${session.is_open ? 'border-yellow-400/50 bg-gray-900/60' : 'border-gray-800 bg-black'} transition-all hover:border-yellow-400/80 flex flex-col`}>
-                                    <div className="flex justify-between items-start mb-4">
-                                        <h3 className="text-xl font-bold text-white line-clamp-1" title={session.title}>{session.title}</h3>
+
+                                    <div className="flex justify-between items-start mb-4 gap-3">
+                                        <div className="flex-1 w-0">
+                                            <h3
+                                                className="text-xl font-bold text-white overflow-x-auto whitespace-nowrap [&::-webkit-scrollbar]:hidden"
+                                                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                                            >
+                                                {session.title}
+                                            </h3>
+                                        </div>
+
                                         {session.is_open ? (
-                                            <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded border border-green-500/50 flex items-center gap-1 shrink-0"><CheckCircle size={12}/> Buka</span>
+                                            <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded border border-green-500/50 flex items-center gap-1 shrink-0"><CheckCircle size={12} /> Buka</span>
                                         ) : (
-                                            <span className="px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded border border-red-500/50 flex items-center gap-1 shrink-0"><XCircle size={12}/> Tutup</span>
+                                            <span className="px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded border border-red-500/50 flex items-center gap-1 shrink-0"><XCircle size={12} /> Tutup</span>
                                         )}
                                     </div>
+
                                     <p className="text-gray-400 text-sm mb-4 min-h-[40px] line-clamp-2">{session.description || 'Tidak ada deskripsi.'}</p>
-                                    
+
                                     <div className="mt-auto pt-4 border-t border-gray-800/50">
                                         {session.is_open && (
                                             <>
-                                            {!isAttended ? (
-                                                <div className="flex gap-2">
-                                                    <button 
-                                                        onClick={() => setSelectedSession(session)} 
-                                                        className="flex-1 py-2 bg-yellow-400 text-black font-bold uppercase text-xs sm:text-sm hover:bg-yellow-300 transition-colors rounded flex items-center justify-center gap-1"
-                                                    >
-                                                        <CheckCircle size={16}/> Hadir
-                                                    </button>
+                                                {!isDone ? (
+                                                    <div className="flex gap-2">
+                                                        {isIzinMenyusul ? (
+                                                            <button
+                                                                onClick={() => setSelectedSession(session)}
+                                                                className="w-full py-2 bg-yellow-600 text-white font-bold uppercase text-xs sm:text-sm hover:bg-yellow-500 transition-colors rounded flex items-center justify-center gap-1 animate-pulse"
+                                                            >
+                                                                <ArrowRightCircle size={16} /> Menyusul Sekarang
+                                                            </button>
+                                                        ) : (
+                                                            <>
+                                                                <button
+                                                                    onClick={() => setSelectedSession(session)}
+                                                                    className="flex-1 py-2 bg-yellow-400 text-black font-bold uppercase text-xs sm:text-sm hover:bg-yellow-300 transition-colors rounded flex items-center justify-center gap-1"
+                                                                >
+                                                                    <CheckCircle size={16} /> Hadir
+                                                                </button>
 
-                                                    <button 
-                                                        onClick={() => setSelectedSessionPermission(session)} 
-                                                        className="flex-1 py-2 bg-blue-600 text-white font-bold uppercase text-xs sm:text-sm hover:bg-blue-500 transition-colors rounded flex items-center justify-center gap-1"
-                                                    >
-                                                        <FileText size={16}/> Izin
+                                                                <button
+                                                                    onClick={() => setSelectedSessionPermission(session)}
+                                                                    className="flex-1 py-2 bg-blue-600 text-white font-bold uppercase text-xs sm:text-sm hover:bg-blue-500 transition-colors rounded flex items-center justify-center gap-1"
+                                                                >
+                                                                    <FileText size={16} /> Izin
+                                                                </button>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <button disabled className="w-full py-2 bg-gray-800 text-gray-500 font-bold uppercase text-sm rounded cursor-not-allowed border border-gray-700 flex items-center justify-center gap-2">
+                                                        <CheckCircle size={16} /> {userRecord?.status === 'Izin' ? 'Sudah Izin' : 'Sudah Hadir'}
                                                     </button>
-                                                </div>
-                                            ) : (
-                                                <button disabled className="w-full py-2 bg-gray-800 text-gray-500 font-bold uppercase text-sm rounded cursor-not-allowed border border-gray-700 flex items-center justify-center gap-2">
-                                                    <CheckCircle size={16}/> Sudah Mengisi
-                                                </button>
-                                            )}
+                                                )}
                                             </>
                                         )}
 
                                         {isAdminOrSekretaris && (
                                             <div className="flex gap-2 mt-3 pt-2 border-t border-gray-800">
-                                                <button onClick={(e) => handleViewStats(e, session.id)} className="flex-1 py-1.5 text-xs bg-gray-800 hover:bg-gray-700 rounded text-white flex items-center justify-center gap-2">
+                                                <button onClick={(e) => handleViewStats(e, session)} className="flex-1 py-1.5 text-xs bg-gray-800 hover:bg-gray-700 rounded text-white flex items-center justify-center gap-2">
                                                     <BarChart3 size={14} /> Laporan
                                                 </button>
                                                 {session.is_open && (
@@ -397,11 +575,11 @@ const Attendance: React.FC = () => {
                     <div className="w-full max-w-5xl bg-gray-900 border border-gray-700 rounded-lg flex flex-col h-[90vh]">
                         <div className="p-6 border-b border-gray-800 flex justify-between items-center bg-gray-900">
                             <div>
-                                <h2 className="text-xl font-bold text-white flex items-center gap-2"><BarChart3/> Laporan</h2>
+                                <h2 className="text-xl font-bold text-white flex items-center gap-2"><BarChart3 /> Laporan</h2>
                             </div>
                             <button onClick={() => setViewStatsId(null)} className="text-gray-400 hover:text-white"><XCircle /></button>
                         </div>
-                        
+
                         <div className="flex-1 overflow-hidden flex flex-col p-6">
                             <div className="bg-gray-800 p-4 rounded-lg mb-6 shrink-0">
                                 <div className="flex justify-between items-end mb-2">
@@ -416,22 +594,32 @@ const Attendance: React.FC = () => {
                             <div className="flex flex-col sm:flex-row justify-between gap-4 mb-4 shrink-0">
                                 <div className="flex bg-gray-800 p-1 rounded-lg overflow-x-auto w-full sm:w-auto custom-scrollbar">
                                     <button onClick={() => setActiveTab('hadir')} className={`flex-shrink-0 px-3 py-2 rounded-md text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'hadir' ? 'bg-green-600 text-white shadow' : 'text-gray-400 hover:text-white'}`}>
-                                        <div className="flex items-center gap-2"><UserCheck size={16}/> Hadir ({presentUsers.length})</div>
+                                        <div className="flex items-center gap-2"><UserCheck size={16} /> Hadir ({presentUsers.length})</div>
                                     </button>
                                     <button onClick={() => setActiveTab('izin')} className={`flex-shrink-0 px-3 py-2 rounded-md text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'izin' ? 'bg-blue-600 text-white shadow' : 'text-gray-400 hover:text-white'}`}>
-                                        <div className="flex items-center gap-2"><FileText size={16}/> Izin ({permissionUsers.length})</div>
+                                        <div className="flex items-center gap-2"><FileText size={16} /> Izin ({permissionUsers.length})</div>
                                     </button>
                                     <button onClick={() => setActiveTab('pending')} className={`flex-shrink-0 px-3 py-2 rounded-md text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'pending' ? 'bg-yellow-500 text-black shadow' : 'text-gray-400 hover:text-white'}`}>
-                                        <div className="flex items-center gap-2"><Clock size={16}/> Pending ({pendingUsers.length})</div>
+                                        <div className="flex items-center gap-2"><Clock size={16} /> Pending ({pendingUsers.length})</div>
                                     </button>
                                     <button onClick={() => setActiveTab('belum')} className={`flex-shrink-0 px-3 py-2 rounded-md text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'belum' ? 'bg-red-600 text-white shadow' : 'text-gray-400 hover:text-white'}`}>
-                                        <div className="flex items-center gap-2"><UserX size={16}/> Belum ({absentUsers.length})</div>
+                                        <div className="flex items-center gap-2"><UserX size={16} /> Belum ({absentUsers.length})</div>
                                     </button>
                                 </div>
-                                
-                                <div className="relative w-full sm:w-64">
-                                    <input placeholder="Cari Nama / NIM..." className="w-full bg-black border border-gray-700 rounded pl-9 pr-3 py-2 text-sm text-white focus:border-yellow-400 outline-none" value={searchFilter} onChange={(e) => setSearchFilter(e.target.value)} />
-                                    <Search size={16} className="absolute left-3 top-2.5 text-gray-500"/>
+
+                                <div className="flex gap-2 w-full sm:w-auto">
+                                    <div className="relative flex-1 sm:w-64">
+                                        <input placeholder="Cari Nama / NIM..." className="w-full bg-black border border-gray-700 rounded pl-9 pr-3 py-2 text-sm text-white focus:border-yellow-400 outline-none" value={searchFilter} onChange={(e) => setSearchFilter(e.target.value)} />
+                                        <Search size={16} className="absolute left-3 top-2.5 text-gray-500" />
+                                    </div>
+
+                                    <button
+                                        onClick={handleExportExcel}
+                                        title="Download Excel"
+                                        className="bg-green-700 hover:bg-green-600 text-white p-2 rounded flex items-center justify-center shrink-0 border border-green-500 transition-colors"
+                                    >
+                                        <FileSpreadsheet size={20} />
+                                    </button>
                                 </div>
                             </div>
 
@@ -457,7 +645,7 @@ const Attendance: React.FC = () => {
                                                 </tr>
                                             )) : <tr><td colSpan={3} className="text-center py-8 text-gray-500">Kosong.</td></tr>
                                         )}
-                                        
+
                                         {activeTab === 'izin' && (
                                             permissionUsers.length > 0 ? permissionUsers.map((rec, i) => (
                                                 <tr key={i} className="hover:bg-gray-800/40">
@@ -466,12 +654,17 @@ const Attendance: React.FC = () => {
                                                         <div>{rec.user_name}</div>
                                                         {rec.reason && (
                                                             <div className="text-xs text-gray-400 italic mt-0.5">
-                                                                "{rec.reason}"
+                                                                {rec.reason.replace('[MENYUSUL]', '')}
                                                             </div>
                                                         )}
                                                     </td>
                                                     <td className="px-4 py-3 text-right">
-                                                        <span className="text-xs bg-blue-900/20 text-blue-400 px-2 py-1 rounded border border-blue-900">Izin</span>
+                                                        {rec.reason && rec.reason.includes('[MENYUSUL]') ? (
+                                                            <span className="text-xs bg-yellow-900/20 text-yellow-400 px-2 py-1 rounded border border-yellow-900">Menyusul</span>
+                                                        ) : (
+                                                            <span className="text-xs bg-blue-900/20 text-blue-400 px-2 py-1 rounded border border-blue-900">Izin</span>
+                                                        )}
+
                                                         {rec.photo_url && <a href={rec.photo_url} target="_blank" rel="noreferrer" className="ml-2 text-blue-400 hover:underline text-xs">Bukti</a>}
                                                     </td>
                                                 </tr>
@@ -486,12 +679,12 @@ const Attendance: React.FC = () => {
                                                     <td className="px-4 py-3 text-right flex items-center justify-end gap-2">
                                                         {rec.photo_url ? (
                                                             <a href={rec.photo_url} target="_blank" rel="noreferrer" className="text-blue-400 hover:text-blue-300 text-xs underline flex items-center gap-1 mr-2">
-                                                                <Camera size={14}/> Bukti
+                                                                <Camera size={14} /> Bukti
                                                             </a>
                                                         ) : <span className="text-xs text-red-400 italic mr-2">No Foto</span>}
-                                                        
+
                                                         <button onClick={() => handleApproveUser(rec.id)} className="bg-green-600 hover:bg-green-500 text-white px-3 py-1 rounded text-xs font-bold flex items-center gap-1 shadow-lg">
-                                                            <CheckCircle size={14}/> ACC
+                                                            <CheckCircle size={14} /> ACC
                                                         </button>
                                                     </td>
                                                 </tr>
@@ -505,7 +698,7 @@ const Attendance: React.FC = () => {
                                                     <td className="px-4 py-3 text-gray-300">{user.name}</td>
                                                     <td className="px-4 py-3 text-right">
                                                         <button onClick={() => handleChecklistUser(user)} className="opacity-60 group-hover:opacity-100 bg-gray-800 hover:bg-green-600 hover:text-white text-gray-400 border border-gray-600 px-3 py-1.5 rounded text-xs font-bold transition-all flex items-center gap-2 ml-auto">
-                                                            <CheckCircle size={14}/> Hadir
+                                                            <CheckCircle size={14} /> Hadir
                                                         </button>
                                                     </td>
                                                 </tr>
@@ -523,33 +716,42 @@ const Attendance: React.FC = () => {
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
                     <div className="w-full max-w-md bg-gray-900 border border-gray-700 rounded-lg p-6">
                         <div className="flex items-center gap-2 mb-4 text-yellow-400">
-                             <CheckCircle />
-                             <h2 className="text-xl font-bold text-white">{selectedSession.title}</h2>
+                            <CheckCircle className="shrink-0" />
+                            <h2 className="text-xl font-bold text-white truncate">{selectedSession.title}</h2>
                         </div>
-                        
+
                         <form onSubmit={handleSubmitAttendance} className="space-y-4 text-left">
                             <div><label className="block text-gray-400 text-sm mb-1">NIM</label><input disabled value={userNIM || ''} className="w-full bg-black border border-gray-700 rounded p-2 text-gray-500 cursor-not-allowed" /></div>
-                            
+
                             {selectedSession.is_photo_required ? (
                                 <div>
-                                    <label className="block text-yellow-400 text-sm mb-1 font-bold flex items-center gap-1"><Camera size={16}/> Foto Bukti (Wajib)</label>
+                                    <label className="block text-yellow-400 text-sm mb-1 font-bold flex items-center gap-1"><Camera size={16} /> Foto Bukti (Wajib)</label>
                                     <div className="border-2 border-dashed border-gray-700 rounded-lg p-4 text-center hover:border-yellow-400 transition-colors cursor-pointer relative">
                                         <input required type="file" accept="image/*" onChange={handleFileChange} className="absolute inset-0 opacity-0 cursor-pointer" />
-                                        {previewUrl ? <img src={previewUrl} className="max-h-40 mx-auto rounded" alt="Preview" /> : <div className="text-gray-500 text-sm flex flex-col items-center"><Upload size={24} className="mb-2"/>Klik untuk upload foto</div>}
+                                        {isCompressing ? (
+                                            <div className="text-yellow-400 text-sm flex flex-col items-center">
+                                                <Loader className="animate-spin mb-2" />
+                                                Memproses gambar...
+                                            </div>
+                                        ) : previewUrl ? (
+                                            <img src={previewUrl} className="max-h-40 mx-auto rounded" alt="Preview" />
+                                        ) : (
+                                            <div className="text-gray-500 text-sm flex flex-col items-center"><Upload size={24} className="mb-2" />Klik untuk upload foto</div>
+                                        )}
                                     </div>
                                 </div>
                             ) : (
-                                <div><label className="block text-gray-400 text-sm mb-1 flex items-center gap-1"><Camera size={16}/> Foto Bukti (Opsional)</label><input type="file" accept="image/*" onChange={handleFileChange} className="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-yellow-400 file:text-black hover:file:bg-yellow-300"/></div>
+                                <div><label className="block text-gray-400 text-sm mb-1 flex items-center gap-1"><Camera size={16} /> Foto Bukti (Opsional)</label><input type="file" accept="image/*" onChange={handleFileChange} className="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-yellow-400 file:text-black hover:file:bg-yellow-300" /></div>
                             )}
 
                             <div className="flex gap-2 pt-4">
                                 <button type="button" onClick={closeModals} className="flex-1 py-2 bg-gray-800 text-white rounded hover:bg-gray-700">Batal</button>
-                                <button 
-                                    type="submit" 
-                                    disabled={isSubmitting} 
+                                <button
+                                    type="submit"
+                                    disabled={isSubmitting || isCompressing}
                                     className="flex-1 py-2 bg-yellow-400 text-black font-bold rounded hover:bg-yellow-300 disabled:opacity-50"
                                 >
-                                    {isSubmitting ? 'Mengirim...' : 'Kirim Hadir'}
+                                    {isSubmitting ? 'Mengirim...' : isCompressing ? 'Memproses...' : 'Kirim Hadir'}
                                 </button>
                             </div>
                         </form>
@@ -561,27 +763,45 @@ const Attendance: React.FC = () => {
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
                     <div className="w-full max-w-md bg-gray-900 border border-gray-700 rounded-lg p-6">
                         <div className="flex items-center gap-2 mb-4 text-blue-400">
-                             <FileText />
-                             <h2 className="text-xl font-bold text-white">{selectedSessionPermission.title}</h2>
+                            <FileText className="shrink-0" />
+                            <h2 className="text-xl font-bold text-white truncate">{selectedSessionPermission.title}</h2>
                         </div>
-                        
+
                         <form onSubmit={handleSubmitPermission} className="space-y-4 text-left">
                             <div><label className="block text-gray-400 text-sm mb-1">NIM</label><input disabled value={userNIM || ''} className="w-full bg-black border border-gray-700 rounded p-2 text-gray-500 cursor-not-allowed" /></div>
-                            
+
                             <div>
                                 <label className="block text-gray-400 text-sm mb-1">Alasan Izin (Wajib)</label>
                                 <textarea required value={permissionReason} onChange={e => setPermissionReason(e.target.value)} placeholder="Jelaskan sejelas-jelasnya" className="w-full bg-black border border-gray-700 rounded p-2 text-white focus:border-blue-500 outline-none" rows={3} />
                             </div>
 
+                            <div className="flex items-center gap-3 bg-gray-800 p-3 rounded border border-gray-700 hover:border-blue-500/50 transition-colors">
+                                <input
+                                    type="checkbox"
+                                    id="menyusul-check"
+                                    checked={isMenyusul}
+                                    onChange={(e) => setIsMenyusul(e.target.checked)}
+                                    className="w-5 h-5 rounded text-blue-600 focus:ring-blue-500 bg-gray-900 border-gray-600 cursor-pointer"
+                                />
+                                <label htmlFor="menyusul-check" className="text-sm text-gray-200 cursor-pointer select-none">
+                                    Saya akan <strong>menyusul</strong> nanti.
+                                    <p className="text-xs text-gray-400 mt-0.5">Centang jika anda berencana hadir terlambat.</p>
+                                </label>
+                            </div>
+
                             <div>
-                                <label className="block text-gray-400 text-sm mb-1 flex items-center gap-1"><Upload size={16}/> Bukti (Opsional)</label>
-                                <input type="file" accept="image/*" onChange={handleFileChange} className="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-500"/>
-                                {previewUrl && <img src={previewUrl} className="mt-2 max-h-32 rounded border border-gray-700" alt="Preview" />}
+                                <label className="block text-gray-400 text-sm mb-1 flex items-center gap-1"><Upload size={16} /> Bukti (Opsional)</label>
+                                <input type="file" accept="image/*" onChange={handleFileChange} className="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-500" />
+                                {isCompressing ? (
+                                    <div className="text-sm text-blue-400 mt-2">Mengkompres gambar...</div>
+                                ) : previewUrl && (
+                                    <img src={previewUrl} className="mt-2 max-h-32 rounded border border-gray-700" alt="Preview" />
+                                )}
                             </div>
 
                             <div className="flex gap-2 pt-4">
                                 <button type="button" onClick={closeModals} className="flex-1 py-2 bg-gray-800 text-white rounded hover:bg-gray-700">Batal</button>
-                                <button type="submit" disabled={isSubmitting} className="flex-1 py-2 bg-blue-600 text-white font-bold rounded hover:bg-blue-500 disabled:opacity-50">{isSubmitting ? 'Mengirim...' : 'Kirim Izin'}</button>
+                                <button type="submit" disabled={isSubmitting || isCompressing} className="flex-1 py-2 bg-blue-600 text-white font-bold rounded hover:bg-blue-500 disabled:opacity-50">{isSubmitting ? 'Mengirim...' : 'Kirim Izin'}</button>
                             </div>
                         </form>
                     </div>
@@ -593,10 +813,20 @@ const Attendance: React.FC = () => {
                     <div className="w-full max-w-md bg-gray-900 border border-gray-700 rounded-lg p-6">
                         <h2 className="text-xl font-bold text-white mb-4">Buat Sesi Absensi</h2>
                         <form onSubmit={handleCreateSession} className="space-y-4 text-left">
-                            <div><label className="block text-gray-400 text-sm mb-1">Judul</label><input required value={newSessionData.title} onChange={e => setNewSessionData({...newSessionData, title: e.target.value})} className="w-full bg-black border border-gray-700 rounded p-2 text-white focus:border-yellow-400 outline-none" /></div>
-                            <div><label className="block text-gray-400 text-sm mb-1">Deskripsi</label><textarea value={newSessionData.description} onChange={e => setNewSessionData({...newSessionData, description: e.target.value})} className="w-full bg-black border border-gray-700 rounded p-2 text-white focus:border-yellow-400 outline-none" rows={3} /></div>
-                            <div className="flex items-center gap-2"><input type="checkbox" id="reqPhoto" checked={newSessionData.is_photo_required} onChange={e => setNewSessionData({...newSessionData, is_photo_required: e.target.checked})} className="w-4 h-4 rounded text-yellow-400 bg-gray-800" /><label htmlFor="reqPhoto" className="text-white text-sm cursor-pointer">Wajib Upload Foto?</label></div>
-                            <div className="flex gap-2 pt-4"><button type="button" onClick={() => setIsCreateModalOpen(false)} className="flex-1 py-2 bg-gray-800 text-white rounded hover:bg-gray-700">Batal</button><button type="submit" className="flex-1 py-2 bg-yellow-400 text-black font-bold rounded hover:bg-yellow-300">Buat Sesi</button></div>
+                            <div><label className="block text-gray-400 text-sm mb-1">Judul</label><input required value={newSessionData.title} onChange={e => setNewSessionData({ ...newSessionData, title: e.target.value })} className="w-full bg-black border border-gray-700 rounded p-2 text-white focus:border-yellow-400 outline-none" /></div>
+                            <div><label className="block text-gray-400 text-sm mb-1">Deskripsi</label><textarea value={newSessionData.description} onChange={e => setNewSessionData({ ...newSessionData, description: e.target.value })} className="w-full bg-black border border-gray-700 rounded p-2 text-white focus:border-yellow-400 outline-none" rows={3} /></div>
+                            <div className="flex items-center gap-2"><input type="checkbox" id="reqPhoto" checked={newSessionData.is_photo_required} onChange={e => setNewSessionData({ ...newSessionData, is_photo_required: e.target.checked })} className="w-4 h-4 rounded text-yellow-400 bg-gray-800" /><label htmlFor="reqPhoto" className="text-white text-sm cursor-pointer">Wajib Upload Foto?</label></div>
+
+                            <div className="flex gap-2 pt-4">
+                                <button type="button" onClick={() => setIsCreateModalOpen(false)} className="flex-1 py-2 bg-gray-800 text-white rounded hover:bg-gray-700">Batal</button>
+                                <button
+                                    type="submit"
+                                    disabled={isSubmitting}
+                                    className="flex-1 py-2 bg-yellow-400 text-black font-bold rounded hover:bg-yellow-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {isSubmitting ? 'Memproses...' : 'Buat Sesi'}
+                                </button>
+                            </div>
                         </form>
                     </div>
                 </div>

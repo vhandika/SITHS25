@@ -68,7 +68,7 @@ const ContactCard: React.FC<{ contact: Contact }> = ({ contact }) => {
 
 const ContactUs: React.FC = () => {
     return (
-        <div className="min-h-screen w-full bg-black py-16 lg:py-24 px-4 sm:px-6 lg:px-8 mt-16 lg:mt-0 font-sans overflow-y-scroll">
+        <div className="min-h-screen w-full bg-black py-16 lg:py-24 px-4 sm:px-6 lg:px-8 mt-16 lg:mt-0 font-sans overflow-y-scroll selection:bg-yellow-400 selection:text-black">
             <div className="mx-auto max-w-7xl text-center">
                 <div className="text-center">
                      <div className="flex justify-center items-center gap-4 mb-4">
