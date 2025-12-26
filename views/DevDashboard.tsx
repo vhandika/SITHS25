@@ -4,7 +4,7 @@ import { Users, Lock, RefreshCw, Smartphone, Monitor, ChevronRight } from 'lucid
 import SkewedButton from '../components/SkewedButton';
 import { fetchWithAuth } from '../src/utils/api';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = 'https://idk-eight.vercel.app/api';
 
 interface ActiveUser {
     nim: string;
