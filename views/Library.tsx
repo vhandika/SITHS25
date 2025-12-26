@@ -1,8 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import {
-  Library as LibraryIcon, ArrowUpRight, MessageCircle, X, Send,
-  Users, Copy, Link as LinkIcon, LogIn, LogOut, Bot
-} from 'lucide-react';
+import React, { useState } from 'react';
+import { Library as LibraryIcon, ArrowUpRight } from 'lucide-react';
 import SkewedButton from '../components/SkewedButton';
 
 export interface LibraryItem {
@@ -12,15 +9,6 @@ export interface LibraryItem {
   image: string;
   driveLink: string;
   semester: 1 | 2;
-}
-
-interface ChatMessage {
-  id: string;
-  text: string;
-  sender: string;
-  createdAt: any;
-  isMe?: boolean;
-  isAi?: boolean;
 }
 
 const libraryData: LibraryItem[] = [
@@ -97,7 +85,7 @@ const Library: React.FC = () => {
   return (
     <div className="relative min-h-screen w-full bg-black py-16 lg:py-24 px-4 sm:px-6 lg:px-8 mt-16 lg:mt-0 font-sans overflow-x-hidden selection:bg-yellow-400 selection:text-black">
 
-      <div className={`mx-auto max-w-7xl text-center transition-all duration-300 ${isChatOpen ? 'pr-0 lg:pr-96' : ''}`}>
+      <div className="mx-auto max-w-7xl text-center transition-all duration-300">
         <div className="text-center">
           <div className="flex justify-center items-center gap-4 mb-4">
             <div className="w-10 h-10 flex items-center justify-center bg-yellow-400 text-black transform -skew-x-12">
