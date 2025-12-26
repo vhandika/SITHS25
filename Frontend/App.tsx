@@ -1,40 +1,68 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/react"
+import { MusicProvider } from './contexts/MusicContext';
 import Sidebar from './components/Sidebar';
-import Home from './views/Home';
-import Library from './views/Library';
-import AboutUs from './views/AboutUs';
-import ContactUs from './views/ContactUs';
-import Login from './views/Login';
-import News from './views/News';
-import ChangePassword from './views/ChangePassword';
-import FindNim from './views/FindNim';
-import Attendance from './views/Attendance';
-import Gallery from './views/Gallery';
+import ActivityTracker from './components/ActivityTracker';
+
+// Lazy Load Views for Performance
+const Home = lazy(() => import('./views/Home'));
+const Library = lazy(() => import('./views/Library'));
+const AboutUs = lazy(() => import('./views/AboutUs'));
+const ContactUs = lazy(() => import('./views/ContactUs'));
+const Login = lazy(() => import('./views/Login'));
+const News = lazy(() => import('./views/News'));
+const ChangePassword = lazy(() => import('./views/ChangePassword'));
+const FindNim = lazy(() => import('./views/FindNim'));
+const Attendance = lazy(() => import('./views/Attendance'));
+const Gallery = lazy(() => import('./views/Gallery'));
+const PDFTools = lazy(() => import('./views/PDFTools'));
+const Playlist = lazy(() => import('./views/Playlist'));
+const Music = lazy(() => import('./views/Music'));
+const DevDashboard = lazy(() => import('./views/DevDashboard'));
+const MusicPlayer = lazy(() => import('./components/MusicPlayer'));
+
+const LoadingFallback = () => (
+    <div className="flex items-center justify-center h-screen w-full bg-black text-yellow-400">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-yellow-400"></div>
+    </div>
+);
 
 const App: React.FC = () => {
     return (
         <BrowserRouter>
-            <div className="flex min-h-screen bg-black">
-                <Sidebar />
-                <main className="flex-1 lg:ml-20">
-                    <Routes>
-                        <Route path="/" element={<Home />} />
-                        <Route path="/library" element={<Library />} />
-                        <Route path="/news" element={<News />} />
-                        <Route path="/about" element={<AboutUs />} />
-                        <Route path="/contact" element={<ContactUs />} />
-                        <Route path="/login" element={<Login />} />
-                        <Route path="/change-password" element={<ChangePassword />} />
-                        <Route path="/find-nim" element={<FindNim />} />
-                        <Route path="/attendance" element={<Attendance />} /> 
-                        <Route path="/gallery" element={<Gallery />} />
-                    </Routes>
-                </main>
-            </div>
-            <Analytics />
-            
+            <MusicProvider>
+                <ActivityTracker />
+                <div className="flex min-h-screen bg-black">
+                    <Sidebar />
+                    <main className="flex-1 lg:ml-20">
+                        <Suspense fallback={<LoadingFallback />}>
+                            <Routes>
+                                <Route path="/" element={<Home />} />
+                                <Route path="/library" element={<Library />} />
+                                <Route path="/news" element={<News />} />
+                                <Route path="/about" element={<AboutUs />} />
+                                <Route path="/contact" element={<ContactUs />} />
+                                <Route path="/login" element={<Login />} />
+                                <Route path="/change-password" element={<ChangePassword />} />
+                                <Route path="/find-nim" element={<FindNim />} />
+                                <Route path="/attendance" element={<Attendance />} />
+                                <Route path="/gallery" element={<Gallery />} />
+                                <Route path="/PDFTools" element={<PDFTools />} />
+                                <Route path="/playlist" element={<Playlist />} />
+                                <Route path="/music" element={<Music />} />
+                                <Route path="/dev" element={<DevDashboard />} />
+                            </Routes>
+                        </Suspense>
+                    </main>
+                    <Suspense fallback={null}>
+                        <MusicPlayer />
+                    </Suspense>
+                </div>
+                <Analytics />
+                <SpeedInsights />
+            </MusicProvider>
         </BrowserRouter>
     );
 };

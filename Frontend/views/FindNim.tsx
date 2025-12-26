@@ -1,14 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Loader, User, AlertCircle } from 'lucide-react';
+import ProfileModal from '../components/ProfileModal';
 
 interface Student {
     id: number;
     nim: string;
     name: string | null;
+    avatar_url?: string | null;
 }
 
-const API_BASE_URL = 'https://idk-eight.vercel.app/api'; 
+const API_BASE_URL = 'http://localhost:5000/api';
+
+const getCookie = (name: string) => {
+    return document.cookie.split('; ').reduce((r, v) => {
+        const parts = v.split('=');
+        return parts[0].trim() === name ? decodeURIComponent(parts[1]) : r;
+    }, '');
+};
 
 const FindNim: React.FC = () => {
     const navigate = useNavigate();
@@ -16,8 +25,13 @@ const FindNim: React.FC = () => {
     const [results, setResults] = useState<Student[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+
+    const [selectedNimProfile, setSelectedNimProfile] = useState<string | null>(null);
+
+    const currentUserNIM = getCookie('userNIM');
+
     useEffect(() => {
-        const token = localStorage.getItem('userToken');
+        const token = getCookie('userNIM');
         if (!token) {
             navigate('/login');
         }
@@ -30,7 +44,7 @@ const FindNim: React.FC = () => {
             } else {
                 setResults([]);
             }
-        }, 500); 
+        }, 500);
 
         return () => clearTimeout(delayDebounceFn);
     }, [query]);
@@ -38,24 +52,21 @@ const FindNim: React.FC = () => {
     const fetchStudents = async () => {
         setLoading(true);
         setError('');
-        const token = localStorage.getItem('userToken');
+        const token = getCookie('userToken');
 
         try {
-            const response = await fetch(`https://idk-eight.vercel.app/api/users?search=${query}`, { 
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
+            const response = await fetch(`${API_BASE_URL}/users?search=${query}`, {
+                headers: {}, credentials: 'include'
             });
 
             if (!response.ok) throw new Error('Gagal mengambil data');
 
             const result = await response.json();
-            
+
             const studentData = result.data || [];
             setResults(studentData);
 
         } catch (err) {
-            console.error(err);
             setError('Gagal memuat data. Pastikan koneksi internet aman.');
         } finally {
             setLoading(false);
@@ -63,12 +74,12 @@ const FindNim: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen w-full bg-black py-16 lg:py-24 px-4 sm:px-6 lg:px-8 mt-16 lg:mt-0 font-sans text-white">
+        <div className="min-h-screen w-full bg-black py-16 lg:py-24 px-4 sm:px-6 lg:px-8 mt-16 lg:mt-0 font-sans overflow-x-hidden selection:bg-yellow-400 selection:text-black">
             <div className="mx-auto max-w-4xl">
 
                 <div className="flex items-center gap-4 mb-8">
                     <div className="w-10 h-10 flex items-center justify-center bg-yellow-400 text-black transform -skew-x-12">
-                         <span className="transform skew-x-12"><Search size={28} /></span>
+                        <span className="transform skew-x-12"><Search size={28} /></span>
                     </div>
                     <h1 className="text-4xl font-bold tracking-wider uppercase text-white sm:text-5xl">Find NIM / Name</h1>
                 </div>
@@ -107,18 +118,28 @@ const FindNim: React.FC = () => {
                         <p className="text-xs mt-2 text-gray-600">Coba cari dengan kata kunci lain atau NIM.</p>
                     </div>
                 )}
+
                 {!loading && results.length > 0 && (
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
                         {results.map((student) => (
-                            <div 
-                                key={student.id || student.nim} 
-                                className="group relative overflow-hidden rounded-lg border border-gray-800 bg-gray-900/40 p-5 hover:border-gray-600 hover:bg-gray-800/60 transition-all duration-300"
+                            <div
+                                key={student.id || student.nim}
+                                onClick={() => setSelectedNimProfile(student.nim)}
+                                className="group relative overflow-hidden rounded-lg border border-gray-800 bg-gray-900/40 p-5 hover:border-gray-600 hover:bg-gray-800/60 transition-all duration-300 cursor-pointer"
                             >
                                 <div className="flex items-start gap-4">
                                     <div className="flex-shrink-0">
-                                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-yellow-400/10 text-yellow-400 group-hover:bg-yellow-400 group-hover:text-black transition-colors duration-300">
-                                            <User size={24} />
-                                        </div>
+                                        {student.avatar_url ? (
+                                            <img
+                                                src={student.avatar_url}
+                                                alt="Profile"
+                                                className="w-12 h-12 rounded-full object-cover border-2 border-yellow-400/50 group-hover:border-yellow-400 transition-colors"
+                                            />
+                                        ) : (
+                                            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-yellow-400/10 text-yellow-400 group-hover:bg-yellow-400 group-hover:text-black transition-colors duration-300">
+                                                <User size={24} />
+                                            </div>
+                                        )}
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <p className="text-sm font-medium text-gray-400 mb-1">
@@ -142,6 +163,18 @@ const FindNim: React.FC = () => {
                 )}
 
             </div>
+
+            {selectedNimProfile && (
+                <ProfileModal
+                    targetNim={selectedNimProfile}
+                    currentUserNim={currentUserNIM}
+                    onClose={() => setSelectedNimProfile(null)}
+                    onChatClick={(nim) => {
+                        setSelectedNimProfile(null);
+                        navigate('/chat');
+                    }}
+                />
+            )}
         </div>
     );
 };

@@ -36,7 +36,6 @@ const SkewedButton: React.FC<SkewedButtonProps> = ({
             border: 'border-white'
         }
     };
-
     const selectedVariant = variantClasses[variant];
 
     const content = (

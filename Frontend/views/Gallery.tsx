@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, X, Link as LinkIcon, User, Camera, Folder, Trash2, Loader } from 'lucide-react';
 import SkewedButton from '../components/SkewedButton';
+import { fetchWithAuth } from '../src/utils/api';
 
 interface GalleryItem {
     id: number;
@@ -11,6 +12,13 @@ interface GalleryItem {
     created_at: string;
 }
 
+const getCookie = (name: string) => {
+    return document.cookie.split('; ').reduce((r, v) => {
+        const parts = v.split('=');
+        return parts[0].trim() === name ? decodeURIComponent(parts[1]) : r;
+    }, '');
+};
+
 const Gallery: React.FC = () => {
     const [items, setItems] = useState<GalleryItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -19,21 +27,20 @@ const Gallery: React.FC = () => {
     const [link, setLink] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const currentUserNIM = localStorage.getItem('userNIM'); 
-    const API_URL = 'https://idk-eight.vercel.app/api/gallery'; 
+    const currentUserNIM = getCookie('userNIM');
+    const API_BASE_URL = 'http://localhost:5000/api';
+    const API_URL = `${API_BASE_URL}/gallery`;
 
     const fetchGallery = async () => {
         try {
-            const token = localStorage.getItem('userToken');
             const res = await fetch(API_URL, {
-                headers: { 'Authorization': `Bearer ${token}` }
+                headers: {}, credentials: 'include'
             });
             const json = await res.json();
             if (res.ok) {
                 setItems(json.data);
             }
         } catch (error) {
-            console.error("Error fetching gallery:", error);
         } finally {
             setIsLoading(false);
         }
@@ -44,17 +51,13 @@ const Gallery: React.FC = () => {
     }, []);
 
     const handleSubmit = async (e?: React.FormEvent | React.MouseEvent) => {
-        if (e) e.preventDefault(); 
+        if (e) e.preventDefault();
         setIsSubmitting(true);
-        const token = localStorage.getItem('userToken');
+        const token = getCookie('userToken');
 
         try {
-            const res = await fetch(API_URL, {
+            const res = await fetchWithAuth(API_URL, {
                 method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
                 body: JSON.stringify({ title, drive_link: link })
             });
             const data = await res.json();
@@ -62,13 +65,12 @@ const Gallery: React.FC = () => {
                 setTitle('');
                 setLink('');
                 setIsModalOpen(false);
-                fetchGallery(); 
+                fetchGallery();
                 alert("Berhasil upload link!");
             } else {
                 alert(data.message || 'Gagal upload');
             }
         } catch (error) {
-            console.error(error);
             alert('Terjadi kesalahan koneksi ke server');
         } finally {
             setIsSubmitting(false);
@@ -81,36 +83,32 @@ const Gallery: React.FC = () => {
 
         if (!confirm("Apakah Anda yakin ingin menghapus folder ini?")) return;
 
-        const token = localStorage.getItem('userToken');
+        const token = getCookie('userToken');
         try {
-            const res = await fetch(`${API_URL}/${id}`, {
-                method: 'DELETE',
-                headers: { 
-                    'Authorization': `Bearer ${token}`
-                }
+            const res = await fetchWithAuth(`${API_URL}/${id}`, {
+                method: 'DELETE'
             });
 
             const data = await res.json();
 
             if (res.ok) {
                 alert("Folder berhasil dihapus");
-                fetchGallery(); 
+                fetchGallery();
             } else {
                 alert(data.message || "Gagal menghapus folder");
             }
         } catch (error) {
-            console.error("Error deleting:", error);
             alert("Terjadi kesalahan koneksi");
         }
     };
 
     return (
-        <div className="min-h-screen w-full bg-black py-16 lg:py-24 px-4 sm:px-6 lg:px-8 mt-16 lg:mt-0 font-sans relative">
+        <div className="min-h-screen w-full bg-black py-16 lg:py-24 px-4 sm:px-6 lg:px-8 mt-16 lg:mt-0 font-sans overflow-x-hidden selection:bg-yellow-400 selection:text-black">
             <div className="mx-auto max-w-7xl">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
                     <div className="flex items-center gap-4">
                         <div className="w-10 h-10 flex items-center justify-center bg-yellow-400 text-black transform -skew-x-12">
-                             <span className="transform skew-x-12"><Camera size={32} /></span>
+                            <span className="transform skew-x-12"><Camera size={32} /></span>
                         </div>
                         <div>
                             <h1 className="text-4xl font-bold tracking-wider uppercase text-white sm:text-5xl">Gallery</h1>
@@ -125,8 +123,8 @@ const Gallery: React.FC = () => {
                 </div>
 
                 {isLoading ? (
-                    <div className="flex flex-col items-center justify-center py-12 text-yellow-400">
-                        <Loader className="animate-spin mb-2" size={32} />
+                    <div className="flex flex-col items-center justify-center py-10 text-yellow-400">
+                        <Loader className="animate-spin mb-2" size={24} />
                     </div>
                 ) : (
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -136,7 +134,7 @@ const Gallery: React.FC = () => {
                             </div>
                         ) : (
                             items.map((item) => (
-                                <a 
+                                <a
                                     key={item.id}
                                     href={item.drive_link}
                                     target="_blank"
@@ -154,19 +152,28 @@ const Gallery: React.FC = () => {
                                     )}
 
                                     <div className="w-24 h-24 mb-4 flex items-center justify-center">
-                                        <Folder 
+                                        <Folder
                                             strokeWidth={1}
                                             className="w-full h-full text-gray-400 transition-colors duration-300 group-hover:text-yellow-400"
                                         />
                                     </div>
 
-                                    <div className="w-full space-y-2">
-                                        <h3 className="text-white text-lg font-bold leading-snug group-hover:text-yellow-400 transition-colors line-clamp-2">
+                                    <div className="w-full space-y-2 overflow-hidden">
+                                        <h3
+                                            className="text-white text-lg font-bold leading-snug group-hover:text-yellow-400 transition-colors w-full overflow-x-auto whitespace-nowrap [&::-webkit-scrollbar]:hidden"
+                                            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                                        >
                                             {item.title}
                                         </h3>
-                                        <div className="flex items-center justify-center gap-1.5 text-[10px] text-gray-500 uppercase tracking-widest border-t border-gray-800 pt-2 mt-2">
-                                            <User size={10} />
-                                            <span className="truncate max-w-[120px]">{item.user_name || item.user_nim}</span>
+
+                                        <div className="flex items-center justify-center gap-1.5 text-[10px] text-gray-500 uppercase tracking-widest border-t border-gray-800 pt-2 mt-2 w-full">
+                                            <User size={10} className="shrink-0" />
+                                            <span
+                                                className="overflow-x-auto whitespace-nowrap [&::-webkit-scrollbar]:hidden"
+                                                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                                            >
+                                                {item.user_name || item.user_nim}
+                                            </span>
                                         </div>
                                     </div>
                                 </a>
@@ -187,13 +194,13 @@ const Gallery: React.FC = () => {
             {isModalOpen && (
                 <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4">
                     <div className="w-full max-w-md bg-gray-900 border border-gray-700 rounded-lg p-6 relative">
-                        <button 
+                        <button
                             onClick={() => setIsModalOpen(false)}
                             className="absolute top-4 right-4 text-gray-400 hover:text-white"
                         >
                             <X size={24} />
                         </button>
-                        
+
                         <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
                             <Plus className="text-yellow-400" /> Tambah Folder
                         </h2>
@@ -201,8 +208,8 @@ const Gallery: React.FC = () => {
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div>
                                 <label className="block text-sm text-gray-400 mb-1">Nama Folder</label>
-                                <input 
-                                    type="text" 
+                                <input
+                                    type="text"
                                     value={title}
                                     onChange={(e) => setTitle(e.target.value)}
                                     className="w-full bg-black border border-gray-700 rounded p-2 text-white focus:border-yellow-400 focus:outline-none"
@@ -214,8 +221,8 @@ const Gallery: React.FC = () => {
                                 <label className="block text-sm text-gray-400 mb-1">Link Google Drive</label>
                                 <div className="relative">
                                     <LinkIcon className="absolute left-3 top-2.5 text-gray-600 w-4 h-4" />
-                                    <input 
-                                        type="url" 
+                                    <input
+                                        type="url"
                                         value={link}
                                         onChange={(e) => setLink(e.target.value)}
                                         className="w-full bg-black border border-gray-700 rounded p-2 pl-9 text-white focus:border-yellow-400 focus:outline-none"
@@ -224,7 +231,7 @@ const Gallery: React.FC = () => {
                                     />
                                 </div>
                             </div>
-                            
+
                             <div className="flex gap-2 pt-4">
                                 <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-2 bg-gray-800 text-white rounded hover:bg-gray-700">
                                     Batal

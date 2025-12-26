@@ -1,0 +1,725 @@
+import React, { useState, useEffect } from 'react';
+import { Search, Plus, Music2, Lock, Globe, Play, Loader, X, Trash2, Edit2, Check, ChevronUp, ChevronDown, Shuffle } from 'lucide-react';
+import { useMusicPlayer } from '../contexts/MusicContext';
+import { fetchWithAuth } from '../src/utils/api';
+
+const API_BASE_URL = 'https://idk-eight.vercel.app/api';
+
+const getCookie = (name: string) => {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop()?.split(';').shift();
+    return null;
+};
+
+interface Track {
+    id: string;
+    video_id: string;
+    title: string;
+    artist?: string;
+    thumbnail?: string;
+    duration?: number | string;
+}
+
+interface Playlist {
+    id: string;
+    title: string;
+    description?: string;
+    is_public: boolean;
+    creator_nim: string;
+    cover_image?: string;
+}
+
+const Music: React.FC = () => {
+    const { playTrack, playQueue } = useMusicPlayer();
+    const [playlists, setPlaylists] = useState<Playlist[]>([]);
+    const [selectedPlaylist, setSelectedPlaylist] = useState<Playlist | null>(null);
+    const [tracks, setTracks] = useState<Track[]>([]);
+    const [searchResults, setSearchResults] = useState<any[]>([]);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [isSearching, setIsSearching] = useState(false);
+    const [showCreateModal, setShowCreateModal] = useState(false);
+    const [newPlaylistTitle, setNewPlaylistTitle] = useState('');
+    const [newPlaylistIsPublic, setNewPlaylistIsPublic] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editTitle, setEditTitle] = useState('');
+    const [isRecommendation, setIsRecommendation] = useState(false);
+    const [suggestions, setSuggestions] = useState<string[]>([]);
+    const [showSuggestions, setShowSuggestions] = useState(false);
+
+    const showPlaylistDetail = selectedPlaylist !== null && tracks.length > 0;
+    const isSearchMode = searchResults.length > 0;
+
+    useEffect(() => {
+        let guestId = localStorage.getItem('music_guest_id');
+        if (!guestId) {
+            const array = new Uint32Array(4);
+            window.crypto.getRandomValues(array);
+            guestId = 'guest_' + Array.from(array, dec => dec.toString(36)).join('');
+            localStorage.setItem('music_guest_id', guestId);
+        }
+
+        fetchPlaylists();
+    }, []);
+
+    const getHeaders = () => {
+        const headers: any = {
+            'Content-Type': 'application/json'
+        };
+
+        const guestId = localStorage.getItem('music_guest_id');
+        if (guestId) {
+            headers['X-Guest-ID'] = guestId;
+        }
+        return headers;
+    };
+
+    const fetchPlaylists = async () => {
+        try {
+            const res = await fetch(`${API_BASE_URL}/music/playlists`, {
+                headers: getHeaders(),
+                credentials: 'include'
+            });
+            const data = await res.json();
+            if (res.ok) setPlaylists(data.data || []);
+        } catch (error) {
+        }
+    };
+
+    const fetchTracks = async (playlistId: string) => {
+        try {
+            const res = await fetch(`${API_BASE_URL}/music/playlists/${playlistId}/tracks`, {
+                headers: getHeaders(),
+                credentials: 'include'
+            });
+            const data = await res.json();
+            if (res.ok) setTracks(data.data || []);
+        } catch (error) {
+        }
+    };
+
+    useEffect(() => {
+        const timer = setTimeout(async () => {
+            if (searchQuery.length > 2) {
+                try {
+                    const res = await fetch(`${API_BASE_URL}/music/suggest?q=${encodeURIComponent(searchQuery)}`);
+                    const data = await res.json();
+                    setSuggestions(data || []);
+                    setShowSuggestions(true);
+                } catch (error) {
+                    // Sshh
+                }
+            } else {
+                setSuggestions([]);
+                setShowSuggestions(false);
+            }
+        }, 500); // 500ms delay to save data
+
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
+
+    const handleSearchInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setSearchQuery(e.target.value);
+    };
+
+    const handleSearch = async (queryOverride?: string) => {
+        const query = queryOverride || searchQuery;
+        if (!query.trim()) return;
+
+        setIsSearching(true);
+        setIsRecommendation(false);
+        setShowSuggestions(false); // Hide suggestions
+        setSelectedPlaylist(null);
+
+        // Update input if searched via click
+        if (queryOverride) setSearchQuery(queryOverride);
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/music/search?q=${encodeURIComponent(query)}`, { credentials: 'include' });
+            const data = await res.json();
+            if (res.ok) setSearchResults(data.data || []);
+        } catch (error) {
+            // Sshh
+        } finally {
+            setIsSearching(false);
+        }
+    };
+
+    const handleCreatePlaylist = async () => {
+        if (!newPlaylistTitle.trim()) return;
+        try {
+            const res = await fetchWithAuth(`${API_BASE_URL}/music/playlists`, {
+                method: 'POST',
+                body: JSON.stringify({ title: newPlaylistTitle, is_public: newPlaylistIsPublic })
+            });
+            if (res.ok) {
+                setShowCreateModal(false);
+                setNewPlaylistTitle('');
+                setNewPlaylistIsPublic(false);
+                fetchPlaylists();
+            }
+        } catch (error) {
+        }
+    };
+
+    const handlePlayNow = (video: any) => {
+        const track: Track = {
+            id: `temp-${Date.now()}`,
+            video_id: video.id,
+            title: video.title,
+            artist: video.channel,
+            thumbnail: video.thumbnail
+        };
+        playTrack(track);
+    };
+
+    const [showAddToPlaylistModal, setShowAddToPlaylistModal] = useState(false);
+    const [trackToAdd, setTrackToAdd] = useState<{ id: string, title: string, artist: string, thumbnail: string } | null>(null);
+
+    const openAddToPlaylistModal = (video: any) => {
+        setTrackToAdd({
+            id: video.id,
+            title: video.title,
+            artist: video.channel,
+            thumbnail: video.thumbnail
+        });
+        setShowAddToPlaylistModal(true);
+    };
+
+    const confirmAddToPlaylist = async (playlistId: string) => {
+        if (!trackToAdd) return;
+        try {
+            const res = await fetchWithAuth(`${API_BASE_URL}/music/playlists/${playlistId}/tracks`, {
+                method: 'POST',
+                body: JSON.stringify({
+                    video_id: trackToAdd.id,
+                    title: trackToAdd.title,
+                    artist: trackToAdd.artist,
+                    thumbnail: trackToAdd.thumbnail
+                })
+            });
+            if (res.ok) {
+                alert('Dimasukkan ke dalam playlist');
+                setShowAddToPlaylistModal(false);
+                setTrackToAdd(null);
+                if (selectedPlaylist && selectedPlaylist.id === playlistId) {
+                    fetchTracks(playlistId);
+                }
+            }
+        } catch (error) {
+        }
+    };
+
+    const handlePlayTrackFromPlaylist = (idx: number) => {
+        playQueue(tracks, idx);
+    };
+
+    const handleDeletePlaylist = async (playlistId: string) => {
+        if (!confirm('Yakin?')) return;
+
+        try {
+            const res = await fetchWithAuth(`${API_BASE_URL}/music/playlists/${playlistId}`, {
+                method: 'DELETE'
+            });
+
+            if (res.ok) {
+                if (selectedPlaylist?.id === playlistId) {
+                    setSelectedPlaylist(null);
+                    setTracks([]);
+                }
+                fetchPlaylists();
+            } else {
+                alert('Gagal');
+            }
+        } catch (error) {
+        }
+    };
+
+    const handleDeleteTrack = async (trackId: string) => {
+        if (!selectedPlaylist) return;
+        if (!confirm('Yakin?')) return;
+
+        try {
+            const res = await fetchWithAuth(`${API_BASE_URL}/music/playlists/${selectedPlaylist.id}/tracks/${trackId}`, {
+                method: 'DELETE'
+            });
+
+            if (res.ok) {
+                fetchTracks(selectedPlaylist.id);
+            } else {
+                alert('Gagal');
+            }
+        } catch (error) {
+        }
+    };
+
+    const handleSelectPlaylist = (playlist: Playlist) => {
+        setSelectedPlaylist(playlist);
+        setEditTitle(playlist.title); // Initialize edit title
+        setIsEditing(false); // Reset edit mode
+        fetchTracks(playlist.id);
+        fetchTracks(playlist.id);
+    };
+
+    const moveTrack = async (index: number, direction: 'up' | 'down') => {
+        const newIndex = direction === 'up' ? index - 1 : index + 1;
+        if (newIndex < 0 || newIndex >= tracks.length) return;
+
+        const newTracks = [...tracks];
+        [newTracks[index], newTracks[newIndex]] = [newTracks[newIndex], newTracks[index]];
+        setTracks(newTracks);
+
+        if (selectedPlaylist) {
+            try {
+                const trackIds = newTracks.map(t => t.id);
+                await fetch(`${API_BASE_URL}/music/playlists/${selectedPlaylist.id}/reorder`, {
+                    method: 'PUT',
+                    headers: getHeaders(),
+                    credentials: 'include',
+                    body: JSON.stringify({ trackIds })
+                });
+            } catch (error) {
+            }
+        }
+    };
+
+    const shuffleTracks = async () => {
+        if (tracks.length < 2) return;
+
+        const newTracks = [...tracks].sort(() => Math.random() - 0.5);
+        setTracks(newTracks);
+
+        // Save to backend
+        if (selectedPlaylist) {
+            try {
+                const trackIds = newTracks.map(t => t.id);
+                await fetch(`${API_BASE_URL}/music/playlists/${selectedPlaylist.id}/reorder`, {
+                    method: 'PUT',
+                    headers: getHeaders(),
+                    credentials: 'include',
+                    body: JSON.stringify({ trackIds })
+                });
+            } catch (error) {
+            }
+        }
+    };
+
+    const handleUpdatePlaylist = async () => {
+        if (!selectedPlaylist || !editTitle.trim()) return;
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/music/playlists/${selectedPlaylist.id}`, {
+                method: 'PUT',
+                headers: getHeaders(),
+                credentials: 'include',
+                body: JSON.stringify({ title: editTitle })
+            });
+
+            if (res.ok) {
+                const updatedPlaylist = { ...selectedPlaylist, title: editTitle };
+                setSelectedPlaylist(updatedPlaylist);
+                setPlaylists(playlists.map(p => p.id === updatedPlaylist.id ? updatedPlaylist : p));
+                setIsEditing(false);
+                alert('Playlist updated!');
+            } else {
+                const data = await res.json();
+                alert(data.message || 'Gagal');
+            }
+        } catch (error) {
+        }
+    };
+
+    const [activeMobileTab, setActiveMobileTab] = useState<'playlists' | 'search'>('search');
+
+    return (
+        <div className="h-[calc(100vh-4rem)] lg:h-screen w-full bg-black text-white flex flex-col mt-16 lg:mt-0">
+
+            {/* Mobile Tab Navigation */}
+            <div className="flex lg:hidden bg-gray-900 border-b border-gray-800 flex-shrink-0">
+                <button
+                    onClick={() => setActiveMobileTab('playlists')}
+                    className={`flex-1 py-3 text-sm font-bold uppercase tracking-wider ${activeMobileTab === 'playlists' ? 'text-yellow-400 border-b-2 border-yellow-400' : 'text-gray-500'}`}
+                >
+                    Playlists
+                </button>
+                <button
+                    onClick={() => setActiveMobileTab('search')}
+                    className={`flex-1 py-3 text-sm font-bold uppercase tracking-wider ${activeMobileTab === 'search' ? 'text-yellow-400 border-b-2 border-yellow-400' : 'text-gray-500'}`}
+                >
+                    Search
+                </button>
+            </div>
+
+            <div className="flex flex-col lg:flex-row flex-1 overflow-hidden relative">
+                {/* Left Sidebar - Playlists */}
+                <div className={`border-r border-gray-800 p-4 overflow-y-auto transition-all duration-300 flex-shrink-0 ${
+                    // Mobile: strictly controlled by activeMobileTab
+                    (activeMobileTab === 'playlists' ? 'block w-full h-full' : 'hidden') + ' ' +
+                    // Desktop: overrides mobile hidden/block classes
+                    'lg:block lg:w-64'
+                    }`}>
+                    <div className="flex justify-between items-center mb-4">
+                        <h2 className="text-gray-400 uppercase text-xs font-bold tracking-wider">Your Playlists</h2>
+                        <button
+                            onClick={() => setShowCreateModal(true)}
+                            className="p-1 hover:bg-gray-800 rounded text-yellow-400"
+                            title="New Playlist"
+                        >
+                            <Plus size={18} />
+                        </button>
+                    </div>
+                    <div className="space-y-2">
+                        {playlists.map(playlist => (
+                            <div
+                                key={playlist.id}
+                                onClick={() => handleSelectPlaylist(playlist)}
+                                className={`relative p-3 rounded-lg cursor-pointer transition-all duration-200 group ${selectedPlaylist?.id === playlist.id
+                                    ? 'bg-yellow-400/10 text-yellow-400'
+                                    : 'hover:bg-gray-800 text-gray-300'
+                                    }`}
+                            >
+                                {selectedPlaylist?.id === playlist.id && (
+                                    <div className="absolute left-0 top-1/2 -translate-y-1/2 h-8 w-1 bg-yellow-400 rounded-r-full" />
+                                )}
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className={`p-2 rounded-lg transition-colors ${selectedPlaylist?.id === playlist.id ? 'bg-yellow-400/20 text-yellow-400' : 'bg-gray-800 group-hover:bg-gray-700 text-gray-400'}`}>
+                                            <Music2 size={18} />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <h3 className="font-bold truncate max-w-[120px] text-sm">{playlist.title}</h3>
+                                            <p className={`text-xs truncate ${selectedPlaylist?.id === playlist.id ? 'text-yellow-400/70' : 'text-gray-500'}`}>
+                                                {playlist.is_public ? 'Public' : 'Private'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    {playlist.is_public ? <Globe size={14} className="opacity-50" /> : <Lock size={14} className="opacity-50" />}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Main Content Area (Search & Results) */}
+                <div
+                    className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 min-w-0 ${
+                        // Mobile
+                        (activeMobileTab === 'search' ? 'block' : 'hidden') + ' ' +
+                        'lg:flex '
+                        }`}
+                >
+                    {/* Search Bar */}
+                    <div className="p-4 border-b border-gray-800 relative z-50">
+                        <div className="flex gap-2 relative">
+                            <div className="flex-1 relative">
+                                <Search className="absolute left-3 top-2.5 text-gray-400" size={20} />
+                                <input
+                                    type="text"
+                                    value={searchQuery}
+                                    onChange={handleSearchInput}
+                                    onKeyDown={e => e.key === 'Enter' && handleSearch()}
+                                    onFocus={() => searchQuery.length > 2 && setShowSuggestions(true)}
+                                    onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                                    placeholder="Search..."
+                                    className="w-full bg-gray-900 border border-gray-700 rounded px-4 pl-10 py-2 text-white focus:border-yellow-400 outline-none"
+                                />
+                                {/* Suggestions Dropdown */}
+                                {showSuggestions && suggestions.length > 0 && (
+                                    <div className="absolute top-full left-0 right-0 mt-2 bg-gray-800 rounded-xl shadow-xl overflow-hidden border border-gray-700">
+                                        {suggestions.map((s, idx) => (
+                                            <div
+                                                key={idx}
+                                                className="px-4 py-2 hover:bg-gray-700 cursor-pointer text-gray-300 hover:text-white flex items-center gap-2"
+                                                onMouseDown={(e) => {
+                                                    e.preventDefault(); // Prevent input blur
+                                                    handleSearch(s);
+                                                }}
+                                            >
+                                                <Search size={14} className="text-gray-500" />
+                                                <span>{s}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                            <button
+                                onClick={() => handleSearch()}
+                                disabled={isSearching}
+                                className="px-6 py-2 bg-yellow-400 hover:bg-yellow-300 text-black font-bold rounded flex items-center gap-2"
+                            >
+                                {isSearching ? <Loader className="animate-spin" size={18} /> : <Search size={18} />}
+                                Search
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Search Results List */}
+                    <div className="flex-1 overflow-y-auto p-2 sm:p-4 overflow-x-hidden no-scrollbar">
+                        {searchResults.length > 0 ? (
+                            <div>
+                                <h3 className="text-xl font-bold mb-4 px-2 sm:px-0">Search Results</h3>
+                                <div className="space-y-2">
+                                    {searchResults.map((video, idx) => (
+                                        <div key={idx} className="flex items-center gap-2 sm:gap-4 p-2 sm:p-3 bg-gray-900 rounded hover:bg-gray-800">
+                                            <img src={video.thumbnail} alt={video.title} loading="lazy" className="w-16 h-12 sm:w-24 sm:h-16 object-cover rounded flex-shrink-0" />
+                                            <div className="flex-1 min-w-0 w-0">
+                                                <h4 className="font-semibold truncate text-sm sm:text-base" title={video.title}>{video.title}</h4>
+                                                <p className="text-xs text-gray-400 truncate">{video.channel}</p>
+                                            </div>
+                                            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+                                                <button
+                                                    onClick={() => handlePlayNow(video)}
+                                                    className="p-1.5 sm:p-2 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-full transition-colors"
+                                                    title="Play Now"
+                                                >
+                                                    <Play size={20} className="sm:w-6 sm:h-6" />
+                                                </button>
+                                                <button
+                                                    onClick={() => openAddToPlaylistModal(video)}
+                                                    className="p-1.5 sm:p-2 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-full transition-colors"
+                                                    title="Add to Playlist"
+                                                >
+                                                    <Plus size={20} className="sm:w-6 sm:h-6" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="flex items-center justify-center h-full text-gray-500">
+                                <p>Search for music or select a playlist</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Right Panel - Playlist Detail (Animated Expand) */}
+                <div
+                    className={`absolute lg:relative top-0 right-0 h-full bg-black border-l border-gray-800 overflow-y-auto z-30 transition-all duration-300 flex-shrink-0 ${showPlaylistDetail
+                        ? (activeMobileTab === 'search' ? 'hidden lg:block lg:w-96 translate-x-0' : 'w-full lg:w-96 translate-x-0')
+                        : 'w-96 translate-x-full lg:w-0 lg:translate-x-0 lg:border-l-0'
+                        }`}
+                >
+                    {selectedPlaylist && (
+                        <div className="p-4">
+                            <div className="flex items-center justify-between mb-4 gap-2">
+                                {isEditing ? (
+                                    <input
+                                        type="text"
+                                        value={editTitle}
+                                        onChange={e => setEditTitle(e.target.value)}
+                                        onKeyDown={e => e.key === 'Enter' && handleUpdatePlaylist()}
+                                        onBlur={() => {
+                                            setIsEditing(false);
+                                            setEditTitle(selectedPlaylist.title);
+                                        }}
+                                        className="flex-1 bg-transparent border-b border-yellow-400 text-xl font-bold text-white focus:outline-none min-w-0"
+                                        autoFocus
+                                    />
+                                ) : (
+                                    <h3 className="text-xl font-bold truncate">{selectedPlaylist.title}</h3>
+                                )}
+                                <div className="flex gap-2 flex-shrink-0">
+                                    <button
+                                        onClick={() => handleDeletePlaylist(selectedPlaylist.id)}
+                                        className="p-1 hover:bg-gray-800 rounded text-gray-400 hover:text-white transition-colors"
+                                        title="Delete Playlist"
+                                    >
+                                        <Trash2 size={20} />
+                                    </button>
+                                    <button
+                                        onMouseDown={(e) => e.preventDefault()} // Prevent blur so click works
+                                        onClick={() => {
+                                            if (isEditing) {
+                                                handleUpdatePlaylist();
+                                            } else {
+                                                setIsEditing(true);
+                                                setEditTitle(selectedPlaylist.title);
+                                            }
+                                        }}
+                                        className="p-1 hover:bg-gray-800 rounded transition-colors text-gray-400 hover:text-white"
+                                        title={isEditing ? "Save Name" : "Edit Name"}
+                                    >
+                                        {isEditing ? <Check size={20} /> : <Edit2 size={20} />}
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            if (isEditing) {
+                                                setIsEditing(false); // Cancel edit
+                                                setEditTitle(selectedPlaylist.title);
+                                            } else {
+                                                setSelectedPlaylist(null);
+                                            }
+                                        }}
+                                        className="p-1 hover:bg-gray-800 rounded text-gray-400 transition-colors"
+                                        title={isEditing ? "Cancel" : "Close"}
+                                    >
+                                        <X size={20} />
+                                    </button>
+                                </div>
+                            </div>
+
+
+                            {/* Shuffle Button */}
+                            <div className="flex justify-end mb-2">
+                                <button
+                                    onClick={shuffleTracks}
+                                    className="flex items-center gap-1 px-3 py-1.5 text-sm bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white rounded-lg transition-colors"
+                                    title="Shuffle tracks"
+                                >
+                                    <Shuffle size={14} />
+                                    <span className="hidden sm:inline">Shuffle</span>
+                                </button>
+                            </div>
+
+                            <div className="space-y-2">
+                                {tracks.map((track, idx) => (
+                                    <div
+                                        key={track.id}
+                                        className="flex items-center gap-2 p-2 bg-black rounded hover:bg-gray-800 group transition-colors"
+                                    >
+                                        {/* Move Up/Down Buttons */}
+                                        <div className="flex flex-col gap-0.5">
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); moveTrack(idx, 'up'); }}
+                                                disabled={idx === 0}
+                                                className={`p-0.5 rounded transition-colors ${idx === 0 ? 'text-gray-700 cursor-not-allowed' : 'text-gray-500 hover:text-white hover:bg-gray-700'}`}
+                                                title="Move up"
+                                            >
+                                                <ChevronUp size={14} />
+                                            </button>
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); moveTrack(idx, 'down'); }}
+                                                disabled={idx === tracks.length - 1}
+                                                className={`p-0.5 rounded transition-colors ${idx === tracks.length - 1 ? 'text-gray-700 cursor-not-allowed' : 'text-gray-500 hover:text-white hover:bg-gray-700'}`}
+                                                title="Move down"
+                                            >
+                                                <ChevronDown size={14} />
+                                            </button>
+                                        </div>
+
+                                        {track.thumbnail && <img src={track.thumbnail} alt={track.title} loading="lazy" className="w-10 h-10 object-cover rounded" />}
+                                        <div className="flex-1 min-w-0 cursor-pointer" onClick={() => handlePlayTrackFromPlaylist(idx)}>
+                                            <h4 className="font-semibold truncate text-sm">{track.title}</h4>
+                                            {track.artist && <p className="text-xs text-gray-400 truncate">{track.artist}</p>}
+                                        </div>
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleDeleteTrack(track.id);
+                                            }}
+                                            className="p-1 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                            title="Remove Track"
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
+                                        <button
+                                            onClick={() => handlePlayTrackFromPlaylist(idx)}
+                                            className="p-1 text-yellow-400 hover:text-yellow-300"
+                                            title="Play"
+                                        >
+                                            <Play size={16} />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Create Playlist Modal */}
+            {showCreateModal && (
+                <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+                    <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 w-full max-w-md">
+                        <h2 className="text-xl font-bold mb-4">Create Playlist</h2>
+                        <input
+                            type="text"
+                            value={newPlaylistTitle}
+                            onChange={e => setNewPlaylistTitle(e.target.value)}
+                            placeholder="Playlist name"
+                            className="w-full bg-black border border-gray-700 rounded px-4 py-2 mb-4 text-white focus:border-yellow-400 outline-none"
+                        />
+                        <label className="flex items-center gap-2 mb-4 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={newPlaylistIsPublic}
+                                onChange={e => setNewPlaylistIsPublic(e.target.checked)}
+                                className="w-4 h-4"
+                            />
+                            <span className="text-sm">Make public</span>
+                        </label>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => setShowCreateModal(false)}
+                                className="flex-1 bg-gray-800 hover:bg-gray-700 py-2 rounded"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleCreatePlaylist}
+                                className="flex-1 bg-yellow-400 hover:bg-yellow-300 text-black font-bold py-2 rounded"
+                            >
+                                Create
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )
+            }
+
+            {/* Add to Playlist Modal */}
+            {
+                showAddToPlaylistModal && (
+                    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+                        <div className="bg-gray-900 border border-gray-700 rounded-lg w-full max-w-md p-6 shadow-2xl">
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-xl font-bold flex items-center gap-2">
+                                    <Plus size={20} className="text-yellow-400" />
+                                    Add to Playlist
+                                </h3>
+                                <button onClick={() => setShowAddToPlaylistModal(false)} className="text-gray-400 hover:text-white">
+                                    <X size={24} />
+                                </button>
+                            </div>
+
+                            {trackToAdd && (
+                                <div className="bg-gray-800/50 p-3 rounded mb-4 flex items-center gap-3">
+                                    {trackToAdd.thumbnail && (
+                                        <img src={trackToAdd.thumbnail} alt="" className="w-10 h-10 rounded object-cover" />
+                                    )}
+                                    <div className="min-w-0">
+                                        <p className="font-medium truncate text-sm">{trackToAdd.title}</p>
+                                        <p className="text-xs text-gray-400 truncate">{trackToAdd.artist}</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
+                                <p className="text-xs text-gray-500 uppercase font-bold mb-2">Select Playlist</p>
+                                {playlists.map(p => (
+                                    <button
+                                        key={p.id}
+                                        onClick={() => confirmAddToPlaylist(p.id)}
+                                        className="w-full text-left p-3 rounded hover:bg-gray-800 flex items-center gap-3 transition-colors border border-transparent hover:border-gray-700 group"
+                                    >
+                                        <div className="bg-gray-800 group-hover:bg-gray-700 p-2 rounded transition-colors">
+                                            {p.is_public ? <Globe size={16} className="text-green-400" /> : <Lock size={16} className="text-gray-500" />}
+                                        </div>
+                                        <span className="font-medium text-sm">{p.title}</span>
+                                    </button>
+                                ))}
+                                {playlists.length === 0 && (
+                                    <p className="text-center text-gray-500 py-4 text-sm">No playlists found. Create one first!</p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+        </div >
+    );
+};
+
+export default Music;
