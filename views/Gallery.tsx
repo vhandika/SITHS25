@@ -28,7 +28,7 @@ const Gallery: React.FC = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const currentUserNIM = getCookie('userNIM');
-    const API_BASE_URL = 'http://localhost:5000/api';
+    const API_BASE_URL = 'https://idk-eight.vercel.app/api';
     const API_URL = `${API_BASE_URL}/gallery`;
 
     const fetchGallery = async () => {
