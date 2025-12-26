@@ -6,7 +6,6 @@ import { MusicProvider } from './contexts/MusicContext';
 import Sidebar from './components/Sidebar';
 import ActivityTracker from './components/ActivityTracker';
 
-// Lazy Load Views for Performance
 const Home = lazy(() => import('./views/Home'));
 const Library = lazy(() => import('./views/Library'));
 const AboutUs = lazy(() => import('./views/AboutUs'));
