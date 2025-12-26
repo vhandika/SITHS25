@@ -107,13 +107,12 @@ const Music: React.FC = () => {
                     setSuggestions(data || []);
                     setShowSuggestions(true);
                 } catch (error) {
-                    // Sshh
                 }
             } else {
                 setSuggestions([]);
                 setShowSuggestions(false);
             }
-        }, 500); // 500ms delay to save data
+        }, 500);
 
         return () => clearTimeout(timer);
     }, [searchQuery]);
@@ -138,7 +137,6 @@ const Music: React.FC = () => {
             const data = await res.json();
             if (res.ok) setSearchResults(data.data || []);
         } catch (error) {
-            // Sshh
         } finally {
             setIsSearching(false);
         }
@@ -256,8 +254,7 @@ const Music: React.FC = () => {
         setSelectedPlaylist(playlist);
         setEditTitle(playlist.title);
         setIsEditing(false);
-        fetchTracks(playlist.id);
-        fetchTracks(playlist.id);
+        fetchTracks(playlist.id)
     };
 
     const moveTrack = async (index: number, direction: 'up' | 'down') => {
@@ -347,7 +344,7 @@ const Music: React.FC = () => {
                 </button>
             </div>
 
-            <div className="flex flex-col lg:flex-row flex-1 overflow-hidden relative">}
+            <div className="flex flex-col lg:flex-row flex-1 overflow-hidden relative">
                 <div className={`border-r border-gray-800 p-4 overflow-y-auto transition-all duration-300 flex-shrink-0 ${
                     (activeMobileTab === 'playlists' ? 'block w-full h-full' : 'hidden') + ' ' +
                     'lg:block lg:w-64'
@@ -421,7 +418,7 @@ const Music: React.FC = () => {
                                                 key={idx}
                                                 className="px-4 py-2 hover:bg-gray-700 cursor-pointer text-gray-300 hover:text-white flex items-center gap-2"
                                                 onMouseDown={(e) => {
-                                                    e.preventDefault();
+                                                    e.preventDefault(); // Prevent input blur
                                                     handleSearch(s);
                                                 }}
                                             >
@@ -534,7 +531,7 @@ const Music: React.FC = () => {
                                     <button
                                         onClick={() => {
                                             if (isEditing) {
-                                                setIsEditing(false); 
+                                                setIsEditing(false);
                                                 setEditTitle(selectedPlaylist.title);
                                             } else {
                                                 setSelectedPlaylist(null);
