@@ -19,31 +19,14 @@ const getCookie = (name: string) => {
 
 const Home: React.FC = () => {
     const navigate = useNavigate();
-    // Use a lightweight placeholder or gradient initially
-    const [bgLoaded, setBgLoaded] = useState(false);
-    // HD Background
-    const HD_BG = "https://itb.ac.id/files/cover/170125-Kolam-Intel.jpg";
+    const DEFAULT_BG = "https://itb.ac.id/files/cover/170125-Kolam-Intel.jpg";
 
-    // Check local storage for custom BG, otherwise use HD_BG logic
-    const savedBg = localStorage.getItem('homeBackgroundImage');
-    const [backgroundImageUrl, setBackgroundImageUrl] = useState(savedBg || HD_BG);
-
+    const [backgroundImageUrl, setBackgroundImageUrl] = useState(DEFAULT_BG);
     const [birthdayUsers, setBirthdayUsers] = useState<User[]>([]);
     const [showBirthdayModal, setShowBirthdayModal] = useState(false);
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const isCustomBackground = !!savedBg;
-
-    // Preload Background Image
-    useEffect(() => {
-        const img = new Image();
-        img.src = backgroundImageUrl;
-        img.onload = () => {
-            setBgLoaded(true);
-        };
-    }, [backgroundImageUrl]);
-
-    // ... (keep audio effects) 
+    const isCustomBackground = backgroundImageUrl !== DEFAULT_BG;
 
     useEffect(() => {
         audioRef.current = new Audio('/sounds/HBD.mp3');
@@ -57,6 +40,67 @@ const Home: React.FC = () => {
                 audioRef.current.currentTime = 0;
             }
         };
+    }, []);
+
+    useEffect(() => {
+        const handleVisibilityChange = () => {
+            if (document.hidden) {
+                if (audioRef.current) {
+                    audioRef.current.pause();
+                }
+            } else {
+                if (showBirthdayModal && audioRef.current) {
+                    audioRef.current.play().catch(e => console.log("Resume error:", e));
+                }
+            }
+        };
+
+        document.addEventListener("visibilitychange", handleVisibilityChange);
+
+        return () => {
+            document.removeEventListener("visibilitychange", handleVisibilityChange);
+        };
+    }, [showBirthdayModal]);
+
+    useEffect(() => {
+        const storedImage = localStorage.getItem('homeBackgroundImage');
+        if (storedImage) setBackgroundImageUrl(storedImage);
+    }, []);
+
+    useEffect(() => {
+        const checkBirthdays = async () => {
+            const token = getCookie('userNIM');
+            if (!token) return;
+
+            try {
+                const response = await fetch('https://idk-eight.vercel.app/api/users', {
+                    headers: {},
+                    credentials: 'include'
+                });
+
+                if (response.ok) {
+                    const json = await response.json();
+                    const users: User[] = json.data || [];
+                    const today = new Date();
+                    const currentDay = today.getDate();
+                    const currentMonth = today.getMonth() + 1;
+
+                    const celebrants = users.filter(user => {
+                        if (!user.birthday) return false;
+                        const dateParts = user.birthday.split('-');
+
+                        if (dateParts.length !== 2) return false;
+
+                        return parseInt(dateParts[1]) === currentDay && parseInt(dateParts[0]) === currentMonth;
+                    });
+
+                    setBirthdayUsers(celebrants);
+                }
+            } catch (error) {
+                console.error("Gagal memuat data ulang tahun:", error);
+            }
+        };
+        checkBirthdays();
     }, []);
 
     const triggerConfetti = () => {
@@ -92,7 +136,7 @@ const Home: React.FC = () => {
 
         if (audioRef.current) {
             audioRef.current.currentTime = 0;
-            audioRef.current.play().catch(() => { });
+            audioRef.current.play().catch(e => console.log("Audio error:", e));
         }
 
         triggerConfetti();
@@ -114,7 +158,6 @@ const Home: React.FC = () => {
                 const base64String = reader.result as string;
                 localStorage.setItem('homeBackgroundImage', base64String);
                 setBackgroundImageUrl(base64String);
-                setBgLoaded(true); // Base64 is instant
             };
             reader.readAsDataURL(file);
         }
@@ -123,8 +166,7 @@ const Home: React.FC = () => {
     const handleBackgroundAction = () => {
         if (isCustomBackground) {
             localStorage.removeItem('homeBackgroundImage');
-            setBackgroundImageUrl(HD_BG);
-            setBgLoaded(false); // Reset to trigger fade in
+            setBackgroundImageUrl(DEFAULT_BG);
             if (fileInputRef.current) fileInputRef.current.value = '';
         } else {
             fileInputRef.current?.click();
@@ -132,13 +174,9 @@ const Home: React.FC = () => {
     };
 
     return (
-        <div className="relative flex h-screen min-h-[600px] w-full items-center justify-center overflow-hidden selection:bg-yellow-400 selection:text-black bg-gray-900">
-            {/* Gradient Fallback (Visible immediately) */}
-            <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-black to-gray-800" />
-
-            {/* HD Background (Fades in) */}
+        <div className="relative flex h-screen min-h-[600px] w-full items-center justify-center overflow-hidden selection:bg-yellow-400 selection:text-black">
             <div
-                className={`absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000 ${bgLoaded ? 'opacity-100' : 'opacity-0'}`}
+                className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-all duration-500"
                 style={{ backgroundImage: `url('${backgroundImageUrl}')` }}
             >
                 <div className="absolute inset-0 bg-black/60"></div>
