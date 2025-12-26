@@ -29,7 +29,7 @@ const Login: React.FC = () => {
 
     const navigate = useNavigate();
 
-const API_BASE_URL = 'https://idk-eight.vercel.app/login';
+const API_BASE_URL = 'https://idk-eight.vercel.app/api/login';
 
     useEffect(() => {
         deleteCookie('userToken');
