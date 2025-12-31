@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, Music2, Lock, Globe, Play, Loader, X, Trash2, Edit2, Check, ChevronUp, ChevronDown, Shuffle } from 'lucide-react';
+import { Search, Plus, Music2, Lock, Globe, Play, Loader, X, Trash2, Edit2, Check, ChevronUp, ChevronDown, Shuffle, Share2, Copy, Link } from 'lucide-react';
 import { useMusicPlayer } from '../contexts/MusicContext';
 import { fetchWithAuth } from '../src/utils/api';
 
@@ -28,6 +28,9 @@ interface Playlist {
     is_public: boolean;
     creator_nim: string;
     cover_image?: string;
+    share_code?: string;
+    subscribed?: boolean;
+    used_share_code?: string;
 }
 
 const Music: React.FC = () => {
@@ -46,25 +49,39 @@ const Music: React.FC = () => {
     const [isRecommendation, setIsRecommendation] = useState(false);
     const [suggestions, setSuggestions] = useState<string[]>([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
+    const [showShareModal, setShowShareModal] = useState(false);
+    const [currentShareCode, setCurrentShareCode] = useState<string | null>(null);
+    const [joinCode, setJoinCode] = useState('');
+    const [showJoinModal, setShowJoinModal] = useState(false);
+    const [sharedPlaylist, setSharedPlaylist] = useState<{ playlist: Playlist; tracks: Track[] } | null>(null);
+    const [isLoadingShare, setIsLoadingShare] = useState(false);
 
     const showPlaylistDetail = selectedPlaylist !== null && tracks.length > 0;
     const isSearchMode = searchResults.length > 0;
 
     useEffect(() => {
-        let guestId = localStorage.getItem('music_guest_id');
-        if (!guestId) {
-            const array = new Uint32Array(4);
-            window.crypto.getRandomValues(array);
-            guestId = 'guest_' + Array.from(array, dec => dec.toString(36)).join('');
-            localStorage.setItem('music_guest_id', guestId);
-        }
-
-        fetchPlaylists();
+        const initGuestId = async () => {
+            let guestId = localStorage.getItem('music_guest_id');
+            if (!guestId) {
+                try {
+                    const res = await fetch(`${API_BASE_URL}/guest-token`);
+                    const data = await res.json();
+                    if (data.guestId) {
+                        guestId = data.guestId;
+                        localStorage.setItem('music_guest_id', guestId);
+                    }
+                } catch (error) {
+                }
+            }
+            fetchPlaylists();
+        };
+        initGuestId();
     }, []);
 
     const getHeaders = () => {
         const headers: any = {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
         };
 
         const guestId = localStorage.getItem('music_guest_id');
@@ -107,13 +124,12 @@ const Music: React.FC = () => {
                     setSuggestions(data || []);
                     setShowSuggestions(true);
                 } catch (error) {
-                    // Sshh
                 }
             } else {
                 setSuggestions([]);
                 setShowSuggestions(false);
             }
-        }, 500); // 500ms delay to save data
+        }, 500);
 
         return () => clearTimeout(timer);
     }, [searchQuery]);
@@ -128,10 +144,9 @@ const Music: React.FC = () => {
 
         setIsSearching(true);
         setIsRecommendation(false);
-        setShowSuggestions(false); // Hide suggestions
+        setShowSuggestions(false);
         setSelectedPlaylist(null);
 
-        // Update input if searched via click
         if (queryOverride) setSearchQuery(queryOverride);
 
         try {
@@ -139,7 +154,6 @@ const Music: React.FC = () => {
             const data = await res.json();
             if (res.ok) setSearchResults(data.data || []);
         } catch (error) {
-            // Sshh
         } finally {
             setIsSearching(false);
         }
@@ -255,10 +269,9 @@ const Music: React.FC = () => {
 
     const handleSelectPlaylist = (playlist: Playlist) => {
         setSelectedPlaylist(playlist);
-        setEditTitle(playlist.title); // Initialize edit title
-        setIsEditing(false); // Reset edit mode
-        fetchTracks(playlist.id);
-        fetchTracks(playlist.id);
+        setEditTitle(playlist.title);
+        setIsEditing(false);
+        fetchTracks(playlist.id)
     };
 
     const moveTrack = async (index: number, direction: 'up' | 'down') => {
@@ -272,13 +285,15 @@ const Music: React.FC = () => {
         if (selectedPlaylist) {
             try {
                 const trackIds = newTracks.map(t => t.id);
-                await fetch(`${API_BASE_URL}/music/playlists/${selectedPlaylist.id}/reorder`, {
+                const res = await fetchWithAuth(`${API_BASE_URL}/music/playlists/${selectedPlaylist.id}/reorder`, {
                     method: 'PUT',
-                    headers: getHeaders(),
-                    credentials: 'include',
                     body: JSON.stringify({ trackIds })
                 });
+                if (!res.ok) {
+                    console.error('Reorder failed:', await res.json());
+                }
             } catch (error) {
+                console.error('Reorder error:', error);
             }
         }
     };
@@ -289,17 +304,18 @@ const Music: React.FC = () => {
         const newTracks = [...tracks].sort(() => Math.random() - 0.5);
         setTracks(newTracks);
 
-        // Save to backend
         if (selectedPlaylist) {
             try {
                 const trackIds = newTracks.map(t => t.id);
-                await fetch(`${API_BASE_URL}/music/playlists/${selectedPlaylist.id}/reorder`, {
+                const res = await fetchWithAuth(`${API_BASE_URL}/music/playlists/${selectedPlaylist.id}/reorder`, {
                     method: 'PUT',
-                    headers: getHeaders(),
-                    credentials: 'include',
                     body: JSON.stringify({ trackIds })
                 });
+                if (!res.ok) {
+                    console.error('Shuffle reorder failed:', await res.json());
+                }
             } catch (error) {
+                console.error('Shuffle error:', error);
             }
         }
     };
@@ -329,12 +345,81 @@ const Music: React.FC = () => {
         }
     };
 
+    const handleGenerateShareCode = async () => {
+        if (!selectedPlaylist) return;
+        setIsLoadingShare(true);
+        try {
+            const res = await fetchWithAuth(`${API_BASE_URL}/music/playlists/${selectedPlaylist.id}/share-code`, {
+                method: 'POST'
+            });
+            const data = await res.json();
+            if (res.ok) {
+                setCurrentShareCode(data.share_code);
+                setShowShareModal(true);
+            } else {
+                alert(data.message || 'Gagal generate kode');
+            }
+        } catch (error) {
+        } finally {
+            setIsLoadingShare(false);
+        }
+    };
+
+    const handleCopyShareCode = () => {
+        if (currentShareCode) {
+            navigator.clipboard.writeText(currentShareCode);
+            alert('Copied');
+        }
+    };
+
+    const handleRevokeShareCode = async () => {
+        if (!selectedPlaylist) return;
+        if (!confirm('Yakin?')) return;
+
+        try {
+            const res = await fetchWithAuth(`${API_BASE_URL}/music/playlists/${selectedPlaylist.id}/share-code`, {
+                method: 'DELETE'
+            });
+            if (res.ok) {
+                setCurrentShareCode(null);
+                setShowShareModal(false);
+                alert('Oke');
+            }
+        } catch (error) {
+        }
+    };
+
+    const handleJoinByCode = async () => {
+        if (!joinCode.trim() || joinCode.length !== 6) {
+            alert('Kode harus 6 karakter');
+            return;
+        }
+        setIsLoadingShare(true);
+        try {
+            const res = await fetchWithAuth(`${API_BASE_URL}/music/playlists/subscribe/${joinCode.toUpperCase()}`, {
+                method: 'POST'
+            });
+            const data = await res.json();
+            if (res.ok) {
+                alert('Berhasil join playlist!');
+                setShowJoinModal(false);
+                setJoinCode('');
+                fetchPlaylists();
+            } else {
+                alert(data.message || 'Gagal join playlist');
+            }
+        } catch (error) {
+            alert('Gagal join playlist');
+        } finally {
+            setIsLoadingShare(false);
+        }
+    };
+
     const [activeMobileTab, setActiveMobileTab] = useState<'playlists' | 'search'>('search');
 
     return (
         <div className="h-[calc(100vh-4rem)] lg:h-screen w-full bg-black text-white flex flex-col mt-16 lg:mt-0">
 
-            {/* Mobile Tab Navigation */}
             <div className="flex lg:hidden bg-gray-900 border-b border-gray-800 flex-shrink-0">
                 <button
                     onClick={() => setActiveMobileTab('playlists')}
@@ -351,22 +436,27 @@ const Music: React.FC = () => {
             </div>
 
             <div className="flex flex-col lg:flex-row flex-1 overflow-hidden relative">
-                {/* Left Sidebar - Playlists */}
-                <div className={`border-r border-gray-800 p-4 overflow-y-auto transition-all duration-300 flex-shrink-0 ${
-                    // Mobile: strictly controlled by activeMobileTab
-                    (activeMobileTab === 'playlists' ? 'block w-full h-full' : 'hidden') + ' ' +
-                    // Desktop: overrides mobile hidden/block classes
+                <div className={`border-r border-gray-800 p-4 overflow-y-auto transition-all duration-300 flex-shrink-0 ${(activeMobileTab === 'playlists' ? 'block w-full h-full' : 'hidden') + ' ' +
                     'lg:block lg:w-64'
                     }`}>
                     <div className="flex justify-between items-center mb-4">
                         <h2 className="text-gray-400 uppercase text-xs font-bold tracking-wider">Your Playlists</h2>
-                        <button
-                            onClick={() => setShowCreateModal(true)}
-                            className="p-1 hover:bg-gray-800 rounded text-yellow-400"
-                            title="New Playlist"
-                        >
-                            <Plus size={18} />
-                        </button>
+                        <div className="flex gap-1">
+                            <button
+                                onClick={() => setShowJoinModal(true)}
+                                className="p-1 hover:bg-gray-800 rounded text-green-400"
+                                title="Join via Code"
+                            >
+                                <Link size={18} />
+                            </button>
+                            <button
+                                onClick={() => setShowCreateModal(true)}
+                                className="p-1 hover:bg-gray-800 rounded text-yellow-400"
+                                title="New Playlist"
+                            >
+                                <Plus size={18} />
+                            </button>
+                        </div>
                     </div>
                     <div className="space-y-2">
                         {playlists.map(playlist => (
@@ -383,32 +473,28 @@ const Music: React.FC = () => {
                                 )}
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
-                                        <div className={`p-2 rounded-lg transition-colors ${selectedPlaylist?.id === playlist.id ? 'bg-yellow-400/20 text-yellow-400' : 'bg-gray-800 group-hover:bg-gray-700 text-gray-400'}`}>
-                                            <Music2 size={18} />
+                                        <div className={`p-2 rounded-lg transition-colors ${selectedPlaylist?.id === playlist.id ? 'bg-yellow-400/20 text-yellow-400' : playlist.subscribed ? 'bg-green-800 text-green-400' : 'bg-gray-800 group-hover:bg-gray-700 text-gray-400'}`}>
+                                            {playlist.subscribed ? <Link size={18} /> : <Music2 size={18} />}
                                         </div>
                                         <div className="min-w-0">
                                             <h3 className="font-bold truncate max-w-[120px] text-sm">{playlist.title}</h3>
-                                            <p className={`text-xs truncate ${selectedPlaylist?.id === playlist.id ? 'text-yellow-400/70' : 'text-gray-500'}`}>
-                                                {playlist.is_public ? 'Public' : 'Private'}
+                                            <p className={`text-xs truncate ${selectedPlaylist?.id === playlist.id ? 'text-yellow-400/70' : playlist.subscribed ? 'text-green-400/70' : 'text-gray-500'}`}>
+                                                {playlist.subscribed ? `${playlist.used_share_code}` : playlist.is_public ? 'Public' : 'Private'}
                                             </p>
                                         </div>
                                     </div>
-                                    {playlist.is_public ? <Globe size={14} className="opacity-50" /> : <Lock size={14} className="opacity-50" />}
+                                    {playlist.subscribed ? <Link size={14} className="text-green-400 opacity-50" /> : playlist.is_public ? <Globe size={14} className="opacity-50" /> : <Lock size={14} className="opacity-50" />}
                                 </div>
                             </div>
                         ))}
                     </div>
                 </div>
 
-                {/* Main Content Area (Search & Results) */}
                 <div
-                    className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 min-w-0 ${
-                        // Mobile
-                        (activeMobileTab === 'search' ? 'block' : 'hidden') + ' ' +
+                    className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 min-w-0 ${(activeMobileTab === 'search' ? 'block' : 'hidden') + ' ' +
                         'lg:flex '
                         }`}
                 >
-                    {/* Search Bar */}
                     <div className="p-4 border-b border-gray-800 relative z-50">
                         <div className="flex gap-2 relative">
                             <div className="flex-1 relative">
@@ -423,7 +509,6 @@ const Music: React.FC = () => {
                                     placeholder="Search..."
                                     className="w-full bg-gray-900 border border-gray-700 rounded px-4 pl-10 py-2 text-white focus:border-yellow-400 outline-none"
                                 />
-                                {/* Suggestions Dropdown */}
                                 {showSuggestions && suggestions.length > 0 && (
                                     <div className="absolute top-full left-0 right-0 mt-2 bg-gray-800 rounded-xl shadow-xl overflow-hidden border border-gray-700">
                                         {suggestions.map((s, idx) => (
@@ -431,7 +516,7 @@ const Music: React.FC = () => {
                                                 key={idx}
                                                 className="px-4 py-2 hover:bg-gray-700 cursor-pointer text-gray-300 hover:text-white flex items-center gap-2"
                                                 onMouseDown={(e) => {
-                                                    e.preventDefault(); // Prevent input blur
+                                                    e.preventDefault();
                                                     handleSearch(s);
                                                 }}
                                             >
@@ -453,7 +538,6 @@ const Music: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Search Results List */}
                     <div className="flex-1 overflow-y-auto p-2 sm:p-4 overflow-x-hidden no-scrollbar">
                         {searchResults.length > 0 ? (
                             <div>
@@ -494,7 +578,6 @@ const Music: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Right Panel - Playlist Detail (Animated Expand) */}
                 <div
                     className={`absolute lg:relative top-0 right-0 h-full bg-black border-l border-gray-800 overflow-y-auto z-30 transition-all duration-300 flex-shrink-0 ${showPlaylistDetail
                         ? (activeMobileTab === 'search' ? 'hidden lg:block lg:w-96 translate-x-0' : 'w-full lg:w-96 translate-x-0')
@@ -522,6 +605,14 @@ const Music: React.FC = () => {
                                 )}
                                 <div className="flex gap-2 flex-shrink-0">
                                     <button
+                                        onClick={handleGenerateShareCode}
+                                        disabled={isLoadingShare}
+                                        className="p-1 hover:bg-gray-800 rounded text-gray-400 hover:text-green-400 transition-colors"
+                                        title="Share Playlist"
+                                    >
+                                        <Share2 size={20} />
+                                    </button>
+                                    <button
                                         onClick={() => handleDeletePlaylist(selectedPlaylist.id)}
                                         className="p-1 hover:bg-gray-800 rounded text-gray-400 hover:text-white transition-colors"
                                         title="Delete Playlist"
@@ -529,7 +620,7 @@ const Music: React.FC = () => {
                                         <Trash2 size={20} />
                                     </button>
                                     <button
-                                        onMouseDown={(e) => e.preventDefault()} // Prevent blur so click works
+                                        onMouseDown={(e) => e.preventDefault()}
                                         onClick={() => {
                                             if (isEditing) {
                                                 handleUpdatePlaylist();
@@ -546,7 +637,7 @@ const Music: React.FC = () => {
                                     <button
                                         onClick={() => {
                                             if (isEditing) {
-                                                setIsEditing(false); // Cancel edit
+                                                setIsEditing(false);
                                                 setEditTitle(selectedPlaylist.title);
                                             } else {
                                                 setSelectedPlaylist(null);
@@ -560,8 +651,6 @@ const Music: React.FC = () => {
                                 </div>
                             </div>
 
-
-                            {/* Shuffle Button */}
                             <div className="flex justify-end mb-2">
                                 <button
                                     onClick={shuffleTracks}
@@ -579,7 +668,6 @@ const Music: React.FC = () => {
                                         key={track.id}
                                         className="flex items-center gap-2 p-2 bg-black rounded hover:bg-gray-800 group transition-colors"
                                     >
-                                        {/* Move Up/Down Buttons */}
                                         <div className="flex flex-col gap-0.5">
                                             <button
                                                 onClick={(e) => { e.stopPropagation(); moveTrack(idx, 'up'); }}
@@ -629,7 +717,6 @@ const Music: React.FC = () => {
                 </div>
             </div>
 
-            {/* Create Playlist Modal */}
             {showCreateModal && (
                 <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
                     <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 w-full max-w-md">
@@ -669,7 +756,6 @@ const Music: React.FC = () => {
             )
             }
 
-            {/* Add to Playlist Modal */}
             {
                 showAddToPlaylistModal && (
                     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
@@ -718,6 +804,121 @@ const Music: React.FC = () => {
                     </div>
                 )
             }
+
+            {showShareModal && currentShareCode && (
+                <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+                    <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 w-full max-w-sm">
+                        <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-xl font-bold flex items-center gap-2">
+                                <Share2 size={20} className="text-green-400" />
+                                Share Playlist
+                            </h2>
+                            <button onClick={() => setShowShareModal(false)} className="text-gray-400 hover:text-white">
+                                <X size={24} />
+                            </button>
+                        </div>
+                        <p className="text-gray-400 text-sm mb-4">Code:</p>
+                        <div className="bg-black border border-gray-700 rounded-lg p-4 flex items-center justify-between mb-4">
+                            <span className="text-2xl font-mono font-bold text-yellow-400 tracking-widest">{currentShareCode}</span>
+                            <button onClick={handleCopyShareCode} className="p-2 hover:bg-gray-800 rounded text-gray-400 hover:text-white">
+                                <Copy size={20} />
+                            </button>
+                        </div>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={handleRevokeShareCode}
+                                className="flex-1 bg-red-900/30 hover:bg-red-900/50 text-red-400 py-2 rounded font-bold"
+                            >
+                                Reset
+                            </button>
+                            <button
+                                onClick={() => setShowShareModal(false)}
+                                className="flex-1 bg-gray-800 hover:bg-gray-700 py-2 rounded"
+                            >
+                                Tutup
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {showJoinModal && (
+                <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+                    <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 w-full max-w-sm">
+                        <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-xl font-bold flex items-center gap-2">
+                                <Link size={20} className="text-green-400" />
+                                Join via Code
+                            </h2>
+                            <button onClick={() => setShowJoinModal(false)} className="text-gray-400 hover:text-white">
+                                <X size={24} />
+                            </button>
+                        </div>
+                        <p className="text-gray-400 text-sm mb-4">Masukkan kode 6 karakter:</p>
+                        <input
+                            type="text"
+                            value={joinCode}
+                            onChange={e => setJoinCode(e.target.value.toUpperCase().slice(0, 6))}
+                            placeholder="______"
+                            maxLength={6}
+                            className="w-full bg-black border border-gray-700 rounded-lg px-4 py-3 mb-4 text-center text-2xl font-mono font-bold text-yellow-400 tracking-widest focus:border-green-400 outline-none uppercase"
+                        />
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => setShowJoinModal(false)}
+                                className="flex-1 bg-gray-800 hover:bg-gray-700 py-2 rounded"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                onClick={handleJoinByCode}
+                                disabled={joinCode.length !== 6 || isLoadingShare}
+                                className="flex-1 bg-green-600 hover:bg-green-500 text-white font-bold py-2 rounded disabled:opacity-50"
+                            >
+                                {isLoadingShare ? <Loader className="animate-spin mx-auto" size={20} /> : 'Join'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {sharedPlaylist && (
+                <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4">
+                    <div className="bg-gray-900 border border-gray-700 rounded-lg w-full max-w-lg max-h-[80vh] flex flex-col">
+                        <div className="p-4 border-b border-gray-800 flex justify-between items-center">
+                            <div>
+                                <h2 className="text-xl font-bold">{sharedPlaylist.playlist.title}</h2>
+                                <p className="text-xs text-gray-400">Shared Playlist</p>
+                            </div>
+                            <button onClick={() => setSharedPlaylist(null)} className="text-gray-400 hover:text-white">
+                                <X size={24} />
+                            </button>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-4">
+                            {sharedPlaylist.tracks.length === 0 ? (
+                                <p className="text-center text-gray-500 py-8">Playlist kosong</p>
+                            ) : (
+                                <div className="space-y-2">
+                                    {sharedPlaylist.tracks.map((track, idx) => (
+                                        <div
+                                            key={track.id}
+                                            className="flex items-center gap-3 p-2 bg-black rounded hover:bg-gray-800 cursor-pointer group"
+                                            onClick={() => playQueue(sharedPlaylist.tracks, idx)}
+                                        >
+                                            {track.thumbnail && <img src={track.thumbnail} alt={track.title} className="w-10 h-10 object-cover rounded" />}
+                                            <div className="flex-1 min-w-0">
+                                                <h4 className="font-semibold truncate text-sm">{track.title}</h4>
+                                                {track.artist && <p className="text-xs text-gray-400 truncate">{track.artist}</p>}
+                                            </div>
+                                            <Play size={16} className="text-yellow-400 opacity-0 group-hover:opacity-100" />
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div >
     );
 };
