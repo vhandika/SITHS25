@@ -28,7 +28,7 @@ const ChangePassword: React.FC = () => {
 
     const navigate = useNavigate();
 
-    const API_BASE_URL = 'https://idk-eight.vercel.app/api';
+    const API_BASE_URL = 'https://api.sith-s25.my.id/api';
     const API_URL = `${API_BASE_URL}/change-password`;
 
     useEffect(() => {
@@ -63,7 +63,8 @@ const ChangePassword: React.FC = () => {
             const response = await fetch(API_URL, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
                 },
                 credentials: 'include',
                 body: JSON.stringify({

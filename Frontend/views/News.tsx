@@ -3,7 +3,7 @@ import { Newspaper, Plus, X, Lock, Pencil, Trash2, ChevronLeft, ChevronRight, Lo
 import SkewedButton from '../components/SkewedButton';
 import { fetchWithAuth } from '../src/utils/api';
 
-const API_BASE_URL = 'https://idk-eight.vercel.app/api';
+const API_BASE_URL = 'https://api.sith-s25.my.id/api';
 
 const getCookie = (name: string) => {
     return document.cookie.split('; ').reduce((r, v) => {

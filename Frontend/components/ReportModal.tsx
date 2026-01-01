@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Send, AlertTriangle, Loader, CheckCircle } from 'lucide-react';
 
-const API_BASE_URL = 'https://idk-eight.vercel.app/api';
+const API_BASE_URL = 'https://api.sith-s25.my.id/api';
 
 const getCookie = (name: string) => {
     return document.cookie.split('; ').reduce((r, v) => {
@@ -34,7 +34,8 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
             const res = await fetch(`${API_BASE_URL}/report`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
                 },
                 credentials: 'include',
                 body: JSON.stringify({ sender_name: name || 'Anonymous', content })

@@ -6,7 +6,6 @@ import { MusicProvider } from './contexts/MusicContext';
 import Sidebar from './components/Sidebar';
 import ActivityTracker from './components/ActivityTracker';
 
-// Lazy Load Views for Performance
 const Home = lazy(() => import('./views/Home'));
 const Library = lazy(() => import('./views/Library'));
 const AboutUs = lazy(() => import('./views/AboutUs'));
@@ -18,7 +17,6 @@ const FindNim = lazy(() => import('./views/FindNim'));
 const Attendance = lazy(() => import('./views/Attendance'));
 const Gallery = lazy(() => import('./views/Gallery'));
 const PDFTools = lazy(() => import('./views/PDFTools'));
-const Playlist = lazy(() => import('./views/Playlist'));
 const Music = lazy(() => import('./views/Music'));
 const DevDashboard = lazy(() => import('./views/DevDashboard'));
 const MusicPlayer = lazy(() => import('./components/MusicPlayer'));
@@ -50,7 +48,6 @@ const App: React.FC = () => {
                                 <Route path="/attendance" element={<Attendance />} />
                                 <Route path="/gallery" element={<Gallery />} />
                                 <Route path="/PDFTools" element={<PDFTools />} />
-                                <Route path="/playlist" element={<Playlist />} />
                                 <Route path="/music" element={<Music />} />
                                 <Route path="/dev" element={<DevDashboard />} />
                             </Routes>

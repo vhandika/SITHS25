@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 
-const API_BASE_URL = 'https://idk-eight.vercel.app/api';
+const API_BASE_URL = 'https://api.sith-s25.my.id/api';
 
 const ActivityTracker: React.FC = () => {
     const location = useLocation();
@@ -11,7 +11,10 @@ const ActivityTracker: React.FC = () => {
             try {
                 await fetch(`${API_BASE_URL}/activity`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
                     credentials: 'include',
                     body: JSON.stringify({
                         path: location.pathname

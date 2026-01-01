@@ -8,7 +8,7 @@ import {
 import ProfileModal from '../components/ProfileModal';
 import ReportModal from '../components/ReportModal';
 
-const API_BASE_URL = 'https://idk-eight.vercel.app/api';
+const API_BASE_URL = 'https://api.sith-s25.my.id/api';
 
 const getCookie = (name: string) => {
     return document.cookie.split('; ').reduce((r, v) => {
@@ -135,7 +135,11 @@ const Sidebar: React.FC = () => {
     const handleLogout = async () => {
         if (window.confirm("Yakin ingin logout?")) {
             try {
-                await fetch(`${API_BASE_URL}/logout`, { method: 'POST', credentials: 'include' });
+                await fetch(`${API_BASE_URL}/logout`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
             } catch (e) { }
 
             deleteCookie('userToken');
@@ -235,7 +239,7 @@ const Sidebar: React.FC = () => {
                 )}
             </aside>
 
-            <header className="fixed top-0 left-0 right-0 z-40 flex h-16 items-center justify-between bg-black/80 px-4 backdrop-blur-sm lg:hidden ">
+            <header className="fixed top-0 left-0 right-0 z-40 flex h-16 items-center justify-between px-4 lg:hidden ">
                 <div className="text-white font-bold"></div>
                 <button
                     onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}

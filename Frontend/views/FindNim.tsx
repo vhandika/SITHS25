@@ -10,7 +10,7 @@ interface Student {
     avatar_url?: string | null;
 }
 
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = 'https://api.sith-s25.my.id/api';
 
 const getCookie = (name: string) => {
     return document.cookie.split('; ').reduce((r, v) => {

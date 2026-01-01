@@ -351,9 +351,23 @@ const MusicPlayer: React.FC = () => {
                     onTouchEnd={handleTouchEnd}
                 >
                     <div
-                        className="w-14 h-14 rounded-full shadow-xl flex items-center justify-center relative overflow-hidden border-2 border-yellow-400"
+                        className="w-14 h-14 rounded-full shadow-xl flex items-center justify-center relative overflow-hidden"
                         onClick={() => !hasMoved.current && togglePlay()}
                     >
+                        <svg className="absolute inset-0 w-full h-full -rotate-90 z-20 pointer-events-none" viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="48" fill="none" stroke="#4B5563" strokeWidth="4" />
+                            <circle
+                                cx="50"
+                                cy="50"
+                                r="48"
+                                fill="none"
+                                stroke="#D1D5DB"
+                                strokeWidth="4"
+                                strokeDasharray="301.59"
+                                strokeDashoffset={duration ? 301.59 - ((currentTime / duration) * 301.59) : 301.59}
+                                strokeLinecap="round"
+                            />
+                        </svg>
                         {currentTrack.thumbnail ? (
                             <img src={currentTrack.thumbnail} alt="" className={`w-full h-full object-cover ${isPlaying ? 'animate-spin' : ''}`} style={{ animationDuration: '3s' }} />
                         ) : (
@@ -361,7 +375,7 @@ const MusicPlayer: React.FC = () => {
                                 {!isReady ? <Loader size={24} className="text-yellow-400 animate-spin" /> : isPlaying ? <Pause size={24} className="text-yellow-400" /> : <Play size={24} className="text-yellow-400 ml-0.5" />}
                             </div>
                         )}
-                        <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                        <div className="absolute inset-0 bg-black/30 flex items-center justify-center z-10">
                             {!isReady ? <Loader size={24} className="text-white animate-spin" /> : isPlaying ? <Pause size={24} className="text-white" /> : <Play size={24} className="text-white ml-0.5" />}
                         </div>
                     </div>

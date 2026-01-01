@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Camera, Instagram, Phone, MessageCircle, Globe, Loader, AlertCircle, Save, Edit2, Palette, Trash2 } from 'lucide-react';
 
-const API_BASE_URL = 'https://idk-eight.vercel.app/api'; 
+const API_BASE_URL = 'https://api.sith-s25.my.id/api';
 
 const getCookie = (name: string) => {
     return document.cookie.split('; ').reduce((r, v) => {
@@ -94,7 +94,8 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, 
         try {
             const res = await fetch(`${API_BASE_URL}/user/profile`, {
                 method: 'PUT',
-                headers: {}, credentials: 'include',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                credentials: 'include',
                 body: data
             });
             if (res.ok) {

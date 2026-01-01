@@ -13,7 +13,6 @@ export default defineConfig(({ mode }) => {
     },
     plugins: [
       react(),
-      // obfuscator removed - package uninstalled during cleanup
     ],
     resolve: {
       alias: {

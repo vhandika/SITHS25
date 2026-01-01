@@ -4,12 +4,25 @@ import {
     BarChart3, CheckCircle, XCircle, Search, UserCheck, UserX, Lock, Clock, Loader, FileText,
     FileSpreadsheet, ArrowRightCircle
 } from 'lucide-react';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import SkewedButton from '../components/SkewedButton';
 import imageCompression from 'browser-image-compression';
 import { fetchWithAuth } from '../src/utils/api';
+import { useNavigate } from 'react-router-dom';
 
-const API_BASE_URL = 'https://idk-eight.vercel.app/api';
+const API_BASE_URL = 'https://api.sith-s25.my.id/api';
+const API_INTERNAL_GANJIL = 'https://ganjil.sith-s25.my.id/api';
+const API_INTERNAL_GENAP = 'https://genap.sith-s25.my.id/api';
+
+const getAttendanceApiUrl = (nim: string): string => {
+    const lastDigit = parseInt(nim.slice(-1));
+    return lastDigit % 2 === 0 ? API_INTERNAL_GENAP : API_INTERNAL_GANJIL;
+};
+
+const isNimGanjil = (nim: string): boolean => {
+    const lastDigit = parseInt(nim.slice(-1));
+    return lastDigit % 2 !== 0;
+};
 
 const getCookie = (name: string) => {
     return document.cookie.split('; ').reduce((r, v) => {
@@ -19,6 +32,7 @@ const getCookie = (name: string) => {
 };
 
 const Attendance: React.FC = () => {
+    const navigate = useNavigate();
     const [sessions, setSessions] = useState<any[]>([]);
     const [allUsers, setAllUsers] = useState<any[]>([]);
     const [userRole, setUserRole] = useState<string | null>(null);
@@ -44,6 +58,13 @@ const Attendance: React.FC = () => {
     useEffect(() => {
         const role = getCookie('userRole');
         const nim = getCookie('userNIM');
+
+        // Redirect jika tidak login
+        if (!nim) {
+            navigate('/login');
+            return;
+        }
+
         setUserRole(role || null);
         setUserNIM(nim || null);
         fetchSessions(nim || null);
@@ -51,16 +72,15 @@ const Attendance: React.FC = () => {
         if (role === 'admin' || role === 'sekretaris' || role === 'dev') {
             fetchAllUsers();
         }
-    }, []);
+    }, [navigate]);
 
     const isAdminOrSekretaris = userRole === 'admin' || userRole === 'sekretaris' || userRole === 'dev';
 
     const fetchSessions = async (currentNIM: string | null = userNIM) => {
         setLoading(true);
         try {
-            const token = getCookie('userToken');
-            const res = await fetch(`${API_BASE_URL}/attendance/sessions`, {
-                headers: {}, credentials: 'include'
+            const res = await fetch(`${API_INTERNAL_GANJIL}/attendance/sessions`, {
+                credentials: 'include'
             });
             const json = await res.json();
             if (res.ok) {
@@ -74,14 +94,14 @@ const Attendance: React.FC = () => {
     };
 
     const checkUserAttendanceStatus = async (currentSessions: any[], nim: string) => {
-        const token = getCookie('userToken');
         const openSessions = currentSessions.filter(s => s.is_open);
         const statusMap: { [key: number]: { status: string, reason: string | null } } = {};
+        const attendanceApi = getAttendanceApiUrl(nim);
 
         for (const session of openSessions) {
             try {
-                const res = await fetch(`${API_BASE_URL}/attendance/stats/${session.id}`, {
-                    headers: {}, credentials: 'include'
+                const res = await fetch(`${attendanceApi}/attendance/stats/${session.id}`, {
+                    credentials: 'include'
                 });
                 if (res.ok) {
                     const json = await res.json();
@@ -119,21 +139,27 @@ const Attendance: React.FC = () => {
         if (isSubmitting) return;
         setIsSubmitting(true);
 
-        const token = getCookie('userToken');
         try {
-            const res = await fetchWithAuth(`${API_BASE_URL}/attendance/sessions`, {
-                method: 'POST',
-                body: JSON.stringify(newSessionData)
-            });
+            const [resGanjil, resGenap] = await Promise.all([
+                fetchWithAuth(`${API_INTERNAL_GANJIL}/attendance/sessions`, {
+                    method: 'POST',
+                    body: JSON.stringify(newSessionData)
+                }),
+                fetchWithAuth(`${API_INTERNAL_GENAP}/attendance/sessions`, {
+                    method: 'POST',
+                    body: JSON.stringify(newSessionData)
+                })
+            ]);
 
-            if (res.ok) {
+            if (resGanjil.ok && resGenap.ok) {
                 alert('Sesi berhasil dibuat!');
                 setIsCreateModalOpen(false);
                 setNewSessionData({ title: '', description: '', is_photo_required: false });
                 fetchSessions();
             } else {
-                const json = await res.json();
-                alert(json.message || 'Gagal membuat sesi');
+                const errGanjil = !resGanjil.ok ? await resGanjil.json() : null;
+                const errGenap = !resGenap.ok ? await resGenap.json() : null;
+                alert(errGanjil?.message || errGenap?.message || 'Gagal membuat sesi');
             }
         } catch (error) {
             alert('Gagal membuat sesi (Error Koneksi)');
@@ -147,11 +173,14 @@ const Attendance: React.FC = () => {
         if (!window.confirm('Yakin ingin menutup sesi ini?')) return;
 
         try {
-            const token = getCookie('userToken');
-            const res = await fetchWithAuth(`${API_BASE_URL}/attendance/close/${id}`, {
-                method: 'PUT'
-            });
-            if (res.ok) { alert("Sesi berhasil ditutup."); fetchSessions(); }
+            const [resGanjil, resGenap] = await Promise.all([
+                fetchWithAuth(`${API_INTERNAL_GANJIL}/attendance/close/${id}`, { method: 'PUT' }),
+                fetchWithAuth(`${API_INTERNAL_GENAP}/attendance/close/${id}`, { method: 'PUT' })
+            ]);
+            if (resGanjil.ok || resGenap.ok) {
+                alert("Sesi berhasil ditutup.");
+                fetchSessions();
+            }
         } catch (err) { alert("Terjadi kesalahan."); }
     };
 
@@ -160,19 +189,28 @@ const Attendance: React.FC = () => {
         setViewStatsId(session.id);
         setViewStatsTitle(session.title);
         setActiveTab('hadir');
-        const token = getCookie('userToken');
 
-        const res = await fetch(`${API_BASE_URL}/attendance/stats/${session.id}`, {
-            headers: {}, credentials: 'include'
-        });
-        const json = await res.json();
-        if (res.ok) setStatsRecords(json.data);
+        try {
+            const [resGanjil, resGenap] = await Promise.all([
+                fetch(`${API_INTERNAL_GANJIL}/attendance/stats/${session.id}`, { credentials: 'include' }),
+                fetch(`${API_INTERNAL_GENAP}/attendance/stats/${session.id}`, { credentials: 'include' })
+            ]);
+
+            const jsonGanjil = resGanjil.ok ? await resGanjil.json() : { data: [] };
+            const jsonGenap = resGenap.ok ? await resGenap.json() : { data: [] };
+
+            const mergedData = [...(jsonGanjil.data || []), ...(jsonGenap.data || [])];
+            setStatsRecords(mergedData);
+        } catch (err) {
+            console.error('Failed to fetch stats:', err);
+            setStatsRecords([]);
+        }
     };
 
-    const handleApproveUser = async (recordId: number) => {
-        const token = getCookie('userToken');
+    const handleApproveUser = async (recordId: number, userNim: string) => {
         try {
-            const res = await fetchWithAuth(`${API_BASE_URL}/attendance/approve/${recordId}`, {
+            const attendanceApi = getAttendanceApiUrl(userNim);
+            const res = await fetchWithAuth(`${attendanceApi}/attendance/approve/${recordId}`, {
                 method: 'PUT'
             });
 
@@ -189,8 +227,8 @@ const Attendance: React.FC = () => {
     const handleChecklistUser = async (targetUser: any) => {
         if (!window.confirm(`Hadirkan ${targetUser.name}`)) return;
 
-        const token = getCookie('userToken');
-        const res = await fetchWithAuth(`${API_BASE_URL}/attendance/manual`, {
+        const attendanceApi = getAttendanceApiUrl(targetUser.nim);
+        const res = await fetchWithAuth(`${attendanceApi}/attendance/manual`, {
             method: 'POST',
             body: JSON.stringify({
                 session_id: viewStatsId,
@@ -273,7 +311,8 @@ const Attendance: React.FC = () => {
         if (photoFile) formData.append('image', photoFile);
 
         try {
-            const res = await fetchWithAuth(`${API_BASE_URL}/attendance/submit`, {
+            const attendanceApi = getAttendanceApiUrl(userNIM!);
+            const res = await fetchWithAuth(`${attendanceApi}/attendance/submit`, {
                 method: 'POST',
                 body: formData
             });
@@ -314,7 +353,8 @@ const Attendance: React.FC = () => {
         if (photoFile) formData.append('image', photoFile);
 
         try {
-            const res = await fetchWithAuth(`${API_BASE_URL}/attendance/submit`, {
+            const attendanceApi = getAttendanceApiUrl(userNIM!);
+            const res = await fetchWithAuth(`${attendanceApi}/attendance/submit`, {
                 method: 'POST',
                 body: formData
             });
@@ -399,7 +439,7 @@ const Attendance: React.FC = () => {
         };
     }, [allUsers, statsRecords, viewStatsId, searchFilter, sessions]);
 
-    const handleExportExcel = () => {
+    const handleExportExcel = async () => {
         const combinedData = [
             ...presentUsers.map(u => ({ ...u, finalStatus: 'Hadir' })),
             ...permissionUsers.map(u => ({ ...u, finalStatus: 'Izin' })),
@@ -418,35 +458,42 @@ const Attendance: React.FC = () => {
             return nimA.toString().localeCompare(nimB.toString(), undefined, { numeric: true });
         });
 
-        const excelData = combinedData.map((item, index) => ({
-            "No": index + 1,
-            "NIM": item.user_nim || item.nim,
-            "Nama": item.user_name || item.name,
-            "Status": item.finalStatus,
-            "Alasan": item.reason || "-",
-            "Waktu Input": item.created_at ? new Date(item.created_at).toLocaleString('id-ID') : "-",
-            "Link Foto": item.photo_url || "-"
-        }));
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Data Absensi');
 
-        const worksheet = XLSX.utils.json_to_sheet(excelData);
-        const wscols = [
-            { wch: 5 },
-            { wch: 10 },
-            { wch: 40 },
-            { wch: 15 },
-            { wch: 30 },
-            { wch: 20 },
-            { wch: 30 }
+        worksheet.columns = [
+            { header: 'No', key: 'no', width: 5 },
+            { header: 'NIM', key: 'nim', width: 15 },
+            { header: 'Nama', key: 'nama', width: 40 },
+            { header: 'Status', key: 'status', width: 15 },
+            { header: 'Alasan', key: 'alasan', width: 30 },
+            { header: 'Waktu Input', key: 'waktu', width: 20 },
+            { header: 'Link Foto', key: 'foto', width: 30 }
         ];
-        worksheet['!cols'] = wscols;
 
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Data Absensi");
+        combinedData.forEach((item, index) => {
+            worksheet.addRow({
+                no: index + 1,
+                nim: item.user_nim || item.nim,
+                nama: item.user_name || item.name,
+                status: item.finalStatus,
+                alasan: item.reason || "-",
+                waktu: item.created_at ? new Date(item.created_at).toLocaleString('id-ID') : "-",
+                foto: item.photo_url || "-"
+            });
+        });
 
+        worksheet.getRow(1).font = { bold: true };
+
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
         const cleanTitle = viewStatsTitle.replace(/[^a-zA-Z0-9]/g, "_");
-        const fileName = `${cleanTitle}_${new Date().toISOString().split('T')[0]}.xlsx`;
-
-        XLSX.writeFile(workbook, fileName);
+        link.download = `${cleanTitle}_${new Date().toISOString().split('T')[0]}.xlsx`;
+        link.click();
+        window.URL.revokeObjectURL(url);
     };
 
     return (
@@ -683,7 +730,7 @@ const Attendance: React.FC = () => {
                                                             </a>
                                                         ) : <span className="text-xs text-red-400 italic mr-2">No Foto</span>}
 
-                                                        <button onClick={() => handleApproveUser(rec.id)} className="bg-green-600 hover:bg-green-500 text-white px-3 py-1 rounded text-xs font-bold flex items-center gap-1 shadow-lg">
+                                                        <button onClick={() => handleApproveUser(rec.id, rec.user_nim)} className="bg-green-600 hover:bg-green-500 text-white px-3 py-1 rounded text-xs font-bold flex items-center gap-1 shadow-lg">
                                                             <CheckCircle size={14} /> ACC
                                                         </button>
                                                     </td>

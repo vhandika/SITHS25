@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, Music2, Lock, Globe, Play, Loader, X, Trash2, Edit2, Check, ChevronUp, ChevronDown, Shuffle, Share2, Copy, Link } from 'lucide-react';
+import { Search, Plus, Music2, Lock, Globe, Play, Loader, X, Trash2, Edit2, Check, ChevronUp, ChevronDown, Shuffle, Share2, Copy, Link, Download } from 'lucide-react';
 import { useMusicPlayer } from '../contexts/MusicContext';
 import { fetchWithAuth } from '../src/utils/api';
 
-const API_BASE_URL = 'https://idk-eight.vercel.app/api';
+const API_BASE_URL = 'https://api.sith-s25.my.id/api';
 
 const getCookie = (name: string) => {
     const value = `; ${document.cookie}`;
@@ -34,7 +34,7 @@ interface Playlist {
 }
 
 const Music: React.FC = () => {
-    const { playTrack, playQueue } = useMusicPlayer();
+    const { playTrack, playQueue, setQueue, queue, currentIndex, setCurrentIndex } = useMusicPlayer();
     const [playlists, setPlaylists] = useState<Playlist[]>([]);
     const [selectedPlaylist, setSelectedPlaylist] = useState<Playlist | null>(null);
     const [tracks, setTracks] = useState<Track[]>([]);
@@ -55,6 +55,10 @@ const Music: React.FC = () => {
     const [showJoinModal, setShowJoinModal] = useState(false);
     const [sharedPlaylist, setSharedPlaylist] = useState<{ playlist: Playlist; tracks: Track[] } | null>(null);
     const [isLoadingShare, setIsLoadingShare] = useState(false);
+    const [showImportModal, setShowImportModal] = useState(false);
+    const [spotifyUrl, setSpotifyUrl] = useState('');
+    const [isImporting, setIsImporting] = useState(false);
+    const [importIsPublic, setImportIsPublic] = useState(false);
 
     const showPlaylistDetail = selectedPlaylist !== null && tracks.length > 0;
     const isSearchMode = searchResults.length > 0;
@@ -231,10 +235,20 @@ const Music: React.FC = () => {
     const handleDeletePlaylist = async (playlistId: string) => {
         if (!confirm('Yakin?')) return;
 
+        const playlist = playlists.find(p => p.id === playlistId);
+        if (!playlist) return;
+
         try {
-            const res = await fetchWithAuth(`${API_BASE_URL}/music/playlists/${playlistId}`, {
-                method: 'DELETE'
-            });
+            let res;
+            if (playlist.subscribed) {
+                res = await fetchWithAuth(`${API_BASE_URL}/music/playlists/subscribe/${playlistId}`, {
+                    method: 'DELETE'
+                });
+            } else {
+                res = await fetchWithAuth(`${API_BASE_URL}/music/playlists/${playlistId}`, {
+                    method: 'DELETE'
+                });
+            }
 
             if (res.ok) {
                 if (selectedPlaylist?.id === playlistId) {
@@ -282,6 +296,15 @@ const Music: React.FC = () => {
         [newTracks[index], newTracks[newIndex]] = [newTracks[newIndex], newTracks[index]];
         setTracks(newTracks);
 
+        if (queue.length > 0) {
+            const currentTrack = queue[currentIndex];
+            const newCurrentIndex = newTracks.findIndex(t => t.id === currentTrack?.id);
+            setQueue(newTracks);
+            if (newCurrentIndex !== -1) {
+                setCurrentIndex(newCurrentIndex);
+            }
+        }
+
         if (selectedPlaylist) {
             try {
                 const trackIds = newTracks.map(t => t.id);
@@ -303,6 +326,15 @@ const Music: React.FC = () => {
 
         const newTracks = [...tracks].sort(() => Math.random() - 0.5);
         setTracks(newTracks);
+
+        if (queue.length > 0) {
+            const currentTrack = queue[currentIndex];
+            const newCurrentIndex = newTracks.findIndex(t => t.id === currentTrack?.id);
+            setQueue(newTracks);
+            if (newCurrentIndex !== -1) {
+                setCurrentIndex(newCurrentIndex);
+            }
+        }
 
         if (selectedPlaylist) {
             try {
@@ -368,7 +400,6 @@ const Music: React.FC = () => {
     const handleCopyShareCode = () => {
         if (currentShareCode) {
             navigator.clipboard.writeText(currentShareCode);
-            alert('Copied');
         }
     };
 
@@ -415,6 +446,39 @@ const Music: React.FC = () => {
         }
     };
 
+    const handleSpotifyImport = async () => {
+        if (!spotifyUrl.trim()) {
+            alert('Masukkan URL Spotify');
+            return;
+        }
+        if (!spotifyUrl.includes('spotify.com/playlist/')) {
+            alert('URL harus merupakan link playlist Spotify');
+            return;
+        }
+
+        setIsImporting(true);
+        try {
+            const res = await fetchWithAuth(`${API_BASE_URL}/music/import/spotify`, {
+                method: 'POST',
+                body: JSON.stringify({ spotifyUrl, isPublic: importIsPublic })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                alert(data.message || 'Import berhasil!');
+                setShowImportModal(false);
+                setSpotifyUrl('');
+                setImportIsPublic(false);
+                fetchPlaylists();
+            } else {
+                alert(data.message || 'Gagal import playlist');
+            }
+        } catch (error) {
+            alert('Gagal import playlist');
+        } finally {
+            setIsImporting(false);
+        }
+    };
+
     const [activeMobileTab, setActiveMobileTab] = useState<'playlists' | 'search'>('search');
 
     return (
@@ -443,8 +507,15 @@ const Music: React.FC = () => {
                         <h2 className="text-gray-400 uppercase text-xs font-bold tracking-wider">Your Playlists</h2>
                         <div className="flex gap-1">
                             <button
+                                onClick={() => setShowImportModal(true)}
+                                className="p-1 hover:bg-gray-800 rounded text-gray-400"
+                                title="Import from Spotify"
+                            >
+                                <Download size={18} />
+                            </button>
+                            <button
                                 onClick={() => setShowJoinModal(true)}
-                                className="p-1 hover:bg-gray-800 rounded text-green-400"
+                                className="p-1 hover:bg-gray-800 rounded text-gray-400"
                                 title="Join via Code"
                             >
                                 <Link size={18} />
@@ -473,17 +544,17 @@ const Music: React.FC = () => {
                                 )}
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
-                                        <div className={`p-2 rounded-lg transition-colors ${selectedPlaylist?.id === playlist.id ? 'bg-yellow-400/20 text-yellow-400' : playlist.subscribed ? 'bg-green-800 text-green-400' : 'bg-gray-800 group-hover:bg-gray-700 text-gray-400'}`}>
+                                        <div className={`p-2 rounded-lg transition-colors ${selectedPlaylist?.id === playlist.id ? 'bg-yellow-400/20 text-yellow-400' : playlist.subscribed ? 'bg-gray-800 text-gray-300' : 'bg-gray-800 group-hover:bg-gray-700 text-gray-400'}`}>
                                             {playlist.subscribed ? <Link size={18} /> : <Music2 size={18} />}
                                         </div>
                                         <div className="min-w-0">
                                             <h3 className="font-bold truncate max-w-[120px] text-sm">{playlist.title}</h3>
-                                            <p className={`text-xs truncate ${selectedPlaylist?.id === playlist.id ? 'text-yellow-400/70' : playlist.subscribed ? 'text-green-400/70' : 'text-gray-500'}`}>
+                                            <p className={`text-xs truncate ${selectedPlaylist?.id === playlist.id ? 'text-yellow-400/70' : playlist.subscribed ? 'text-gray-500' : 'text-gray-500'}`}>
                                                 {playlist.subscribed ? `${playlist.used_share_code}` : playlist.is_public ? 'Public' : 'Private'}
                                             </p>
                                         </div>
                                     </div>
-                                    {playlist.subscribed ? <Link size={14} className="text-green-400 opacity-50" /> : playlist.is_public ? <Globe size={14} className="opacity-50" /> : <Lock size={14} className="opacity-50" />}
+                                    {playlist.subscribed ? <Link size={14} className="text-gray-500" /> : playlist.is_public ? <Globe size={14} className="opacity-50" /> : <Lock size={14} className="opacity-50" />}
                                 </div>
                             </div>
                         ))}
@@ -607,7 +678,7 @@ const Music: React.FC = () => {
                                     <button
                                         onClick={handleGenerateShareCode}
                                         disabled={isLoadingShare}
-                                        className="p-1 hover:bg-gray-800 rounded text-gray-400 hover:text-green-400 transition-colors"
+                                        className="p-1 hover:bg-gray-800 rounded text-gray-400 hover:text-white transition-colors"
                                         title="Share Playlist"
                                     >
                                         <Share2 size={20} />
@@ -791,7 +862,7 @@ const Music: React.FC = () => {
                                         className="w-full text-left p-3 rounded hover:bg-gray-800 flex items-center gap-3 transition-colors border border-transparent hover:border-gray-700 group"
                                     >
                                         <div className="bg-gray-800 group-hover:bg-gray-700 p-2 rounded transition-colors">
-                                            {p.is_public ? <Globe size={16} className="text-green-400" /> : <Lock size={16} className="text-gray-500" />}
+                                            {p.is_public ? <Globe size={16} className="text-gray-400" /> : <Lock size={16} className="text-gray-500" />}
                                         </div>
                                         <span className="font-medium text-sm">{p.title}</span>
                                     </button>
@@ -810,7 +881,7 @@ const Music: React.FC = () => {
                     <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 w-full max-w-sm">
                         <div className="flex justify-between items-center mb-4">
                             <h2 className="text-xl font-bold flex items-center gap-2">
-                                <Share2 size={20} className="text-green-400" />
+                                <Share2 size={20} className="text-yellow-400" />
                                 Share Playlist
                             </h2>
                             <button onClick={() => setShowShareModal(false)} className="text-gray-400 hover:text-white">
@@ -847,7 +918,7 @@ const Music: React.FC = () => {
                     <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 w-full max-w-sm">
                         <div className="flex justify-between items-center mb-4">
                             <h2 className="text-xl font-bold flex items-center gap-2">
-                                <Link size={20} className="text-green-400" />
+                                <Link size={20} className="text-yellow-400" />
                                 Join via Code
                             </h2>
                             <button onClick={() => setShowJoinModal(false)} className="text-gray-400 hover:text-white">
@@ -861,7 +932,7 @@ const Music: React.FC = () => {
                             onChange={e => setJoinCode(e.target.value.toUpperCase().slice(0, 6))}
                             placeholder="______"
                             maxLength={6}
-                            className="w-full bg-black border border-gray-700 rounded-lg px-4 py-3 mb-4 text-center text-2xl font-mono font-bold text-yellow-400 tracking-widest focus:border-green-400 outline-none uppercase"
+                            className="w-full bg-black border border-gray-700 rounded-lg px-4 py-3 mb-4 text-center text-2xl font-mono font-bold text-yellow-400 tracking-widest focus:border-yellow-400 outline-none uppercase"
                         />
                         <div className="flex gap-2">
                             <button
@@ -873,7 +944,7 @@ const Music: React.FC = () => {
                             <button
                                 onClick={handleJoinByCode}
                                 disabled={joinCode.length !== 6 || isLoadingShare}
-                                className="flex-1 bg-green-600 hover:bg-green-500 text-white font-bold py-2 rounded disabled:opacity-50"
+                                className="flex-1 bg-yellow-400 hover:bg-yellow-300 text-black font-bold py-2 rounded disabled:opacity-50"
                             >
                                 {isLoadingShare ? <Loader className="animate-spin mx-auto" size={20} /> : 'Join'}
                             </button>
@@ -915,6 +986,55 @@ const Music: React.FC = () => {
                                     ))}
                                 </div>
                             )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {showImportModal && (
+                <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+                    <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 w-full max-w-md">
+                        <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-xl font-bold flex items-center gap-2">
+                                <Download size={20} className="text-yellow-400" />
+                                Import from Spotify
+                            </h2>
+                            <button onClick={() => setShowImportModal(false)} className="text-gray-400 hover:text-white">
+                                <X size={24} />
+                            </button>
+                        </div>
+                        <p className="text-gray-400 text-sm mb-4">Paste link playlist Spotify:</p>
+                        <input
+                            type="text"
+                            value={spotifyUrl}
+                            onChange={e => setSpotifyUrl(e.target.value)}
+                            placeholder="https://open.spotify.com/.."
+                            className="w-full bg-black border border-gray-700 rounded-lg px-4 py-3 mb-4 text-white focus:border-yellow-400 outline-none"
+                        />
+                        <label className="flex items-center gap-2 mb-4 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={importIsPublic}
+                                onChange={e => setImportIsPublic(e.target.checked)}
+                                className="w-4 h-4"
+                            />
+                            <span className="text-sm">Make public</span>
+                        </label>
+                        <p className="text-xs text-gray-500 mb-4">Proses import bisa memakan waktu beberapa menit tergantung jumlah lagu.</p>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => setShowImportModal(false)}
+                                className="flex-1 bg-gray-800 hover:bg-gray-700 py-2 rounded"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                onClick={handleSpotifyImport}
+                                disabled={!spotifyUrl.trim() || isImporting}
+                                className="flex-1 bg-yellow-400 hover:bg-yellow-300 text-black font-bold py-2 rounded disabled:opacity-50"
+                            >
+                                {isImporting ? <Loader className="animate-spin mx-auto" size={20} /> : 'Import'}
+                            </button>
                         </div>
                     </div>
                 </div>

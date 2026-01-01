@@ -29,7 +29,7 @@ const Login: React.FC = () => {
 
     const navigate = useNavigate();
 
-    const API_BASE_URL = 'http://localhost:5000';
+    const API_BASE_URL = 'https://api.sith-s25.my.id/api';
     const API_URL = `${API_BASE_URL}/login`;
 
     useEffect(() => {
@@ -53,7 +53,10 @@ const Login: React.FC = () => {
         try {
             const response = await fetch(API_URL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
                 body: JSON.stringify({ nim, password }),
                 credentials: 'include'
             });

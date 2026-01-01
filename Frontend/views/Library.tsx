@@ -206,7 +206,10 @@ const Library: React.FC = () => {
     try {
       const res = await fetch(`${API_URL}/chat/create-room`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
         body: JSON.stringify({ username })
       });
       const data = await res.json();
@@ -263,7 +266,10 @@ const Library: React.FC = () => {
     try {
       await fetch(`${API_URL}/chat/send`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
         body: JSON.stringify({
           roomId: roomId,
           text: textToSend,
@@ -450,10 +456,10 @@ const Library: React.FC = () => {
                     </div>
 
                     <div className={`max-w-[85%] p-3 rounded-lg text-sm leading-relaxed whitespace-pre-wrap ${msg.isAi
-                        ? 'bg-zinc-800 text-blue-100 border border-blue-500/30'
-                        : msg.isMe
-                          ? 'bg-yellow-400 text-black rounded-tr-none font-medium'
-                          : 'bg-gray-800 text-gray-200 rounded-tl-none border border-gray-700'
+                      ? 'bg-zinc-800 text-blue-100 border border-blue-500/30'
+                      : msg.isMe
+                        ? 'bg-yellow-400 text-black rounded-tr-none font-medium'
+                        : 'bg-gray-800 text-gray-200 rounded-tl-none border border-gray-700'
                       }`}>
                       {msg.text.replace(' @ai', '')}
                     </div>

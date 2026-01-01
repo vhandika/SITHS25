@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, X, Link as LinkIcon, User, Camera, Folder, Trash2, Loader } from 'lucide-react';
 import SkewedButton from '../components/SkewedButton';
 import { fetchWithAuth } from '../src/utils/api';
+import { useNavigate } from 'react-router-dom';
 
 interface GalleryItem {
     id: number;
@@ -20,6 +21,7 @@ const getCookie = (name: string) => {
 };
 
 const Gallery: React.FC = () => {
+    const navigate = useNavigate();
     const [items, setItems] = useState<GalleryItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -28,7 +30,7 @@ const Gallery: React.FC = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const currentUserNIM = getCookie('userNIM');
-    const API_BASE_URL = 'http://localhost:5000/api';
+    const API_BASE_URL = 'https://api.sith-s25.my.id/api';
     const API_URL = `${API_BASE_URL}/gallery`;
 
     const fetchGallery = async () => {
@@ -47,8 +49,13 @@ const Gallery: React.FC = () => {
     };
 
     useEffect(() => {
+        // Redirect jika tidak login
+        if (!currentUserNIM) {
+            navigate('/login');
+            return;
+        }
         fetchGallery();
-    }, []);
+    }, [currentUserNIM, navigate]);
 
     const handleSubmit = async (e?: React.FormEvent | React.MouseEvent) => {
         if (e) e.preventDefault();
