@@ -38,7 +38,7 @@ const About: React.FC = () => {
     const visionRef = useRef<HTMLDivElement>(null);
     const missionRef = useRef<HTMLDivElement>(null);
     const timelineRef = useRef<HTMLDivElement>(null);
-    const detailRef = useRef<HTMLDivElement>(null); 
+    const detailRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const observerOptions = { threshold: 0.1, rootMargin: "0px" };
@@ -86,7 +86,7 @@ const About: React.FC = () => {
             </div>
 
             <div className="relative w-full max-w-6xl mx-auto h-[220px] md:h-[500px] overflow-hidden rounded-lg md:rounded-xl border border-gray-800 shadow-2xl group mb-16 px-4 md:px-0">
-                <div 
+                <div
                     className="flex h-full transition-transform duration-700 ease-out"
                     style={{ transform: `translateX(-${currentBanner * 100}%)` }}
                 >
@@ -105,12 +105,11 @@ const About: React.FC = () => {
                 </button>
             </div>
 
-            <div 
-                id="about" 
+            <div
+                id="about"
                 ref={aboutRef}
-                className={`mx-auto max-w-4xl px-6 pb-16 text-center transition-all duration-1000 ease-out transform ${
-                    visibleSections['about'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
-                }`}
+                className={`mx-auto max-w-4xl px-6 pb-16 text-center transition-all duration-1000 ease-out transform ${visibleSections['about'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+                    }`}
             >
                 <h2 className="mb-6 text-2xl md:text-4xl font-bold uppercase tracking-widest text-white">
                     Tentang <span className="text-yellow-400">SITH-S</span>
@@ -121,12 +120,11 @@ const About: React.FC = () => {
             </div>
 
             <div className="mx-auto max-w-6xl px-6 py-8 md:py-24 flex flex-col gap-12 md:gap-24">
-                <div 
-                    id="vision" 
+                <div
+                    id="vision"
                     ref={visionRef}
-                    className={`flex flex-col md:flex-row md:w-2/3 self-start gap-4 md:gap-6 transition-all duration-1000 ease-out transform ${
-                        visibleSections['vision'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-20'
-                    }`}
+                    className={`flex flex-col md:flex-row md:w-2/3 self-start gap-4 md:gap-6 transition-all duration-1000 ease-out transform ${visibleSections['vision'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-20'
+                        }`}
                 >
                     <div className="flex items-center gap-4 md:block">
                         <h3 className="text-2xl font-bold uppercase tracking-wide text-yellow-400 md:hidden">Visi</h3>
@@ -139,12 +137,11 @@ const About: React.FC = () => {
                     </div>
                 </div>
 
-                <div 
-                    id="mission" 
+                <div
+                    id="mission"
                     ref={missionRef}
-                    className={`flex flex-col md:flex-row-reverse md:w-2/3 self-end gap-4 md:gap-6 transition-all duration-1000 delay-300 ease-out transform ${
-                        visibleSections['mission'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-20'
-                    }`}
+                    className={`flex flex-col md:flex-row-reverse md:w-2/3 self-end gap-4 md:gap-6 transition-all duration-1000 delay-300 ease-out transform ${visibleSections['mission'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-20'
+                        }`}
                 >
                     <div className="flex items-center gap-4 md:block">
                         <h3 className="text-2xl font-bold uppercase tracking-wide text-yellow-400 md:hidden">Misi</h3>
@@ -180,21 +177,19 @@ const About: React.FC = () => {
 
                     <div className="block md:hidden relative px-4">
                         <div className="absolute left-8 top-0 bottom-0 w-1 bg-gray-800 rounded-full"></div>
-                        
+
                         <div className="flex flex-col gap-8">
                             {activitiesData.map((activity, index) => (
-                                <div 
-                                    key={activity.id} 
+                                <div
+                                    key={activity.id}
                                     className="relative pl-12 cursor-pointer group"
                                     onClick={() => handleActivityClick(activity)}
                                 >
-                                    <div className={`absolute left-[29px] top-4 w-4 h-4 rounded-full border-2 z-10 transition-colors ${
-                                        selectedActivity.id === activity.id ? 'bg-yellow-400 border-yellow-400' : 'bg-black border-gray-600'
-                                    }`}></div>
+                                    <div className={`absolute left-[29px] top-4 w-4 h-4 rounded-full border-2 z-10 transition-colors ${selectedActivity.id === activity.id ? 'bg-yellow-400 border-yellow-400' : 'bg-black border-gray-600'
+                                        }`}></div>
 
-                                    <div className={`border-l-2 p-4 rounded-r-lg bg-white/5 transition-all ${
-                                        selectedActivity.id === activity.id ? 'border-yellow-400 bg-white/10' : 'border-gray-700'
-                                    }`}>
+                                    <div className={`border-l-2 p-4 rounded-r-lg bg-white/5 transition-all ${selectedActivity.id === activity.id ? 'border-yellow-400 bg-white/10' : 'border-gray-700'
+                                        }`}>
                                         <div className="flex gap-4 items-start">
                                             <img src={activity.imageUrl} alt={activity.title} className="w-16 h-16 object-cover rounded bg-gray-800" />
                                             <div>
@@ -209,12 +204,12 @@ const About: React.FC = () => {
                     </div>
 
                     <div className="hidden md:block relative w-full overflow-x-auto pb-4 scrollbar-hide">
-                        <div 
+                        <div
                             className="relative h-[450px] px-12"
                             style={{ minWidth: `${Math.max(1000, activitiesData.length * 320)}px` }}
                         >
                             <div className="absolute top-1/2 left-0 w-full h-1 bg-gray-800 -translate-y-1/2 rounded-full mx-12" style={{ width: 'calc(100% - 6rem)' }}></div>
-                            <div 
+                            <div
                                 className="absolute top-1/2 left-0 h-1 bg-yellow-400 -translate-y-1/2 rounded-full transition-all duration-[2000ms] ease-in-out mx-12"
                                 style={{ width: visibleSections['timeline'] ? 'calc(100% - 6rem)' : '0%' }}
                             ></div>
@@ -223,32 +218,29 @@ const About: React.FC = () => {
                                 {activitiesData.map((activity, index) => {
                                     const isTop = index % 2 === 0;
                                     return (
-                                        <div 
-                                            key={activity.id} 
-                                            className={`relative w-[320px] flex-shrink-0 h-full flex justify-center transition-all duration-1000 transform ${
-                                                visibleSections['timeline'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
-                                            }`}
+                                        <div
+                                            key={activity.id}
+                                            className={`relative w-[320px] flex-shrink-0 h-full flex justify-center transition-all duration-1000 transform ${visibleSections['timeline'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+                                                }`}
                                             style={{ transitionDelay: visibleSections['timeline'] ? `${index * 300 + 300}ms` : '0ms' }}
                                         >
-                                            <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2 z-20 transition-all duration-300 ${
-                                                selectedActivity.id === activity.id ? 'bg-yellow-400 border-yellow-400 scale-150' : 'bg-black border-gray-600'
-                                            }`}></div>
+                                            <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2 z-20 transition-all duration-300 ${selectedActivity.id === activity.id ? 'bg-yellow-400 border-yellow-400 scale-150' : 'bg-black border-gray-600'
+                                                }`}></div>
 
-                                            <div 
+                                            <div
                                                 className={`absolute flex flex-col items-center cursor-pointer group w-full ${isTop ? 'bottom-[50%] pb-8' : 'top-[50%] pt-8'}`}
                                                 onClick={() => handleActivityClick(activity)}
                                             >
                                                 <svg className={`absolute left-0 w-full pointer-events-none ${isTop ? 'bottom-0 h-8' : 'top-0 h-8'}`}>
                                                     {isTop ? (
-                                                        <path d="M 160,0 L 160,12 L 160,32" fill="none" stroke={selectedActivity.id === activity.id ? "#FACC15" : "#4B5563"} strokeWidth="1.5"/>
+                                                        <path d="M 160,0 L 160,12 L 160,32" fill="none" stroke={selectedActivity.id === activity.id ? "#FACC15" : "#4B5563"} strokeWidth="1.5" />
                                                     ) : (
-                                                        <path d="M 160,32 L 160,20 L 160,0" fill="none" stroke={selectedActivity.id === activity.id ? "#FACC15" : "#4B5563"} strokeWidth="1.5"/>
+                                                        <path d="M 160,32 L 160,20 L 160,0" fill="none" stroke={selectedActivity.id === activity.id ? "#FACC15" : "#4B5563"} strokeWidth="1.5" />
                                                     )}
                                                 </svg>
 
-                                                <div className={`relative w-64 h-36 rounded-lg overflow-hidden border bg-black transition-all duration-300 z-30 ${
-                                                    selectedActivity.id === activity.id ? 'border-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.5)] scale-105' : 'border-gray-800 group-hover:border-yellow-400 group-hover:scale-105'
-                                                }`}>
+                                                <div className={`relative w-64 h-36 rounded-lg overflow-hidden border bg-black transition-all duration-300 z-30 ${selectedActivity.id === activity.id ? 'border-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.5)] scale-105' : 'border-gray-800 group-hover:border-yellow-400 group-hover:scale-105'
+                                                    }`}>
                                                     <img src={activity.imageUrl} alt={activity.title} className="w-full h-full object-cover" />
                                                     <div className="absolute bottom-0 left-0 w-full bg-black/80 py-1 text-center">
                                                         <p className="text-xs font-bold text-yellow-400">{activity.date}</p>
@@ -256,9 +248,8 @@ const About: React.FC = () => {
                                                 </div>
 
                                                 <div className={`absolute left-1/2 -translate-x-1/2 w-[300px] text-center px-2 z-40 ${isTop ? 'bottom-full mb-3' : 'top-full mt-3'}`}>
-                                                    <p className={`text-sm font-bold uppercase tracking-wider transition-colors drop-shadow-md bg-black/50 backdrop-blur-sm rounded py-1 ${
-                                                        selectedActivity.id === activity.id ? 'text-yellow-400' : 'text-gray-300 group-hover:text-white'
-                                                    }`}>
+                                                    <p className={`text-sm font-bold uppercase tracking-wider transition-colors drop-shadow-md bg-black/50 backdrop-blur-sm rounded py-1 ${selectedActivity.id === activity.id ? 'text-yellow-400' : 'text-gray-300 group-hover:text-white'
+                                                        }`}>
                                                         {activity.title}
                                                     </p>
                                                 </div>
@@ -278,10 +269,10 @@ const About: React.FC = () => {
                         <div className="w-full lg:w-3/5">
                             <div className="relative overflow-hidden rounded-xl border border-yellow-400/30 shadow-2xl">
                                 <div className="absolute inset-0 bg-yellow-400/10 mix-blend-overlay"></div>
-                                <img 
+                                <img
                                     key={selectedActivity.imageUrl}
-                                    src={selectedActivity.imageUrl} 
-                                    alt="Detail" 
+                                    src={selectedActivity.imageUrl}
+                                    alt="Detail"
                                     className="h-[250px] md:h-[400px] lg:h-[500px] w-full object-cover animate-fade-in"
                                 />
                             </div>
