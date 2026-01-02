@@ -161,8 +161,8 @@ const Attendance: React.FC = () => {
                 const errGenap = !resGenap.ok ? await resGenap.json() : null;
                 alert(errGanjil?.message || errGenap?.message || 'Gagal membuat sesi');
             }
-        } catch (error) {
-            alert('Gagal membuat sesi (Error Koneksi)');
+        } catch (error: any) {
+            alert(`Gagal membuat sesi: ${error.message || 'Error Koneksi'}`);
         } finally {
             setIsSubmitting(false);
         }
@@ -181,7 +181,7 @@ const Attendance: React.FC = () => {
                 alert("Sesi berhasil ditutup.");
                 fetchSessions();
             }
-        } catch (err) { alert("Terjadi kesalahan."); }
+        } catch (err: any) { alert(`Terjadi kesalahan: ${err.message}`); }
     };
 
     const handleViewStats = async (e: React.MouseEvent, session: any) => {
@@ -221,36 +221,38 @@ const Attendance: React.FC = () => {
             } else {
                 alert("Gagal verifikasi user.");
             }
-        } catch (error) { alert("Error koneksi."); }
+        } catch (error: any) { alert(`Error koneksi: ${error.message}`); }
     };
 
     const handleChecklistUser = async (targetUser: any) => {
         if (!window.confirm(`Hadirkan ${targetUser.name}`)) return;
 
-        const attendanceApi = getAttendanceApiUrl(targetUser.nim);
-        const res = await fetchWithAuth(`${attendanceApi}/attendance/manual`, {
-            method: 'POST',
-            body: JSON.stringify({
-                session_id: viewStatsId,
-                target_nim: targetUser.nim,
-                target_name: targetUser.name,
-                status: 'Dihadirkan'
-            })
-        });
+        try {
+            const attendanceApi = getAttendanceApiUrl(targetUser.nim);
+            const res = await fetchWithAuth(`${attendanceApi}/attendance/manual`, {
+                method: 'POST',
+                body: JSON.stringify({
+                    session_id: viewStatsId,
+                    target_nim: targetUser.nim,
+                    target_name: targetUser.name,
+                    status: 'Dihadirkan'
+                })
+            });
 
-        if (res.ok) {
-            const newRecord = {
-                id: Date.now(),
-                user_nim: targetUser.nim,
-                user_name: targetUser.name,
-                status: 'Dihadirkan',
-                photo_url: null,
-                created_at: new Date().toISOString()
-            };
-            setStatsRecords([...statsRecords, newRecord]);
-        } else {
-            alert("Gagal menghadirkan user.");
-        }
+            if (res.ok) {
+                const newRecord = {
+                    id: Date.now(),
+                    user_nim: targetUser.nim,
+                    user_name: targetUser.name,
+                    status: 'Dihadirkan',
+                    photo_url: null,
+                    created_at: new Date().toISOString()
+                };
+                setStatsRecords([...statsRecords, newRecord]);
+            } else {
+                alert("Gagal menghadirkan user.");
+            }
+        } catch (error: any) { alert(`Gagal menghadirkan user: ${error.message}`); }
     };
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -328,7 +330,7 @@ const Attendance: React.FC = () => {
             } else {
                 alert(json.message || "Gagal absen");
             }
-        } catch (error) { alert('Terjadi kesalahan koneksi.'); }
+        } catch (error: any) { alert(`Terjadi kesalahan: ${error.message}`); }
         finally { setIsSubmitting(false); }
     };
 
@@ -370,7 +372,7 @@ const Attendance: React.FC = () => {
             } else {
                 alert(json.message || "Gagal mengirim izin");
             }
-        } catch (error) { alert('Terjadi kesalahan koneksi.'); }
+        } catch (error: any) { alert(`Terjadi kesalahan: ${error.message}`); }
         finally { setIsSubmitting(false); }
     };
 
