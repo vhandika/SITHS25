@@ -19,12 +19,9 @@ const getCookie = (name: string) => {
 
 const Home: React.FC = () => {
     const navigate = useNavigate();
-    // Use a lightweight placeholder or gradient initially
     const [bgLoaded, setBgLoaded] = useState(false);
-    // HD Background
     const HD_BG = "https://itb.ac.id/files/cover/170125-Kolam-Intel.jpg";
-
-    // Check local storage for custom BG, otherwise use HD_BG logic
+    const API_BASE_URL = 'https://api.sith-s25.my.id/api';
     const savedBg = localStorage.getItem('homeBackgroundImage');
     const [backgroundImageUrl, setBackgroundImageUrl] = useState(savedBg || HD_BG);
 
@@ -34,7 +31,21 @@ const Home: React.FC = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const isCustomBackground = !!savedBg;
 
-    // Preload Background Image
+    useEffect(() => {
+        const fetchBirthdays = async () => {
+            try {
+                const res = await fetch(`${API_BASE_URL}/birthdays`);
+                const data = await res.json();
+                if (data.data && Array.isArray(data.data)) {
+                    setBirthdayUsers(data.data);
+                }
+            } catch (error) {
+                console.error("Failed to fetch birthdays", error);
+            }
+        };
+        fetchBirthdays();
+    }, []);
+
     useEffect(() => {
         const img = new Image();
         img.src = backgroundImageUrl;
@@ -42,8 +53,6 @@ const Home: React.FC = () => {
             setBgLoaded(true);
         };
     }, [backgroundImageUrl]);
-
-    // ... (keep audio effects) 
 
     useEffect(() => {
         audioRef.current = new Audio('/sounds/HBD.mp3');
@@ -114,7 +123,7 @@ const Home: React.FC = () => {
                 const base64String = reader.result as string;
                 localStorage.setItem('homeBackgroundImage', base64String);
                 setBackgroundImageUrl(base64String);
-                setBgLoaded(true); // Base64 is instant
+                setBgLoaded(true);
             };
             reader.readAsDataURL(file);
         }
@@ -124,7 +133,7 @@ const Home: React.FC = () => {
         if (isCustomBackground) {
             localStorage.removeItem('homeBackgroundImage');
             setBackgroundImageUrl(HD_BG);
-            setBgLoaded(false); // Reset to trigger fade in
+            setBgLoaded(false);
             if (fileInputRef.current) fileInputRef.current.value = '';
         } else {
             fileInputRef.current?.click();
@@ -133,10 +142,8 @@ const Home: React.FC = () => {
 
     return (
         <div className="relative flex h-screen min-h-[600px] w-full items-center justify-center overflow-hidden selection:bg-yellow-400 selection:text-black bg-gray-900">
-            {/* Gradient Fallback (Visible immediately) */}
             <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-black to-gray-800" />
 
-            {/* HD Background (Fades in) */}
             <div
                 className={`absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000 ${bgLoaded ? 'opacity-100' : 'opacity-0'}`}
                 style={{ backgroundImage: `url('${backgroundImageUrl}')` }}
