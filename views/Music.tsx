@@ -615,22 +615,31 @@ const Music: React.FC = () => {
                                 <h3 className="text-xl font-bold mb-4 px-2 sm:px-0">Search Results</h3>
                                 <div className="space-y-2">
                                     {searchResults.map((video, idx) => (
-                                        <div key={idx} className="flex items-center gap-2 sm:gap-4 p-2 sm:p-3 bg-gray-900 rounded hover:bg-gray-800">
+                                        <div key={idx}
+                                            onClick={() => handlePlayNow(video)}
+                                            className="flex items-center gap-2 sm:gap-4 p-2 sm:p-3 bg-gray-900 rounded hover:bg-gray-800 cursor-pointer group"
+                                        >
                                             <img src={video.thumbnail} alt={video.title} loading="lazy" className="w-16 h-12 sm:w-24 sm:h-16 object-cover rounded flex-shrink-0" />
                                             <div className="flex-1 min-w-0 w-0">
-                                                <h4 className="font-semibold truncate text-sm sm:text-base" title={video.title}>{video.title}</h4>
+                                                <h4 className="font-semibold truncate text-sm sm:text-base text-white group-hover:text-yellow-400 transition-colors" title={video.title}>{video.title}</h4>
                                                 <p className="text-xs text-gray-400 truncate">{video.channel}</p>
                                             </div>
                                             <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                                                 <button
-                                                    onClick={() => handlePlayNow(video)}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handlePlayNow(video);
+                                                    }}
                                                     className="p-1.5 sm:p-2 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-full transition-colors"
                                                     title="Play Now"
                                                 >
                                                     <Play size={20} className="sm:w-6 sm:h-6" />
                                                 </button>
                                                 <button
-                                                    onClick={() => openAddToPlaylistModal(video)}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        openAddToPlaylistModal(video);
+                                                    }}
                                                     className="p-1.5 sm:p-2 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-full transition-colors"
                                                     title="Add to Playlist"
                                                 >
