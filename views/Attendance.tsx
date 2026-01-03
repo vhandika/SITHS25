@@ -942,7 +942,6 @@ const Attendance: React.FC = () => {
                 </div>
             )}
 
-            {/* Photo Popup Modal */}
             {photoPopupUrl && (
                 <div
                     className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/95 backdrop-blur-sm cursor-zoom-out"

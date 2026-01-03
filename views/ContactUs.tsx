@@ -14,24 +14,6 @@ interface Contact {
 const contacts: Contact[] = [
   {
     id: 1,
-    name: 'Vhandika',
-    role: '',
-    avatarUrl: '/1000002381.jpg',
-    waLink: 'https://wa.me/62895322783560',
-    igLink: 'https://instagram.com/vhandikanizar',
-    lineLink: 'https://line.me/ti/p/evHX-EYjsU',
-  },
-  {
-    id: 2,
-    name: 'Raihan',
-    role: 'Penimbun file',
-    avatarUrl: '/assets/',
-    waLink: 'https://wa.me/6282117506384',
-    igLink: 'https://instagram.com/rai_hanjune',
-    lineLink: 'https://line.me/ti/p/rai_han_june',
-  },
-  {
-    id: 3,
     name: 'Yarvis',
     role: 'Ketua Angkatan',
     avatarUrl: '/assets',
