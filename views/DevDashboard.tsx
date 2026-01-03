@@ -138,7 +138,7 @@ const DevDashboard: React.FC = () => {
                                             <tr key={user.nim} className="hover:bg-white/5 transition-colors">
                                                 <td className="px-4 py-4 font-bold text-white">
                                                     <div className="flex items-center gap-3">
-                                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${user.is_guest || user.nim.startsWith('GUEST-') ? 'bg-purple-900 text-purple-300' : user.users?.avatar_url ? 'overflow-hidden' : 'bg-blue-900 text-blue-300'}`}>
+                                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${user.is_guest || user.nim.startsWith('GUEST-') ? 'bg-gray-800 text-gray-300' : user.users?.avatar_url ? 'overflow-hidden' : 'bg-blue-900 text-blue-300'}`}>
                                                             {user.users?.avatar_url ?
                                                                 <img src={user.users.avatar_url} className="w-full h-full object-cover" alt="avatar" /> :
                                                                 <span className="text-xs">{user.is_guest || user.nim.startsWith('GUEST-') ? 'G' : user.nim.slice(-2)}</span>
@@ -147,12 +147,12 @@ const DevDashboard: React.FC = () => {
                                                         <div>
                                                             <div className="text-base flex items-center gap-2">
                                                                 {user.is_guest || user.nim.startsWith('GUEST-') ? (
-                                                                    <span className="text-purple-400">Guest User</span>
+                                                                    <span className="text-gray-400">Guest User</span>
                                                                 ) : (
                                                                     user.users?.name || user.nim
                                                                 )}
                                                                 {(user.is_guest || user.nim.startsWith('GUEST-')) && (
-                                                                    <span className="text-[10px] bg-purple-500/20 text-purple-300 px-1.5 py-0.5 rounded">GUEST</span>
+                                                                    <span className="text-[10px] bg-gray-700/50 text-gray-300 px-1.5 py-0.5 rounded">GUEST</span>
                                                                 )}
                                                             </div>
                                                             <div className="text-xs text-gray-500 font-mono">{user.nim.startsWith('GUEST-') ? user.nim.slice(0, 14) + '...' : user.nim}</div>
