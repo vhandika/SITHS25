@@ -206,7 +206,10 @@ const PhotoToPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             }
             const finalName = fileName.trim() ? `${fileName}.pdf` : 'Dokumen.pdf';
             pdf.save(finalName);
-        } catch (error) { alert("Gagal convert PDF."); }
+        } catch (error: any) {
+            console.error(error);
+            alert(`Gagal convert PDF: ${error instanceof Error ? error.message : String(error)}`);
+        }
         finally { setIsGenerating(false); }
     };
 
