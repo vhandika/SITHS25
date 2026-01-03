@@ -59,7 +59,7 @@ const Music: React.FC = () => {
     const [sharedPlaylist, setSharedPlaylist] = useState<{ playlist: Playlist; tracks: Track[] } | null>(null);
     const [isLoadingShare, setIsLoadingShare] = useState(false);
     const [showImportModal, setShowImportModal] = useState(false);
-    const [spotifyUrl, setSpotifyUrl] = useState('');
+    const [importUrl, setImportUrl] = useState('');
     const [isImporting, setIsImporting] = useState(false);
     const [importIsPublic, setImportIsPublic] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -476,27 +476,45 @@ const Music: React.FC = () => {
         await joinPlaylist(joinCode);
     };
 
-    const handleSpotifyImport = async () => {
-        if (!spotifyUrl.trim()) {
-            alert('Masukkan URL Spotify');
+    const detectImportSource = (url: string): 'spotify' | 'youtube' | null => {
+        if (url.includes('spotify.com/playlist/')) return 'spotify';
+        if (url.includes('youtube.com') && url.includes('list=')) return 'youtube';
+        if (url.includes('youtu.be') && url.includes('list=')) return 'youtube';
+        if (url.includes('music.youtube.com') && url.includes('list=')) return 'youtube';
+        return null;
+    };
+
+    const handleImport = async () => {
+        if (!importUrl.trim()) {
+            alert('Masukkan URL playlist Spotify atau YouTube');
             return;
         }
-        if (!spotifyUrl.includes('spotify.com/playlist/')) {
-            alert('URL harus merupakan link playlist Spotify');
+
+        const source = detectImportSource(importUrl);
+        if (!source) {
+            alert('URL tidak valid. Gunakan link playlist Spotify atau YouTube.');
             return;
         }
 
         setIsImporting(true);
         try {
-            const res = await fetchWithAuth(`${API_BASE_URL}/music/import/spotify`, {
+            const endpoint = source === 'spotify'
+                ? `${API_BASE_URL}/music/import/spotify`
+                : `${API_BASE_URL}/music/import/youtube`;
+
+            const body = source === 'spotify'
+                ? { spotifyUrl: importUrl, isPublic: importIsPublic }
+                : { youtubeUrl: importUrl, isPublic: importIsPublic };
+
+            const res = await fetchWithAuth(endpoint, {
                 method: 'POST',
-                body: JSON.stringify({ spotifyUrl, isPublic: importIsPublic })
+                body: JSON.stringify(body)
             });
             const data = await res.json();
             if (res.ok) {
                 alert(data.message || 'Import berhasil!');
                 setShowImportModal(false);
-                setSpotifyUrl('');
+                setImportUrl('');
                 setImportIsPublic(false);
                 fetchPlaylists();
             } else {
@@ -539,7 +557,7 @@ const Music: React.FC = () => {
                             <button
                                 onClick={() => setShowImportModal(true)}
                                 className="p-1 hover:bg-gray-800 rounded text-gray-400"
-                                title="Import from Spotify"
+                                title="Import Playlist"
                             >
                                 <Download size={18} />
                             </button>
@@ -1051,18 +1069,18 @@ const Music: React.FC = () => {
                         <div className="flex justify-between items-center mb-4">
                             <h2 className="text-xl font-bold flex items-center gap-2">
                                 <Download size={20} className="text-yellow-400" />
-                                Import from Spotify
+                                Import Playlist
                             </h2>
                             <button onClick={() => setShowImportModal(false)} className="text-gray-400 hover:text-white">
                                 <X size={24} />
                             </button>
                         </div>
-                        <p className="text-gray-400 text-sm mb-4">Paste link playlist Spotify:</p>
+
                         <input
                             type="text"
-                            value={spotifyUrl}
-                            onChange={e => setSpotifyUrl(e.target.value)}
-                            placeholder="https://open.spotify.com/.."
+                            value={importUrl}
+                            onChange={e => setImportUrl(e.target.value)}
+                            placeholder="Paste URL playlist..."
                             className="w-full bg-black border border-gray-700 rounded-lg px-4 py-3 mb-4 text-white focus:border-yellow-400 outline-none"
                         />
                         <label className="flex items-center gap-2 mb-4 cursor-pointer">
@@ -1083,8 +1101,8 @@ const Music: React.FC = () => {
                                 Batal
                             </button>
                             <button
-                                onClick={handleSpotifyImport}
-                                disabled={!spotifyUrl.trim() || isImporting}
+                                onClick={handleImport}
+                                disabled={!importUrl.trim() || isImporting}
                                 className="flex-1 bg-yellow-400 hover:bg-yellow-300 text-black font-bold py-2 rounded disabled:opacity-50"
                             >
                                 {isImporting ? <Loader className="animate-spin mx-auto" size={20} /> : 'Import'}
