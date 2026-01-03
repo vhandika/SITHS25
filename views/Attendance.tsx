@@ -54,6 +54,7 @@ const Attendance: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'hadir' | 'izin' | 'pending' | 'belum'>('hadir');
     const [searchFilter, setSearchFilter] = useState('');
     const [userStatusMap, setUserStatusMap] = useState<{ [key: number]: { status: string, reason: string | null } }>({});
+    const [photoPopupUrl, setPhotoPopupUrl] = useState<string | null>(null);
 
     useEffect(() => {
         const role = getCookie('userRole');
@@ -688,7 +689,7 @@ const Attendance: React.FC = () => {
                                                     <td className="px-4 py-3 text-gray-300">{rec.user_name}</td>
                                                     <td className="px-4 py-3 text-right">
                                                         <span className="text-xs bg-green-900/20 text-green-400 px-2 py-1 rounded border border-green-900">Hadir</span>
-                                                        {rec.photo_url && <a href={rec.photo_url} target="_blank" rel="noreferrer" className="ml-2 text-blue-400 hover:underline text-xs">Bukti</a>}
+                                                        {rec.photo_url && <button type="button" onClick={() => setPhotoPopupUrl(rec.photo_url)} className="ml-2 text-blue-400 hover:underline text-xs">Bukti</button>}
                                                     </td>
                                                 </tr>
                                             )) : <tr><td colSpan={3} className="text-center py-8 text-gray-500">Kosong.</td></tr>
@@ -713,7 +714,7 @@ const Attendance: React.FC = () => {
                                                             <span className="text-xs bg-blue-900/20 text-blue-400 px-2 py-1 rounded border border-blue-900">Izin</span>
                                                         )}
 
-                                                        {rec.photo_url && <a href={rec.photo_url} target="_blank" rel="noreferrer" className="ml-2 text-blue-400 hover:underline text-xs">Bukti</a>}
+                                                        {rec.photo_url && <button type="button" onClick={() => setPhotoPopupUrl(rec.photo_url)} className="ml-2 text-blue-400 hover:underline text-xs">Bukti</button>}
                                                     </td>
                                                 </tr>
                                             )) : <tr><td colSpan={3} className="text-center py-8 text-gray-500">Kosong.</td></tr>
@@ -726,9 +727,9 @@ const Attendance: React.FC = () => {
                                                     <td className="px-4 py-3 text-white font-bold">{rec.user_name}</td>
                                                     <td className="px-4 py-3 text-right flex items-center justify-end gap-2">
                                                         {rec.photo_url ? (
-                                                            <a href={rec.photo_url} target="_blank" rel="noreferrer" className="text-blue-400 hover:text-blue-300 text-xs underline flex items-center gap-1 mr-2">
+                                                            <button type="button" onClick={() => setPhotoPopupUrl(rec.photo_url)} className="text-blue-400 hover:text-blue-300 text-xs underline flex items-center gap-1 mr-2">
                                                                 <Camera size={14} /> Bukti
-                                                            </a>
+                                                            </button>
                                                         ) : <span className="text-xs text-red-400 italic mr-2">No Foto</span>}
 
                                                         <button onClick={() => handleApproveUser(rec.id, rec.user_nim)} className="bg-green-600 hover:bg-green-500 text-white px-3 py-1 rounded text-xs font-bold flex items-center gap-1 shadow-lg">
@@ -936,6 +937,29 @@ const Attendance: React.FC = () => {
                                 </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Photo Popup Modal */}
+            {photoPopupUrl && (
+                <div
+                    className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/95 backdrop-blur-sm cursor-zoom-out"
+                    onClick={() => setPhotoPopupUrl(null)}
+                >
+                    <div className="relative max-w-4xl max-h-[90vh] w-full flex items-center justify-center">
+                        <button
+                            onClick={() => setPhotoPopupUrl(null)}
+                            className="absolute -top-10 right-0 text-white hover:text-yellow-400 transition-colors"
+                        >
+                            <X size={28} />
+                        </button>
+                        <img
+                            src={photoPopupUrl}
+                            alt="Bukti Absensi"
+                            className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl cursor-default"
+                            onClick={(e) => e.stopPropagation()}
+                        />
                     </div>
                 </div>
             )}
