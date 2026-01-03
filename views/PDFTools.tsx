@@ -437,17 +437,25 @@ print(\`Karyawan \${nama},\`);
 print(\`Mendapatkan Gaji Pokok: Rp \${gaji_pokok}\`);`;
 
 const CodeToPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
-    const [code, setCode] = useState<string>(() => localStorage.getItem('pdf_code_content') || DEFAULT_PYTHON_CODE.replace(/\t/g, '    '));
+    const [language, setLanguage] = useState<'javascript' | 'python'>(() => (localStorage.getItem('pdf_code_language') as 'javascript' | 'python') || 'python');
+
+    const [code, setCode] = useState<string>(() => {
+        if (language === 'python') return localStorage.getItem('pdf_code_content_python') || DEFAULT_PYTHON_CODE.replace(/\t/g, '    ');
+        return localStorage.getItem('pdf_code_content_javascript') || DEFAULT_JS_CODE.replace(/\t/g, '    ');
+    });
+
     const [fileName, setFileName] = useState<string>(() => localStorage.getItem('pdf_code_filename') || `CODE_${new Date().toISOString().slice(0, 10)}`);
     const [fontSize, setFontSize] = useState<number>(() => Number(localStorage.getItem('pdf_code_fontsize')) || 11);
-    const [language, setLanguage] = useState<'javascript' | 'python'>(() => (localStorage.getItem('pdf_code_language') as 'javascript' | 'python') || 'python');
     const [pageSize, setPageSize] = useState<string>(() => localStorage.getItem('pdf_code_pagesize') || 'a4');
     const [bgTheme, setBgTheme] = useState<string>(() => localStorage.getItem('pdf_code_bgtheme') || '#000000');
     const [isColored, setIsColored] = useState<boolean>(() => localStorage.getItem('pdf_code_iscolored') !== 'false');
     const [pythonStdin, setPythonStdin] = useState(() => localStorage.getItem('pdf_code_stdin') || "100000\n25000\n10");
 
     useEffect(() => {
-        localStorage.setItem('pdf_code_content', code);
+        if (language === 'python') localStorage.setItem('pdf_code_content_python', code);
+        else localStorage.setItem('pdf_code_content_javascript', code);
+
+        localStorage.setItem('pdf_code_filename', fileName);
         localStorage.setItem('pdf_code_filename', fileName);
         localStorage.setItem('pdf_code_fontsize', String(fontSize));
         localStorage.setItem('pdf_code_language', language);
@@ -870,8 +878,18 @@ const CodeToPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                             <div><label className="block text-[10px] font-bold text-gray-500 uppercase mb-2">Ukuran kertas</label><select value={pageSize} onChange={(e) => setPageSize(e.target.value)} className="w-full bg-black border border-gray-700 rounded p-2 text-white text-xs outline-none focus:border-yellow-400"><option value="a4">A4</option><option value="letter">Letter</option><option value="legal">Legal</option></select></div>
                             <div><label className="block text-[10px] font-bold text-gray-500 uppercase mb-2">Background</label><div className="flex items-center gap-2 bg-black p-2 rounded border border-gray-700"><input type="color" value={bgTheme} onChange={(e) => setBgTheme(e.target.value)} className="w-8 h-8 rounded cursor-pointer border-none bg-transparent" /><span className="text-xs text-gray-300 font-mono">{bgTheme}</span></div></div>
                             <div><label className="block text-[10px] font-bold text-gray-500 uppercase mb-2">Bahasa</label><div className="flex bg-black rounded p-1 border border-gray-700">
-                                <button onClick={() => { setLanguage('javascript'); if (code === DEFAULT_PYTHON_CODE) setCode(DEFAULT_JS_CODE); }} className={`flex-1 py-1 rounded text-[10px] ${language === 'javascript' ? 'bg-yellow-400 text-black' : 'text-gray-500'}`}>JS</button>
-                                <button onClick={() => { setLanguage('python'); if (code === DEFAULT_JS_CODE) setCode(DEFAULT_PYTHON_CODE); }} className={`flex-1 py-1 rounded text-[10px] ${language === 'python' ? 'bg-blue-500 text-white' : 'text-gray-500'}`}>Py</button>
+                                <button onClick={() => {
+                                    if (language === 'javascript') return;
+                                    setLanguage('javascript');
+                                    const saved = localStorage.getItem('pdf_code_content_javascript');
+                                    setCode(saved || DEFAULT_JS_CODE.replace(/\t/g, '    '));
+                                }} className={`flex-1 py-1 rounded text-[10px] ${language === 'javascript' ? 'bg-yellow-400 text-black' : 'text-gray-500'}`}>JS</button>
+                                <button onClick={() => {
+                                    if (language === 'python') return;
+                                    setLanguage('python');
+                                    const saved = localStorage.getItem('pdf_code_content_python');
+                                    setCode(saved || DEFAULT_PYTHON_CODE.replace(/\t/g, '    '));
+                                }} className={`flex-1 py-1 rounded text-[10px] ${language === 'python' ? 'bg-blue-500 text-white' : 'text-gray-500'}`}>Py</button>
                             </div></div>
                             <div><label className="block text-[10px] font-bold text-gray-500 uppercase mb-2">Warna</label><div className="flex bg-black rounded p-1 border border-gray-700">
                                 <button onClick={() => setIsColored(true)} className={`flex-1 py-1 rounded text-[10px] ${isColored ? 'bg-gray-800 text-white' : 'text-gray-500 hover:text-gray-300'}`}>Berwarna</button>
