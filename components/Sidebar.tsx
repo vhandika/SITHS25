@@ -239,16 +239,13 @@ const Sidebar: React.FC = () => {
                 )}
             </aside>
 
-            <header className="fixed top-0 left-0 right-0 z-40 flex h-16 items-center justify-between px-4 lg:hidden ">
-                <div className="text-white font-bold"></div>
-                <button
-                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                    className="z-50 text-white transition-transform duration-300 ease-in-out"
-                    style={{ transform: isMobileMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
-                >
-                    {isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
-                </button>
-            </header>
+            <button
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="fixed top-4 right-4 z-50 p-2 text-white transition-all duration-300 ease-in-out lg:hidden hover:bg-white/10 rounded-full"
+                style={{ transform: isMobileMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+            >
+                {isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
+            </button>
             <div
                 className={`fixed inset-0 z-[55] bg-black/80 backdrop-blur-sm transition-opacity duration-300 lg:hidden ${isMobileMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
                     }`}
