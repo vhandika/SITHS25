@@ -33,8 +33,15 @@ const Home: React.FC = () => {
 
     useEffect(() => {
         const fetchBirthdays = async () => {
+            const userNIM = getCookie('userNIM');
+            if (!userNIM) {
+                return;
+            }
+
             try {
-                const res = await fetch(`${API_BASE_URL}/birthdays`);
+                const res = await fetch(`${API_BASE_URL}/birthdays`, {
+                    credentials: 'include'
+                });
                 const data = await res.json();
                 if (data.data && Array.isArray(data.data)) {
                     setBirthdayUsers(data.data);
