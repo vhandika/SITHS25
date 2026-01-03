@@ -863,8 +863,9 @@ const CodeToPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     };
 
     const handleUserEnter = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === 'Enter') {
+        if (e.key === 'Enter' || e.keyCode === 13) {
             e.preventDefault();
+            e.stopPropagation();
             const val = userInput;
             setTerminalLogs(prev => [...prev, { type: 'user-input', text: val }]);
             setUserInput("");
@@ -933,7 +934,18 @@ const CodeToPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         }
     };
 
-    const clearTerminal = () => { setTerminalLogs([]); setIsWaitingInput(false); };
+    const clearTerminal = () => {
+        if (workerRef.current) {
+            workerRef.current.terminate();
+            workerRef.current = null;
+        }
+        setIsRunning(false);
+        setTerminalLogs([]);
+        setIsWaitingInput(false);
+        if (inputResolverRef.current) {
+            inputResolverRef.current = null;
+        }
+    };
 
     const calculateLines = (rawLines: string[], contentWidth: number, getStringWidth: (s: string) => number) => {
         const processedLines: { tokens: any[], isCode: boolean }[] = [];
@@ -1135,7 +1147,7 @@ const CodeToPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                     <div key={idx} className={`mb-1 whitespace-pre-wrap break-words ${log.type === 'system' ? 'text-gray-500 italic' : log.type === 'user-input' ? (isLightBackground(bgTheme) ? 'text-blue-700 font-bold' : 'text-cyan-400 font-bold') : (isLightBackground(bgTheme) ? 'text-green-800' : 'text-green-400')}`}>{log.type === 'user-input' && <span className="mr-2 opacity-50">&gt;</span>}{log.text}</div>
                                 ))}
                                 {isWaitingInput && (
-                                    <div className="flex items-center"><span className={`mr-2 font-bold ${isLightBackground(bgTheme) ? 'text-blue-700' : 'text-cyan-400'}`}>&gt;</span><input autoFocus type="text" value={userInput} onChange={(e) => setUserInput(e.target.value)} onKeyDown={handleUserEnter} className={`flex-1 bg-transparent border-none outline-none font-mono ${isLightBackground(bgTheme) ? 'text-blue-700' : 'text-cyan-400'}`} /></div>
+                                    <div className="flex items-center"><span className={`mr-2 font-bold ${isLightBackground(bgTheme) ? 'text-blue-700' : 'text-cyan-400'}`}>&gt;</span><input autoFocus enterKeyHint="enter" inputMode="text" autoComplete="off" type="text" value={userInput} onChange={(e) => setUserInput(e.target.value)} onKeyDown={handleUserEnter} className={`flex-1 bg-transparent border-none outline-none font-mono ${isLightBackground(bgTheme) ? 'text-blue-700' : 'text-cyan-400'}`} /></div>
                                 )}</div></div></div>
                     ) : <PdfPreviewComponent />}
                 </div>
