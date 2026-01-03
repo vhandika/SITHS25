@@ -708,13 +708,14 @@ const Attendance: React.FC = () => {
                                                         )}
                                                     </td>
                                                     <td className="px-4 py-3 text-right">
-                                                        {rec.reason && rec.reason.includes('[MENYUSUL]') ? (
-                                                            <span className="text-xs bg-yellow-900/20 text-yellow-400 px-2 py-1 rounded border border-yellow-900">Menyusul</span>
-                                                        ) : (
-                                                            <span className="text-xs bg-blue-900/20 text-blue-400 px-2 py-1 rounded border border-blue-900">Izin</span>
-                                                        )}
-
-                                                        {rec.photo_url && <button type="button" onClick={() => setPhotoPopupUrl(rec.photo_url)} className="ml-2 text-blue-400 hover:underline text-xs">Bukti</button>}
+                                                        <div className="flex items-center justify-end gap-2">
+                                                            {rec.reason && rec.reason.includes('[MENYUSUL]') ? (
+                                                                <span className="text-xs bg-yellow-900/20 text-yellow-400 px-2 py-1 rounded border border-yellow-900">Menyusul</span>
+                                                            ) : (
+                                                                <span className="text-xs bg-blue-900/20 text-blue-400 px-2 py-1 rounded border border-blue-900">Izin</span>
+                                                            )}
+                                                            {rec.photo_url && <button type="button" onClick={() => setPhotoPopupUrl(rec.photo_url)} className="text-blue-400 hover:underline text-xs">Bukti</button>}
+                                                        </div>
                                                     </td>
                                                 </tr>
                                             )) : <tr><td colSpan={3} className="text-center py-8 text-gray-500">Kosong.</td></tr>
