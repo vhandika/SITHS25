@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Search, Plus, Music2, Lock, Globe, Play, Loader, X, Trash2, Edit2, Check, ChevronUp, ChevronDown, Shuffle, Share2, Copy, Link, Download } from 'lucide-react';
 import { useMusicPlayer } from '../contexts/MusicContext';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -62,6 +62,8 @@ const Music: React.FC = () => {
     const [spotifyUrl, setSpotifyUrl] = useState('');
     const [isImporting, setIsImporting] = useState(false);
     const [importIsPublic, setImportIsPublic] = useState(false);
+    const inputRef = useRef<HTMLInputElement>(null);
+    const isTyping = useRef(false);
 
     const showPlaylistDetail = selectedPlaylist !== null && tracks.length > 0;
     const isSearchMode = searchResults.length > 0;
@@ -155,7 +157,7 @@ const Music: React.FC = () => {
 
     useEffect(() => {
         const timer = setTimeout(async () => {
-            if (searchQuery.length > 2) {
+            if (searchQuery.length > 2 && isTyping.current) {
                 try {
                     const res = await fetch(`${API_BASE_URL}/music/suggest?q=${encodeURIComponent(searchQuery)}`);
                     const data = await res.json();
@@ -173,6 +175,7 @@ const Music: React.FC = () => {
     }, [searchQuery]);
 
     const handleSearchInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+        isTyping.current = true;
         setSearchQuery(e.target.value);
     };
 
@@ -184,6 +187,10 @@ const Music: React.FC = () => {
         setIsRecommendation(false);
         setShowSuggestions(false);
         setSelectedPlaylist(null);
+        isTyping.current = false;
+        if (inputRef.current) {
+            inputRef.current.blur();
+        }
 
         if (queryOverride) setSearchQuery(queryOverride);
 
@@ -595,10 +602,12 @@ const Music: React.FC = () => {
                                 <Search className="absolute left-3 top-2.5 text-gray-400" size={20} />
                                 <input
                                     type="text"
+                                    ref={inputRef}
                                     value={searchQuery}
                                     onChange={handleSearchInput}
                                     onKeyDown={e => e.key === 'Enter' && handleSearch()}
-                                    onFocus={() => searchQuery.length > 2 && setShowSuggestions(true)}
+                                    onFocus={() => {
+                                    }}
                                     onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                                     placeholder="Search..."
                                     className="w-full bg-gray-900 border border-gray-700 rounded px-4 pl-10 py-2 text-white focus:border-yellow-400 outline-none"
