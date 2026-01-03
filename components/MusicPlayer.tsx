@@ -30,6 +30,9 @@ const MusicPlayer: React.FC = () => {
     const handleToggleRef = useRef<() => void>(() => { });
     const handleSeekForwardRef = useRef<() => void>(() => { });
     const handleSeekBackwardRef = useRef<() => void>(() => { });
+    const scrubRef = useRef<HTMLDivElement>(null);
+    const [isScrubbing, setIsScrubbing] = useState(false);
+    const [scrubTime, setScrubTime] = useState(0);
 
     useEffect(() => {
         handleNextRef.current = () => {
@@ -353,7 +356,73 @@ const MusicPlayer: React.FC = () => {
         return `${mins}:${secs.toString().padStart(2, '0')}`;
     };
 
-    const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
+    const handleScrubStart = (e: React.MouseEvent | React.TouchEvent) => {
+        if (!scrubRef.current) return;
+        setIsScrubbing(true);
+        const rect = scrubRef.current.getBoundingClientRect();
+
+        let clientX;
+        if ('touches' in e) {
+            clientX = e.touches[0].clientX;
+        } else {
+            clientX = e.clientX;
+        }
+
+        const x = Math.max(0, Math.min(clientX - rect.left, rect.width));
+        const percent = x / rect.width;
+        const newTime = percent * duration;
+        setScrubTime(newTime);
+
+        if ('touches' in e) {
+            document.addEventListener('touchmove', handleTouchScrubMove, { passive: false });
+            document.addEventListener('touchend', handleTouchScrubEnd);
+        } else {
+            document.addEventListener('mousemove', handleScrubMove);
+            document.addEventListener('mouseup', handleScrubEnd);
+        }
+    };
+
+    const handleScrubMove = (e: MouseEvent) => {
+        if (!scrubRef.current) return;
+        const rect = scrubRef.current.getBoundingClientRect();
+        const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
+        const percent = x / rect.width;
+        setScrubTime(percent * duration);
+    };
+
+    const handleTouchScrubMove = (e: TouchEvent) => {
+        if (!scrubRef.current) return;
+        e.preventDefault(); // Prevent scrolling while scrubbing
+        const rect = scrubRef.current.getBoundingClientRect();
+        const x = Math.max(0, Math.min(e.touches[0].clientX - rect.left, rect.width));
+        const percent = x / rect.width;
+        setScrubTime(percent * duration);
+    };
+
+    const handleScrubEnd = (e: MouseEvent) => {
+        finishScrub(e.clientX);
+        document.removeEventListener('mousemove', handleScrubMove);
+        document.removeEventListener('mouseup', handleScrubEnd);
+    };
+
+    const handleTouchScrubEnd = (e: TouchEvent) => {
+        finishScrub(e.changedTouches[0].clientX);
+        document.removeEventListener('touchmove', handleTouchScrubMove);
+        document.removeEventListener('touchend', handleTouchScrubEnd);
+    };
+
+    const finishScrub = (clientX: number) => {
+        if (!scrubRef.current) return;
+        const rect = scrubRef.current.getBoundingClientRect();
+        const x = Math.max(0, Math.min(clientX - rect.left, rect.width));
+        const percent = x / rect.width;
+        const finalTime = percent * duration;
+        seekTo(finalTime);
+        setIsScrubbing(false);
+    };
+
+    const currentDisplayTime = isScrubbing ? scrubTime : currentTime;
+    const progressPercent = duration > 0 ? (currentDisplayTime / duration) * 100 : 0;
 
     return (
         <>
@@ -375,16 +444,23 @@ const MusicPlayer: React.FC = () => {
                         </button>
                     )}
 
-                    <div className="w-full h-1 bg-gray-700 rounded-full cursor-pointer relative group"
-                        onClick={(e) => {
-                            const rect = e.currentTarget.getBoundingClientRect();
-                            const x = e.clientX - rect.left;
-                            const percent = x / rect.width;
-                            seekTo(percent * duration);
-                        }}
+                    <div
+                        ref={scrubRef}
+                        className="w-full h-1 bg-gray-700 rounded-full cursor-pointer relative group flex items-center touch-none"
+                        onMouseDown={handleScrubStart}
+                        onTouchStart={handleScrubStart}
                     >
-                        <div className="absolute top-0 left-0 h-full bg-yellow-400 rounded-full" style={{ width: `${progressPercent}%` }} />
-                        <div className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-yellow-400 rounded-full opacity-0 group-hover:opacity-100 shadow-lg" style={{ left: `${progressPercent}%` }} />
+                        <div className="absolute top-0 left-0 h-full bg-yellow-400 rounded-full pointer-events-none" style={{ width: `${progressPercent}%` }} />
+                        <div
+                            className={`absolute w-3 h-3 bg-yellow-400 rounded-full shadow-lg transform transition-transform duration-100 ${isScrubbing ? 'scale-125' : 'scale-0 group-hover:scale-100'}`}
+                            style={{ left: `${progressPercent}%`, transform: `translateX(-50%) ${isScrubbing ? 'scale(1.25)' : ''}` }}
+                        >
+                            {isScrubbing && (
+                                <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap border border-gray-700">
+                                    {formatTime(scrubTime)}
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     <div className="flex items-center justify-between gap-4">
