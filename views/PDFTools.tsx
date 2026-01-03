@@ -436,6 +436,36 @@ print("--------------------------------");
 print(\`Karyawan \${nama},\`);
 print(\`Mendapatkan Gaji Pokok: Rp \${gaji_pokok}\`);`;
 
+const WORKER_SCRIPT = `
+self.onmessage = async (e) => {
+    const { type, code } = e.data;
+    if (type === 'execute') {
+        try {
+            const print = (text) => self.postMessage({ type: 'print', text: String(text) });
+            const input = async (prompt) => {
+                self.postMessage({ type: 'input_request', prompt: String(prompt) });
+                return new Promise(resolve => {
+                    const handler = (ev) => {
+                         if (ev.data.type === 'input_response') {
+                             resolve(ev.data.value);
+                             self.removeEventListener('message', handler);
+                         }
+                    };
+                    self.addEventListener('message', handler);
+                });
+            };
+            
+            const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
+            const fn = new AsyncFunction('print', 'input', code);
+            await fn(print, input);
+            self.postMessage({ type: 'finished' });
+        } catch (e) {
+            self.postMessage({ type: 'error', message: e.message });
+        }
+    }
+};
+`;
+
 const CodeToPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const [language, setLanguage] = useState<'javascript' | 'python'>(() => (localStorage.getItem('pdf_code_language') as 'javascript' | 'python') || 'python');
 
@@ -451,6 +481,13 @@ const CodeToPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const [isColored, setIsColored] = useState<boolean>(() => localStorage.getItem('pdf_code_iscolored') !== 'false');
     const [pythonStdin, setPythonStdin] = useState(() => localStorage.getItem('pdf_code_stdin') || "100000\n25000\n10");
 
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const highlightRef = useRef<HTMLPreElement>(null);
+    const [activeTab, setActiveTab] = useState<'editor' | 'preview'>('editor');
+    const [isRunning, setIsRunning] = useState(false);
+    const [isGenerating, setIsGenerating] = useState(false);
+    const workerRef = useRef<Worker | null>(null);
+
     useEffect(() => {
         if (language === 'python') localStorage.setItem('pdf_code_content_python', code);
         else localStorage.setItem('pdf_code_content_javascript', code);
@@ -465,15 +502,19 @@ const CodeToPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         localStorage.setItem('pdf_code_stdin', pythonStdin);
     }, [code, fileName, fontSize, language, pageSize, bgTheme, isColored, pythonStdin]);
 
+    // Cleanup worker on unmount
+    useEffect(() => {
+        return () => {
+            if (workerRef.current) {
+                workerRef.current.terminate();
+            }
+        };
+    }, []);
+
     const [terminalLogs, setTerminalLogs] = useState<{ type: 'output' | 'user-input' | 'system'; text: string }[]>([]);
     const [isWaitingInput, setIsWaitingInput] = useState(false);
     const [userInput, setUserInput] = useState("");
     const inputResolverRef = useRef<((value: string) => void) | null>(null);
-    const textareaRef = useRef<HTMLTextAreaElement>(null);
-    const highlightRef = useRef<HTMLPreElement>(null);
-    const [activeTab, setActiveTab] = useState<'editor' | 'preview'>('editor');
-    const [isRunning, setIsRunning] = useState(false);
-    const [isGenerating, setIsGenerating] = useState(false);
 
     const isLightBackground = (hex: string) => {
         const r = parseInt(hex.substring(1, 3), 16);
@@ -625,6 +666,7 @@ const CodeToPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
     const handleUserEnter = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
+            e.preventDefault();
             const val = userInput;
             setTerminalLogs(prev => [...prev, { type: 'user-input', text: val }]);
             setUserInput("");
@@ -637,16 +679,40 @@ const CodeToPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     };
 
     const runCode = async () => {
+        if (workerRef.current) workerRef.current.terminate();
         setTerminalLogs([{ type: 'system', text: `> Running ${language}...` }]);
         setIsRunning(true);
+
         if (language === 'javascript') {
             try {
-                const AsyncFunction = Object.getPrototypeOf(async function () { }).constructor;
-                const wrappedFn = new AsyncFunction('print', 'input', code);
-                await wrappedFn((t: any) => printToTerminal(String(t)), waitForInput);
-                printToTerminal("> Finished.", 'system');
+                const blob = new Blob([WORKER_SCRIPT], { type: 'application/javascript' });
+                const worker = new Worker(URL.createObjectURL(blob));
+                workerRef.current = worker;
+
+                worker.onmessage = async (e) => {
+                    const { type, text, prompt, message } = e.data;
+                    if (type === 'print') {
+                        printToTerminal(text);
+                    } else if (type === 'input_request') {
+                        const val = await waitForInput(prompt);
+                        worker.postMessage({ type: 'input_response', value: val });
+                    } else if (type === 'finished') {
+                        printToTerminal("> Finished.", 'system');
+                        setIsRunning(false);
+                        worker.terminate();
+                        workerRef.current = null;
+                    } else if (type === 'error') {
+                        printToTerminal(`Error: ${message}`, 'output');
+                        setIsRunning(false);
+                        worker.terminate();
+                        workerRef.current = null;
+                    }
+                };
+
+                worker.postMessage({ type: 'execute', code });
             } catch (e: any) {
                 printToTerminal(`Error: ${e.message}`, 'output');
+                setIsRunning(false);
             }
         } else {
             try {
@@ -665,8 +731,8 @@ const CodeToPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     printToTerminal("Error: Failed to execute.", 'output');
                 }
             } catch (e) { printToTerminal("Offline / API Error.", 'output'); }
+            setIsRunning(false);
         }
-        setIsRunning(false);
     };
 
     const clearTerminal = () => { setTerminalLogs([]); setIsWaitingInput(false); };
