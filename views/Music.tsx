@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Plus, Music2, Lock, Globe, Play, Loader, X, Trash2, Edit2, Check, ChevronUp, ChevronDown, Shuffle, Share2, Copy, Link, Download } from 'lucide-react';
 import { useMusicPlayer } from '../contexts/MusicContext';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { fetchWithAuth } from '../src/utils/api';
 
 const API_BASE_URL = 'https://api.sith-s25.my.id/api';
@@ -34,6 +35,8 @@ interface Playlist {
 }
 
 const Music: React.FC = () => {
+    const location = useLocation();
+    const navigate = useNavigate();
     const { playTrack, playQueue, setQueue, queue, currentIndex, setCurrentIndex } = useMusicPlayer();
     const [playlists, setPlaylists] = useState<Playlist[]>([]);
     const [selectedPlaylist, setSelectedPlaylist] = useState<Playlist | null>(null);
@@ -81,6 +84,37 @@ const Music: React.FC = () => {
         };
         initGuestId();
     }, []);
+
+    const joinPlaylist = async (code: string) => {
+        setIsLoadingShare(true);
+        try {
+            const res = await fetchWithAuth(`${API_BASE_URL}/music/playlists/subscribe/${code.toUpperCase()}`, {
+                method: 'POST'
+            });
+            const data = await res.json();
+            if (res.ok) {
+                alert('Berhasil join playlist!');
+                setShowJoinModal(false);
+                setJoinCode('');
+                fetchPlaylists();
+            } else {
+                alert(data.message || 'Gagal join playlist');
+            }
+        } catch (error) {
+            alert('Gagal join playlist');
+        } finally {
+            setIsLoadingShare(false);
+        }
+    };
+
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const joinCodeParam = params.get('join');
+        if (joinCodeParam) {
+            navigate('/music', { replace: true });
+            joinPlaylist(joinCodeParam);
+        }
+    }, [location]);
 
     const getHeaders = () => {
         const headers: any = {
@@ -397,9 +431,16 @@ const Music: React.FC = () => {
         }
     };
 
-    const handleCopyShareCode = () => {
+    const handleCopyCode = () => {
         if (currentShareCode) {
             navigator.clipboard.writeText(currentShareCode);
+        }
+    };
+
+    const handleCopyLink = () => {
+        if (currentShareCode) {
+            const url = `${window.location.origin}/music?join=${currentShareCode}`;
+            navigator.clipboard.writeText(url);
         }
     };
 
@@ -425,25 +466,7 @@ const Music: React.FC = () => {
             alert('Kode harus 6 karakter');
             return;
         }
-        setIsLoadingShare(true);
-        try {
-            const res = await fetchWithAuth(`${API_BASE_URL}/music/playlists/subscribe/${joinCode.toUpperCase()}`, {
-                method: 'POST'
-            });
-            const data = await res.json();
-            if (res.ok) {
-                alert('Berhasil join playlist!');
-                setShowJoinModal(false);
-                setJoinCode('');
-                fetchPlaylists();
-            } else {
-                alert(data.message || 'Gagal join playlist');
-            }
-        } catch (error) {
-            alert('Gagal join playlist');
-        } finally {
-            setIsLoadingShare(false);
-        }
+        await joinPlaylist(joinCode);
     };
 
     const handleSpotifyImport = async () => {
@@ -897,12 +920,25 @@ const Music: React.FC = () => {
                                 <X size={24} />
                             </button>
                         </div>
-                        <p className="text-gray-400 text-sm mb-4">Code:</p>
-                        <div className="bg-black border border-gray-700 rounded-lg p-4 flex items-center justify-between mb-4">
-                            <span className="text-2xl font-mono font-bold text-yellow-400 tracking-widest">{currentShareCode}</span>
-                            <button onClick={handleCopyShareCode} className="p-2 hover:bg-gray-800 rounded text-gray-400 hover:text-white">
-                                <Copy size={20} />
-                            </button>
+                        <div className="space-y-4 mb-6">
+                            <div>
+                                <p className="text-gray-400 text-sm mb-2">Share Code:</p>
+                                <div className="bg-black border border-gray-700 rounded-lg p-3 flex items-center justify-between gap-3">
+                                    <span className="text-xl font-mono font-bold text-yellow-400 tracking-widest">{currentShareCode}</span>
+                                    <button onClick={handleCopyCode} className="p-2 hover:bg-gray-800 rounded text-gray-400 hover:text-white" title="Copy Code">
+                                        <Copy size={20} />
+                                    </button>
+                                </div>
+                            </div>
+                            <div>
+                                <p className="text-gray-400 text-sm mb-2">Share Link:</p>
+                                <div className="bg-black border border-gray-700 rounded-lg p-3 flex items-center justify-between gap-3">
+                                    <span className="text-sm text-gray-400 truncate flex-1">{`${window.location.origin}/music?join=${currentShareCode}`}</span>
+                                    <button onClick={handleCopyLink} className="p-2 hover:bg-gray-800 rounded text-gray-400 hover:text-white" title="Copy Link">
+                                        <Link size={20} />
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                         <div className="flex gap-2">
                             <button
