@@ -621,7 +621,7 @@ const Music: React.FC = () => {
                                         >
                                             <img src={video.thumbnail} alt={video.title} loading="lazy" className="w-16 h-12 sm:w-24 sm:h-16 object-cover rounded flex-shrink-0" />
                                             <div className="flex-1 min-w-0 w-0">
-                                                <h4 className="font-semibold truncate text-sm sm:text-base text-white group-hover:text-yellow-400 transition-colors" title={video.title}>{video.title}</h4>
+                                                <h4 className="font-semibold truncate text-sm sm:text-base text-white transition-colors" title={video.title}>{video.title}</h4>
                                                 <p className="text-xs text-gray-400 truncate">{video.channel}</p>
                                             </div>
                                             <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
