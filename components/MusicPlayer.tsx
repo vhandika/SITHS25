@@ -26,6 +26,8 @@ const MusicPlayer: React.FC = () => {
     const containerRef = useRef<HTMLDivElement>(null);
     const progressIntervalRef = useRef<any>(null);
     const handleNextRef = useRef<() => void>(() => { });
+    const handlePrevRef = useRef<() => void>(() => { });
+    const handleToggleRef = useRef<() => void>(() => { });
 
     useEffect(() => {
         handleNextRef.current = () => {
@@ -33,7 +35,38 @@ const MusicPlayer: React.FC = () => {
             const nextIndex = currentIndex < queue.length - 1 ? currentIndex + 1 : 0;
             setCurrentIndex(nextIndex);
         };
-    }, [currentIndex, queue, setCurrentIndex]);
+        handlePrevRef.current = () => {
+            if (queue.length === 0) return;
+            const prevIndex = currentIndex > 0 ? currentIndex - 1 : queue.length - 1;
+            setCurrentIndex(prevIndex);
+        };
+        handleToggleRef.current = () => {
+            if (!playerRef.current || !isReady) return;
+            if (isPlaying) {
+                playerRef.current.pauseVideo();
+            } else {
+                playerRef.current.playVideo();
+            }
+        };
+    }, [currentIndex, queue, setCurrentIndex, isPlaying, isReady]);
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName) || (e.target as HTMLElement).isContentEditable) return;
+
+            if (e.code === 'Space') {
+                e.preventDefault();
+                handleToggleRef.current();
+            } else if (e.key.toLowerCase() === 'r') {
+                handleNextRef.current();
+            } else if (e.key.toLowerCase() === 'l') {
+                handlePrevRef.current();
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
 
     useEffect(() => {
         if (isMusicPage) {
@@ -184,18 +217,11 @@ const MusicPlayer: React.FC = () => {
     };
 
     const togglePlay = () => {
-        if (!playerRef.current || !isReady) return;
-        if (isPlaying) {
-            playerRef.current.pauseVideo();
-        } else {
-            playerRef.current.playVideo();
-        }
+        handleToggleRef.current();
     };
 
     const playPrevious = () => {
-        if (queue.length === 0) return;
-        const prevIndex = currentIndex > 0 ? currentIndex - 1 : queue.length - 1;
-        setCurrentIndex(prevIndex);
+        handlePrevRef.current();
     };
 
     const playNext = () => {
