@@ -7,6 +7,7 @@ import {
     FileCode, Files, FilePenLine, ArrowLeft, Construction
 } from 'lucide-react';
 import Cropper, { ReactCropperElement } from "react-cropper";
+import "cropperjs/dist/cropper.css";
 
 type ToolType = 'menu' | 'photo' | 'code' | 'merge' | 'edit';
 
@@ -97,6 +98,7 @@ const PhotoToPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     };
 
     const handleTouchStart = (e: React.TouchEvent, index: number) => {
+        if ((e.target as HTMLElement).closest('button') || (e.target as HTMLElement).closest('.no-drag')) return;
         const touch = e.touches[0];
         setStartTouch({ x: touch.clientX, y: touch.clientY });
         setDraggedItemIndex(index);
@@ -340,6 +342,53 @@ const PhotoToPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     </div>
                 </div>
             </div>
+
+            {editIndex !== null && images[editIndex] && (
+                <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 lg:p-10 animate-in fade-in duration-200">
+                    <div className="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-5xl h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+                        <div className="p-4 border-b border-gray-800 flex justify-between items-center bg-gray-900/50">
+                            <h3 className="text-white font-bold flex items-center gap-2">
+                                <CropIcon className="text-yellow-400" size={20} /> Edit Foto
+                            </h3>
+                            <button
+                                onClick={() => setEditIndex(null)}
+                                className="p-2 hover:bg-gray-800 rounded-lg text-gray-400 hover:text-white transition-colors"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <div className="flex-1 bg-black/50 relative overflow-hidden flex items-center justify-center p-4">
+                            <Cropper
+                                ref={cropperRef}
+                                src={images[editIndex]}
+                                style={{ height: '100%', width: '100%' }}
+                                aspectRatio={undefined}
+                                guides={true}
+                                viewMode={1}
+                                dragMode="move"
+                                background={false}
+                                className="h-full w-full"
+                            />
+                        </div>
+
+                        <div className="p-4 border-t border-gray-800 bg-gray-900/50 flex justify-end gap-3">
+                            <button
+                                onClick={() => setEditIndex(null)}
+                                className="px-5 py-2.5 rounded-xl font-bold text-sm text-gray-300 hover:text-white hover:bg-gray-800 transition-all border border-transparent hover:border-gray-700"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                onClick={handleCropSave}
+                                className="px-5 py-2.5 rounded-xl font-bold text-sm bg-yellow-400 text-black hover:bg-yellow-300 shadow-lg shadow-yellow-400/10 hover:shadow-yellow-400/20 active:scale-95 transition-all flex items-center gap-2"
+                            >
+                                <Check size={18} /> Simpan Perubahan
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
