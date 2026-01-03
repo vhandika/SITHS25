@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
     CalendarCheck, Plus, Upload, Camera, Users,
     BarChart3, CheckCircle, XCircle, Search, UserCheck, UserX, Lock, Clock, Loader, FileText,
-    FileSpreadsheet, ArrowRightCircle, ImageIcon, Video, X
+    FileSpreadsheet, ArrowRightCircle, ImageIcon, X
 } from 'lucide-react';
 import ExcelJS from 'exceljs';
 import SkewedButton from '../components/SkewedButton';
@@ -54,12 +54,6 @@ const Attendance: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'hadir' | 'izin' | 'pending' | 'belum'>('hadir');
     const [searchFilter, setSearchFilter] = useState('');
     const [userStatusMap, setUserStatusMap] = useState<{ [key: number]: { status: string, reason: string | null } }>({});
-    const [isCameraMode, setIsCameraMode] = useState(false);
-    const [isCameraActive, setIsCameraActive] = useState(false);
-    const [cameraError, setCameraError] = useState<string | null>(null);
-    const videoRef = useRef<HTMLVideoElement>(null);
-    const canvasRef = useRef<HTMLCanvasElement>(null);
-    const streamRef = useRef<MediaStream | null>(null);
 
     useEffect(() => {
         const role = getCookie('userRole');
@@ -382,7 +376,6 @@ const Attendance: React.FC = () => {
     };
 
     const closeModals = () => {
-        stopCamera();
         setSelectedSession(null);
         setSelectedSessionPermission(null);
         setPhotoFile(null);
@@ -391,85 +384,6 @@ const Attendance: React.FC = () => {
         setIsMenyusul(false);
         setIsSubmitting(false);
         setIsCompressing(false);
-        setIsCameraMode(false);
-        setIsCameraActive(false);
-        setCameraError(null);
-    };
-
-    const startCamera = async () => {
-        setCameraError(null);
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
-            });
-            streamRef.current = stream;
-            if (videoRef.current) {
-                videoRef.current.srcObject = stream;
-                await videoRef.current.play();
-            }
-            setIsCameraActive(true);
-        } catch (err: any) {
-            console.error('Camera error:', err);
-            if (err.name === 'NotAllowedError') {
-                setCameraError('Izin kamera ditolak. Aktifkan izin kamera di browser.');
-            } else if (err.name === 'NotFoundError') {
-                setCameraError('Kamera tidak ditemukan di perangkat ini.');
-            } else {
-                setCameraError('Gagal mengakses kamera: ' + err.message);
-            }
-            setIsCameraActive(false);
-        }
-    };
-
-    const stopCamera = () => {
-        if (streamRef.current) {
-            streamRef.current.getTracks().forEach(track => track.stop());
-            streamRef.current = null;
-        }
-        if (videoRef.current) {
-            videoRef.current.srcObject = null;
-        }
-        setIsCameraActive(false);
-    };
-
-    const capturePhoto = async () => {
-        if (!videoRef.current || !canvasRef.current) return;
-
-        const video = videoRef.current;
-        const canvas = canvasRef.current;
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-        canvas.toBlob(async (blob) => {
-            if (!blob) return;
-
-            stopCamera();
-            setIsCameraMode(false);
-
-            const file = new File([blob], `camera-${Date.now()}.jpg`, { type: 'image/jpeg' });
-
-            setIsCompressing(true);
-            try {
-                const compressedFile = await imageCompression(file, {
-                    maxSizeMB: 0.5,
-                    maxWidthOrHeight: 1280,
-                    useWebWorker: true,
-                    fileType: 'image/jpeg'
-                });
-                setPhotoFile(compressedFile);
-                setPreviewUrl(URL.createObjectURL(compressedFile));
-            } catch {
-                setPhotoFile(file);
-                setPreviewUrl(URL.createObjectURL(file));
-            } finally {
-                setIsCompressing(false);
-            }
-        }, 'image/jpeg', 0.9);
     };
 
     const { presentUsers, permissionUsers, pendingUsers, absentUsers, presentPercentage } = useMemo(() => {
@@ -861,16 +775,12 @@ const Attendance: React.FC = () => {
                                 <div>
                                     <label className="block text-yellow-400 text-sm mb-2 font-bold flex items-center gap-1"><Camera size={16} /> Foto Bukti (Wajib)</label>
 
-                                    {/* Camera/File Selection Buttons */}
-                                    {!previewUrl && !isCameraMode && (
+                                    {!previewUrl && (
                                         <div className="flex gap-2 mb-3">
-                                            <button
-                                                type="button"
-                                                onClick={() => { setIsCameraMode(true); startCamera(); }}
-                                                className="flex-1 py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-lg flex items-center justify-center gap-2 border border-gray-600 transition-all"
-                                            >
-                                                <Video size={20} /> Buka Kamera
-                                            </button>
+                                            <label className="flex-1 py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-lg flex items-center justify-center gap-2 border border-gray-600 cursor-pointer transition-all">
+                                                <Camera size={20} /> Buka Kamera
+                                                <input type="file" accept="image/*" capture="environment" onChange={handleFileChange} className="hidden" />
+                                            </label>
                                             <label className="flex-1 py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-lg flex items-center justify-center gap-2 border border-gray-600 cursor-pointer transition-all">
                                                 <ImageIcon size={20} /> Pilih File
                                                 <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
@@ -878,77 +788,31 @@ const Attendance: React.FC = () => {
                                         </div>
                                     )}
 
-                                    {/* Camera Preview */}
-                                    {isCameraMode && (
-                                        <div className="relative bg-black rounded-lg overflow-hidden mb-3">
-                                            <video
-                                                ref={videoRef}
-                                                autoPlay
-                                                playsInline
-                                                muted
-                                                className="w-full h-48 object-cover"
-                                            />
-                                            <canvas ref={canvasRef} className="hidden" />
-
-                                            {cameraError ? (
-                                                <div className="absolute inset-0 flex items-center justify-center bg-black/80 text-red-400 text-sm p-4 text-center">
-                                                    {cameraError}
-                                                </div>
-                                            ) : !isCameraActive ? (
-                                                <div className="absolute inset-0 flex items-center justify-center bg-black">
-                                                    <Loader className="animate-spin text-yellow-400" size={32} />
-                                                </div>
-                                            ) : null}
-
-                                            <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-2">
+                                    <div className="border-2 border-dashed border-gray-700 rounded-lg p-4 text-center">
+                                        {isCompressing ? (
+                                            <div className="text-yellow-400 text-sm flex flex-col items-center">
+                                                <Loader className="animate-spin mb-2" />
+                                                Memproses gambar...
+                                            </div>
+                                        ) : previewUrl ? (
+                                            <div className="relative inline-block">
+                                                <img src={previewUrl} className="max-h-40 mx-auto rounded" alt="Preview" />
                                                 <button
                                                     type="button"
-                                                    onClick={() => { stopCamera(); setIsCameraMode(false); }}
-                                                    className="px-4 py-2 bg-gray-800/90 hover:bg-gray-700 text-white rounded-full text-sm"
+                                                    onClick={() => { setPhotoFile(null); setPreviewUrl(null); }}
+                                                    className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-400 text-white rounded-full p-1"
                                                 >
-                                                    <X size={16} />
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={capturePhoto}
-                                                    disabled={!isCameraActive || !!cameraError}
-                                                    className="px-6 py-2 bg-yellow-400 hover:bg-yellow-300 text-black font-bold rounded-full text-sm disabled:opacity-50 flex items-center gap-1"
-                                                >
-                                                    <Camera size={16} /> Ambil Foto
+                                                    <X size={14} />
                                                 </button>
                                             </div>
-                                        </div>
-                                    )}
+                                        ) : (
+                                            <div className="text-gray-500 text-sm flex flex-col items-center py-2">
+                                                <Upload size={24} className="mb-2" />
+                                                Pilih metode di atas
+                                            </div>
+                                        )}
+                                    </div>
 
-                                    {/* Preview or Processing State */}
-                                    {!isCameraMode && (
-                                        <div className="border-2 border-dashed border-gray-700 rounded-lg p-4 text-center">
-                                            {isCompressing ? (
-                                                <div className="text-yellow-400 text-sm flex flex-col items-center">
-                                                    <Loader className="animate-spin mb-2" />
-                                                    Memproses gambar...
-                                                </div>
-                                            ) : previewUrl ? (
-                                                <div className="relative">
-                                                    <img src={previewUrl} className="max-h-40 mx-auto rounded" alt="Preview" />
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => { setPhotoFile(null); setPreviewUrl(null); }}
-                                                        className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-400 text-white rounded-full p-1"
-                                                    >
-                                                        <X size={14} />
-                                                    </button>
-                                                </div>
-                                            ) : (
-                                                <div className="text-gray-500 text-sm flex flex-col items-center py-2">
-                                                    <Upload size={24} className="mb-2" />
-                                                    Pilih metode di atas
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-
-                                    {/* Hidden required input for form validation */}
                                     <input
                                         type="text"
                                         required
@@ -962,16 +826,12 @@ const Attendance: React.FC = () => {
                                 <div>
                                     <label className="block text-gray-400 text-sm mb-2 flex items-center gap-1"><Camera size={16} /> Foto Bukti (Opsional)</label>
 
-                                    {/* Camera/File Selection for Optional */}
-                                    {!previewUrl && !isCameraMode && (
+                                    {!previewUrl && (
                                         <div className="flex gap-2 mb-3">
-                                            <button
-                                                type="button"
-                                                onClick={() => { setIsCameraMode(true); startCamera(); }}
-                                                className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg flex items-center justify-center gap-2 border border-gray-600 text-sm transition-all"
-                                            >
-                                                <Video size={16} /> Kamera
-                                            </button>
+                                            <label className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg flex items-center justify-center gap-2 border border-gray-600 cursor-pointer text-sm transition-all">
+                                                <Camera size={16} /> Kamera
+                                                <input type="file" accept="image/*" capture="environment" onChange={handleFileChange} className="hidden" />
+                                            </label>
                                             <label className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg flex items-center justify-center gap-2 border border-gray-600 cursor-pointer text-sm transition-all">
                                                 <ImageIcon size={16} /> File
                                                 <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
@@ -979,35 +839,7 @@ const Attendance: React.FC = () => {
                                         </div>
                                     )}
 
-                                    {/* Camera Preview for Optional */}
-                                    {isCameraMode && (
-                                        <div className="relative bg-black rounded-lg overflow-hidden mb-3">
-                                            <video ref={videoRef} autoPlay playsInline muted className="w-full h-40 object-cover" />
-                                            <canvas ref={canvasRef} className="hidden" />
-
-                                            {cameraError ? (
-                                                <div className="absolute inset-0 flex items-center justify-center bg-black/80 text-red-400 text-xs p-4 text-center">
-                                                    {cameraError}
-                                                </div>
-                                            ) : !isCameraActive ? (
-                                                <div className="absolute inset-0 flex items-center justify-center bg-black">
-                                                    <Loader className="animate-spin text-yellow-400" size={24} />
-                                                </div>
-                                            ) : null}
-
-                                            <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-2">
-                                                <button type="button" onClick={() => { stopCamera(); setIsCameraMode(false); }} className="px-3 py-1.5 bg-gray-800/90 text-white rounded-full text-xs">
-                                                    <X size={14} />
-                                                </button>
-                                                <button type="button" onClick={capturePhoto} disabled={!isCameraActive || !!cameraError} className="px-4 py-1.5 bg-yellow-400 text-black font-bold rounded-full text-xs disabled:opacity-50 flex items-center gap-1">
-                                                    <Camera size={14} /> Ambil
-                                                </button>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Preview for Optional */}
-                                    {!isCameraMode && previewUrl && (
+                                    {previewUrl && (
                                         <div className="relative inline-block">
                                             <img src={previewUrl} className="max-h-32 rounded border border-gray-700" alt="Preview" />
                                             <button type="button" onClick={() => { setPhotoFile(null); setPreviewUrl(null); }} className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-400 text-white rounded-full p-1">
