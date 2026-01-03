@@ -490,7 +490,35 @@ const CodeToPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     };
 
     const handleCodeChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-        setCode(e.target.value);
+        const val = e.target.value;
+        const target = e.target;
+        const nativeEvent = e.nativeEvent as any;
+        if (nativeEvent.inputType === 'insertText' && nativeEvent.data) {
+            const char = nativeEvent.data;
+            const pairs: { [key: string]: string } = {
+                '(': ')',
+                '{': '}',
+                '[': ']',
+                '<': '>',
+                "'": "'",
+                '"': '"'
+            };
+
+            if (pairs[char]) {
+                const start = target.selectionStart;
+                const closing = pairs[char];
+                if (val.slice(start - 1, start) === char) {
+                    const newVal = val.substring(0, start) + closing + val.substring(start);
+                    setCode(newVal);
+                    setTimeout(() => {
+                        target.selectionStart = target.selectionEnd = start;
+                    }, 0);
+                    return;
+                }
+            }
+        }
+
+        setCode(val);
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -525,7 +553,6 @@ const CodeToPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
             setCode(newVal);
 
-            // Move cursor
             setTimeout(() => {
                 target.selectionStart = target.selectionEnd = start + insertion.length;
                 if (textareaRef.current) {
@@ -533,27 +560,6 @@ const CodeToPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     textareaRef.current.focus();
                 }
             }, 0);
-        } else {
-            const pairs: { [key: string]: string } = {
-                '(': ')',
-                '{': '}',
-                '[': ']',
-                '<': '>',
-                "'": "'",
-                '"': '"'
-            };
-
-            if (pairs[e.key]) {
-                e.preventDefault();
-                const start = target.selectionStart;
-                const end = target.selectionEnd;
-                const closing = pairs[e.key];
-                const newVal = code.substring(0, start) + e.key + closing + code.substring(end);
-                setCode(newVal);
-                setTimeout(() => {
-                    target.selectionStart = target.selectionEnd = start + 1;
-                }, 0);
-            }
         }
     };
 
