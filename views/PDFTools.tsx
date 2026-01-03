@@ -525,6 +525,27 @@ const CodeToPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     textareaRef.current.focus();
                 }
             }, 0);
+        } else {
+            const pairs: { [key: string]: string } = {
+                '(': ')',
+                '{': '}',
+                '[': ']',
+                '<': '>',
+                "'": "'",
+                '"': '"'
+            };
+
+            if (pairs[e.key]) {
+                e.preventDefault();
+                const start = target.selectionStart;
+                const end = target.selectionEnd;
+                const closing = pairs[e.key];
+                const newVal = code.substring(0, start) + e.key + closing + code.substring(end);
+                setCode(newVal);
+                setTimeout(() => {
+                    target.selectionStart = target.selectionEnd = start + 1;
+                }, 0);
+            }
         }
     };
 
