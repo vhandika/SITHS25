@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import Cropper, { ReactCropperElement } from "react-cropper";
 import "cropperjs/dist/cropper.css";
+import test from 'node:test';
 
 type ToolType = 'menu' | 'photo' | 'code' | 'merge' | 'edit';
 
@@ -485,15 +486,44 @@ const CodeToPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        const target = e.target as HTMLTextAreaElement;
+
         if (e.key === 'Tab') {
             e.preventDefault();
-            const target = e.target as HTMLTextAreaElement;
             const start = target.selectionStart;
             const end = target.selectionEnd;
             const newVal = code.substring(0, start) + "    " + code.substring(end);
             setCode(newVal);
             setTimeout(() => {
                 target.selectionStart = target.selectionEnd = start + 4;
+            }, 0);
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            const start = target.selectionStart;
+            const end = target.selectionEnd;
+            const value = target.value;
+            const lineStart = value.lastIndexOf('\n', start - 1) + 1;
+            const currentLine = value.substring(lineStart, start);
+            const match = currentLine.match(/^\s*/);
+            const currentIndent = match ? match[0] : '';
+            const endsWithColon = currentLine.trimEnd().endsWith(':');
+            let newIndent = currentIndent;
+            if (endsWithColon) {
+                newIndent += "    ";
+            }
+
+            const insertion = '\n' + newIndent;
+            const newVal = value.substring(0, start) + insertion + value.substring(end);
+
+            setCode(newVal);
+
+            // Move cursor
+            setTimeout(() => {
+                target.selectionStart = target.selectionEnd = start + insertion.length;
+                if (textareaRef.current) {
+                    textareaRef.current.blur();
+                    textareaRef.current.focus();
+                }
             }, 0);
         }
     };
@@ -785,7 +815,7 @@ const CodeToPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                             <div className="border border-gray-800 rounded-xl overflow-hidden shadow-2xl flex flex-col h-[50vh] relative transition-colors duration-300" style={{ backgroundColor: bgTheme }}>
                                 <div className="bg-black/20 border-b border-white/10 p-2 flex justify-between items-center backdrop-blur-sm z-10 relative"><span className={`text-xs font-mono ml-2 ${isLightBackground(bgTheme) ? 'text-black' : 'text-gray-300'}`}>main.{language === 'python' ? 'py' : 'js'}</span></div>
                                 <div className="relative flex-1 w-full h-full overflow-hidden">
-                                    <pre ref={highlightRef} aria-hidden="true" className={`absolute inset-0 p-4 font-mono text-sm leading-relaxed whitespace-pre-wrap break-words pointer-events-none custom-scrollbar overflow-hidden ${isColored ? 'opacity-100' : 'opacity-0'}`}>
+                                    <pre ref={highlightRef} aria-hidden="true" className={`absolute inset-0 p-4 font-mono text-sm leading-relaxed whitespace-pre pointer-events-none custom-scrollbar overflow-hidden ${isColored ? 'opacity-100' : 'opacity-0'}`}>
                                         {code.split('\n').map((line, i) => (
                                             <div key={i}>{tokenizeLine(line).map((t, j) => {
                                                 if (t.type === 'text' && isLightBackground(bgTheme)) return <span key={j} style={{ color: 'black' }}>{t.text}</span>;
@@ -793,7 +823,7 @@ const CodeToPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                                 return <span key={j} style={{ color: `rgb(${rgb[0]},${rgb[1]},${rgb[2]})` }}>{t.text}</span>
                                             })}{line.length === 0 && <br />}</div>
                                         ))}</pre>
-                                    <textarea ref={textareaRef} onScroll={handleEditorScroll} value={code} onChange={handleCodeChange} onKeyDown={handleKeyDown} className={`absolute inset-0 w-full h-full p-4 font-mono text-sm leading-relaxed resize-none outline-none bg-transparent whitespace-pre-wrap break-words custom-scrollbar ${isColored ? `text-transparent caret-${isLightBackground(bgTheme) ? 'black' : 'white'}` : (isLightBackground(bgTheme) ? 'text-black' : 'text-[#d4d4d4]')}`} spellCheck={false} />
+                                    <textarea ref={textareaRef} onScroll={handleEditorScroll} value={code} onChange={handleCodeChange} onKeyDown={handleKeyDown} className={`absolute inset-0 w-full h-full p-4 font-mono text-sm leading-relaxed resize-none outline-none bg-transparent whitespace-pre custom-scrollbar overflow-auto ${isColored ? `text-transparent ${isLightBackground(bgTheme) ? 'caret-black' : 'caret-white'}` : (isLightBackground(bgTheme) ? 'text-black' : 'text-[#d4d4d4]')}`} spellCheck={false} />
                                 </div>
                                 <button onClick={runCode} disabled={isRunning} className="hidden lg:flex absolute bottom-6 right-6 bg-green-600 hover:bg-green-500 text-white px-5 py-3 rounded-full shadow-lg font-bold z-10 items-center gap-2">{isRunning ? "Running..." : "Run"}</button>
                             </div>
@@ -823,8 +853,8 @@ const CodeToPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                 <button onClick={() => { setLanguage('python'); if (code === DEFAULT_JS_CODE) setCode(DEFAULT_PYTHON_CODE); }} className={`flex-1 py-1 rounded text-[10px] ${language === 'python' ? 'bg-blue-500 text-white' : 'text-gray-500'}`}>Py</button>
                             </div></div>
                             <div><label className="block text-[10px] font-bold text-gray-500 uppercase mb-2">Warna</label><div className="flex bg-black rounded p-1 border border-gray-700">
-                                <button onClick={() => setIsColored(true)} className={`flex-1 py-1 rounded text-[10px] ${isColored ? 'bg-purple-500 text-white' : 'text-gray-500'}`}>Berwarna</button>
-                                <button onClick={() => setIsColored(false)} className={`flex-1 py-1 rounded text-[10px] ${!isColored ? 'bg-white text-black' : 'text-gray-500'}`}>Polosan</button>
+                                <button onClick={() => setIsColored(true)} className={`flex-1 py-1 rounded text-[10px] ${isColored ? 'bg-gray-800 text-white' : 'text-gray-500 hover:text-gray-300'}`}>Berwarna</button>
+                                <button onClick={() => setIsColored(false)} className={`flex-1 py-1 rounded text-[10px] ${!isColored ? 'bg-gray-800 text-white' : 'text-gray-500 hover:text-gray-300'}`}>Polosan</button>
                             </div></div>
                             <button onClick={downloadSourceCode} disabled={!code.trim()} className="w-full py-2.5 rounded-lg font-bold text-xs bg-yellow-400 text-black hover:bg-yellow-300 border border-yellow-400 hover:shadow-lg transition-all flex items-center justify-center gap-2 mt-4"><FileCode size={16} /> Download .{language === 'python' ? 'py' : 'js'}</button>
                             <button onClick={generatePDF} className="w-full py-3 rounded-lg font-bold text-xs bg-yellow-400 text-black hover:bg-yellow-300 mt-3 flex items-center justify-center gap-2"><FileDown size={16} /> Download PDF</button>
