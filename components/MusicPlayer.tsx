@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useMusicPlayer } from '../contexts/MusicContext';
-import { Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, Loader, X } from 'lucide-react';
+import { Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, Loader, X, FastForward, Rewind } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 
 const MusicPlayer: React.FC = () => {
@@ -28,6 +28,8 @@ const MusicPlayer: React.FC = () => {
     const handleNextRef = useRef<() => void>(() => { });
     const handlePrevRef = useRef<() => void>(() => { });
     const handleToggleRef = useRef<() => void>(() => { });
+    const handleSeekForwardRef = useRef<() => void>(() => { });
+    const handleSeekBackwardRef = useRef<() => void>(() => { });
 
     useEffect(() => {
         handleNextRef.current = () => {
@@ -48,6 +50,20 @@ const MusicPlayer: React.FC = () => {
                 playerRef.current.playVideo();
             }
         };
+        handleSeekForwardRef.current = () => {
+            if (playerRef.current && isReady) {
+                const newTime = Math.min(playerRef.current.getCurrentTime() + 10, playerRef.current.getDuration());
+                playerRef.current.seekTo(newTime, true);
+                setCurrentTime(newTime);
+            }
+        };
+        handleSeekBackwardRef.current = () => {
+            if (playerRef.current && isReady) {
+                const newTime = Math.max(playerRef.current.getCurrentTime() - 10, 0);
+                playerRef.current.seekTo(newTime, true);
+                setCurrentTime(newTime);
+            }
+        };
     }, [currentIndex, queue, setCurrentIndex, isPlaying, isReady]);
 
     useEffect(() => {
@@ -61,6 +77,12 @@ const MusicPlayer: React.FC = () => {
                 handleNextRef.current();
             } else if (e.key.toLowerCase() === 'l') {
                 handlePrevRef.current();
+            } else if (e.code === 'ArrowRight') {
+                e.preventDefault();
+                handleSeekForwardRef.current();
+            } else if (e.code === 'ArrowLeft') {
+                e.preventDefault();
+                handleSeekBackwardRef.current();
             }
         };
 
@@ -76,6 +98,19 @@ const MusicPlayer: React.FC = () => {
 
     useEffect(() => {
         setPosition({ x: window.innerWidth - 80, y: window.innerHeight - 150 });
+
+        const handleResize = () => {
+            setPosition(prev => {
+                let newX = prev.x;
+                let newY = prev.y;
+                if (newX > window.innerWidth - 70) newX = window.innerWidth - 70;
+                if (newY > window.innerHeight - 70) newY = window.innerHeight - 70;
+                return { x: newX, y: newY };
+            });
+        };
+
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
     }, []);
 
     useEffect(() => {
@@ -235,6 +270,9 @@ const MusicPlayer: React.FC = () => {
         }
     };
 
+    const seekForward = () => handleSeekForwardRef.current();
+    const seekBackward = () => handleSeekBackwardRef.current();
+
     const toggleMute = () => {
         if (playerRef.current && isReady) {
             if (isMuted) playerRef.current.unMute();
@@ -268,6 +306,35 @@ const MusicPlayer: React.FC = () => {
 
     const handleTouchEnd = () => {
         isDragging.current = false;
+        snapToEdge();
+    };
+
+    const handleMouseDown = (e: React.MouseEvent) => {
+        e.preventDefault();
+        isDragging.current = true;
+        hasMoved.current = false;
+        dragStartParams.current = { x: e.clientX, y: e.clientY, startX: position.x, startY: position.y };
+
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+        if (!isDragging.current) return;
+        const dx = e.clientX - dragStartParams.current.x;
+        const dy = e.clientY - dragStartParams.current.y;
+        if (Math.abs(dx) > 5 || Math.abs(dy) > 5) hasMoved.current = true;
+        setPosition({ x: dragStartParams.current.startX + dx, y: dragStartParams.current.startY + dy });
+    };
+
+    const handleMouseUp = () => {
+        isDragging.current = false;
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+        snapToEdge();
+    };
+
+    const snapToEdge = () => {
         let newX = position.x;
         let newY = position.y;
         if (newX < 10) newX = 10;
@@ -339,11 +406,17 @@ const MusicPlayer: React.FC = () => {
                             <button onClick={playPrevious} className="p-2 text-gray-300 hover:text-white">
                                 <SkipBack size={20} />
                             </button>
+                            <button onClick={seekBackward} className="p-2 text-gray-300 hover:text-white" title="-10s">
+                                <Rewind size={20} />
+                            </button>
                             <button
                                 onClick={togglePlay}
                                 className="p-2 text-gray-400 hover:text-white transition-colors"
                             >
                                 {!isReady ? <Loader size={24} className="animate-spin" /> : isPlaying ? <Pause size={24} /> : <Play size={24} />}
+                            </button>
+                            <button onClick={seekForward} className="p-2 text-gray-300 hover:text-white" title="+10s">
+                                <FastForward size={20} />
                             </button>
                             <button onClick={playNext} className="p-2 text-gray-300 hover:text-white">
                                 <SkipForward size={20} />
@@ -370,11 +443,12 @@ const MusicPlayer: React.FC = () => {
 
             {!isMusicPage && (
                 <div
-                    className="lg:hidden fixed z-50"
-                    style={{ left: position.x, top: position.y, touchAction: 'none' }}
+                    className="lg:hidden fixed z-[100] cursor-move"
+                    style={{ left: `${position.x}px`, top: `${position.y}px`, touchAction: 'none' }}
                     onTouchStart={handleTouchStart}
                     onTouchMove={handleTouchMove}
                     onTouchEnd={handleTouchEnd}
+                    onMouseDown={handleMouseDown}
                 >
                     <div
                         className="w-14 h-14 rounded-full shadow-xl flex items-center justify-center relative overflow-hidden"
