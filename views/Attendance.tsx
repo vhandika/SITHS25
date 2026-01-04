@@ -64,6 +64,8 @@ const Attendance: React.FC = () => {
             return;
         }
 
+        setUserStatusMap({});
+
         setUserRole(role || null);
         setUserNIM(nim || null);
         fetchSessions(nim || null);
@@ -99,25 +101,22 @@ const Attendance: React.FC = () => {
 
         for (const session of openSessions) {
             try {
-                const res = await fetch(`${attendanceApi}/attendance/stats/${session.id}`, {
+                const res = await fetch(`${attendanceApi}/attendance/my-status/${session.id}`, {
                     credentials: 'include'
                 });
                 if (res.ok) {
                     const json = await res.json();
-                    const records = json.data || [];
-                    const myRecord = records.find((r: any) => r.user_nim === nim);
-
-                    if (myRecord) {
+                    if (json.exists) {
                         statusMap[session.id] = {
-                            status: myRecord.status,
-                            reason: myRecord.reason
+                            status: json.status,
+                            reason: json.reason
                         };
                     }
                 }
             } catch (err) {
             }
         }
-        setUserStatusMap(prev => ({ ...prev, ...statusMap }));
+        setUserStatusMap(statusMap);
     };
 
     const fetchAllUsers = async () => {
