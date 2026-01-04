@@ -2,9 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import {
     CalendarCheck, Plus, Upload, Camera, Users,
     BarChart3, CheckCircle, XCircle, Search, UserCheck, UserX, Lock, Clock, Loader, FileText,
-    FileSpreadsheet, ArrowRightCircle, ImageIcon, X
+    ArrowRightCircle, ImageIcon, X, ExternalLink
 } from 'lucide-react';
-import ExcelJS from 'exceljs';
 import SkewedButton from '../components/SkewedButton';
 import imageCompression from 'browser-image-compression';
 import { fetchWithAuth } from '../src/utils/api';
@@ -441,62 +440,8 @@ const Attendance: React.FC = () => {
         };
     }, [allUsers, statsRecords, viewStatsId, searchFilter, sessions]);
 
-    const handleExportExcel = async () => {
-        const combinedData = [
-            ...presentUsers.map(u => ({ ...u, finalStatus: 'Hadir' })),
-            ...permissionUsers.map(u => ({ ...u, finalStatus: 'Izin' })),
-            ...pendingUsers.map(u => ({ ...u, finalStatus: 'Pending' })),
-            ...absentUsers.map(u => ({ ...u, finalStatus: 'Belum Absen' }))
-        ];
-
-        if (combinedData.length === 0) {
-            alert("Ngga ada data bang");
-            return;
-        }
-
-        combinedData.sort((a, b) => {
-            const nimA = a.user_nim || a.nim || "0";
-            const nimB = b.user_nim || b.nim || "0";
-            return nimA.toString().localeCompare(nimB.toString(), undefined, { numeric: true });
-        });
-
-        const workbook = new ExcelJS.Workbook();
-        const worksheet = workbook.addWorksheet('Data Absensi');
-
-        worksheet.columns = [
-            { header: 'No', key: 'no', width: 5 },
-            { header: 'NIM', key: 'nim', width: 15 },
-            { header: 'Nama', key: 'nama', width: 40 },
-            { header: 'Status', key: 'status', width: 15 },
-            { header: 'Alasan', key: 'alasan', width: 30 },
-            { header: 'Waktu Input', key: 'waktu', width: 20 },
-            { header: 'Link Foto', key: 'foto', width: 30 }
-        ];
-
-        combinedData.forEach((item, index) => {
-            worksheet.addRow({
-                no: index + 1,
-                nim: item.user_nim || item.nim,
-                nama: item.user_name || item.name,
-                status: item.finalStatus,
-                alasan: item.reason || "-",
-                waktu: item.created_at ? new Date(item.created_at).toLocaleString('id-ID') : "-",
-                foto: item.photo_url || "-"
-            });
-        });
-
-        worksheet.getRow(1).font = { bold: true };
-
-        const buffer = await workbook.xlsx.writeBuffer();
-        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        const cleanTitle = viewStatsTitle.replace(/[^a-zA-Z0-9]/g, "_");
-        link.download = `${cleanTitle}_${new Date().toISOString().split('T')[0]}.xlsx`;
-        link.click();
-        window.URL.revokeObjectURL(url);
-    };
+    // Google Sheets link
+    const GSHEET_URL = 'https://docs.google.com/spreadsheets/d/146MsEriqhrN2s-FzmgS9HAXZ2K5zWYYxuVLi-dcC4W8/edit';
 
     return (
         <div className="min-h-screen w-full bg-black py-16 lg:py-24 px-4 sm:px-6 lg:px-8 mt-16 lg:mt-0 font-sans text-white relative selection:bg-yellow-400 selection:text-black">
@@ -662,13 +607,16 @@ const Attendance: React.FC = () => {
                                         <Search size={16} className="absolute left-3 top-2.5 text-gray-500" />
                                     </div>
 
-                                    <button
-                                        onClick={handleExportExcel}
-                                        title="Download Excel"
-                                        className="bg-green-700 hover:bg-green-600 text-white p-2 rounded flex items-center justify-center shrink-0 border border-green-500 transition-colors"
+                                    <a
+                                        href={GSHEET_URL}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        title="Buka Google Sheets"
+                                        className="bg-green-700 hover:bg-green-600 text-white p-2 rounded flex items-center justify-center shrink-0 border border-green-500 transition-colors gap-1 px-3"
                                     >
-                                        <FileSpreadsheet size={20} />
-                                    </button>
+                                        <ExternalLink size={16} />
+                                        <span className="hidden sm:inline text-sm">GSheet</span>
+                                    </a>
                                 </div>
                             </div>
 
