@@ -62,6 +62,7 @@ const Music: React.FC = () => {
     const [importUrl, setImportUrl] = useState('');
     const [isImporting, setIsImporting] = useState(false);
     const [importIsPublic, setImportIsPublic] = useState(false);
+    const [importProgress, setImportProgress] = useState<{ current: number; total: number; added: number; failed: number } | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
     const isTyping = useRef(false);
 
@@ -522,31 +523,87 @@ const Music: React.FC = () => {
         }
 
         setIsImporting(true);
+        setImportProgress({ current: 0, total: 0, added: 0, failed: 0 });
+
         try {
-            const endpoint = source === 'spotify'
-                ? `${API_BASE_URL}/music/import/spotify`
-                : `${API_BASE_URL}/music/import/youtube`;
+            const prefetchEndpoint = source === 'spotify'
+                ? `${API_BASE_URL}/music/import/spotify/prefetch`
+                : `${API_BASE_URL}/music/import/youtube/prefetch`;
 
-            const body = source === 'spotify'
-                ? { spotifyUrl: importUrl, isPublic: importIsPublic }
-                : { youtubeUrl: importUrl, isPublic: importIsPublic };
+            const prefetchBody = source === 'spotify'
+                ? { spotifyUrl: importUrl }
+                : { youtubeUrl: importUrl };
 
-            const res = await fetchWithAuth(endpoint, {
+            const prefetchRes = await fetchWithAuth(prefetchEndpoint, {
                 method: 'POST',
-                body: JSON.stringify(body)
+                body: JSON.stringify(prefetchBody)
             });
-            const data = await res.json();
-            if (res.ok) {
-                alert(data.message || 'Import berhasil!');
-                setShowImportModal(false);
-                setImportUrl('');
-                setImportIsPublic(false);
-                fetchPlaylists();
-            } else {
-                alert(data.message || 'Gagal import playlist');
+
+            if (!prefetchRes.ok) {
+                const errData = await prefetchRes.json();
+                throw new Error(errData.message || 'Failed to fetch playlist');
             }
-        } catch (error) {
-            alert('Gagal import playlist');
+
+            const { playlistName, tracks, total } = await prefetchRes.json();
+            setImportProgress({ current: 0, total, added: 0, failed: 0 });
+
+            const createRes = await fetchWithAuth(`${API_BASE_URL}/music/playlists`, {
+                method: 'POST',
+                body: JSON.stringify({ title: playlistName, is_public: importIsPublic })
+            });
+
+            if (!createRes.ok) {
+                const errData = await createRes.json();
+                throw new Error(errData.message || 'Failed to create playlist');
+            }
+
+            const { data: newPlaylist } = await createRes.json();
+
+            const BATCH_SIZE = 10;
+            let totalAdded = 0;
+            let totalFailed = 0;
+
+            for (let i = 0; i < tracks.length; i += BATCH_SIZE) {
+                const batch = tracks.slice(i, i + BATCH_SIZE);
+
+                try {
+                    const batchRes = await fetchWithAuth(`${API_BASE_URL}/music/import/batch`, {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            playlistId: newPlaylist.id,
+                            tracks: batch,
+                            source
+                        })
+                    });
+
+                    if (batchRes.ok) {
+                        const result = await batchRes.json();
+                        totalAdded += result.added;
+                        totalFailed += result.failed;
+                    } else {
+                        totalFailed += batch.length;
+                    }
+                } catch (e) {
+                    totalFailed += batch.length;
+                }
+
+                setImportProgress({
+                    current: Math.min(i + BATCH_SIZE, total),
+                    total,
+                    added: totalAdded,
+                    failed: totalFailed
+                });
+            }
+
+            alert(`Import selesai! ${totalAdded} lagu ditambahkan, ${totalFailed} gagal.`);
+            setShowImportModal(false);
+            setImportUrl('');
+            setImportIsPublic(false);
+            setImportProgress(null);
+            fetchPlaylists();
+        } catch (error: any) {
+            alert(error.message || 'Gagal import playlist');
+            setImportProgress(null);
         } finally {
             setIsImporting(false);
         }
@@ -1112,43 +1169,72 @@ const Music: React.FC = () => {
                                     <Download size={20} className="text-yellow-400" />
                                     Import Playlist
                                 </h2>
-                                <button onClick={() => setShowImportModal(false)} className="text-gray-400 hover:text-white">
-                                    <X size={24} />
-                                </button>
+                                {!isImporting && (
+                                    <button onClick={() => setShowImportModal(false)} className="text-gray-400 hover:text-white">
+                                        <X size={24} />
+                                    </button>
+                                )}
                             </div>
 
-                            <input
-                                type="text"
-                                value={importUrl}
-                                onChange={e => setImportUrl(e.target.value)}
-                                placeholder="Paste URL playlist..."
-                                className="w-full bg-black border border-gray-700 rounded-lg px-4 py-3 mb-4 text-white focus:border-yellow-400 outline-none"
-                            />
-                            <label className="flex items-center gap-2 mb-4 cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    checked={importIsPublic}
-                                    onChange={e => setImportIsPublic(e.target.checked)}
-                                    className="w-4 h-4"
-                                />
-                                <span className="text-sm">Make public</span>
-                            </label>
-                            <p className="text-xs text-gray-500 mb-4">Proses import bisa memakan waktu beberapa menit tergantung jumlah lagu.</p>
-                            <div className="flex gap-2">
-                                <button
-                                    onClick={() => setShowImportModal(false)}
-                                    className="flex-1 bg-gray-800 hover:bg-gray-700 py-2 rounded"
-                                >
-                                    Batal
-                                </button>
-                                <button
-                                    onClick={handleImport}
-                                    disabled={!importUrl.trim() || isImporting}
-                                    className="flex-1 bg-yellow-400 hover:bg-yellow-300 text-black font-bold py-2 rounded disabled:opacity-50"
-                                >
-                                    {isImporting ? <Loader className="animate-spin mx-auto" size={20} /> : 'Import'}
-                                </button>
-                            </div>
+                            {importProgress && importProgress.total > 0 ? (
+                                <div className="space-y-4">
+                                    <div className="text-center">
+                                        <p className="text-yellow-400 font-bold text-lg">
+                                            Importing {importProgress.current}/{importProgress.total}
+                                        </p>
+                                        <p className="text-gray-400 text-sm">
+                                            {importProgress.added} added, {importProgress.failed} failed
+                                        </p>
+                                    </div>
+                                    <div className="w-full bg-gray-800 rounded-full h-3 overflow-hidden">
+                                        <div
+                                            className="bg-yellow-400 h-3 rounded-full transition-all duration-300"
+                                            style={{ width: `${(importProgress.current / importProgress.total) * 100}%` }}
+                                        />
+                                    </div>
+                                    <p className="text-xs text-gray-500 text-center">
+                                        Jangan tutup halaman ini...
+                                    </p>
+                                </div>
+                            ) : (
+                                <>
+                                    <input
+                                        type="text"
+                                        value={importUrl}
+                                        onChange={e => setImportUrl(e.target.value)}
+                                        placeholder="Paste URL playlist..."
+                                        className="w-full bg-black border border-gray-700 rounded-lg px-4 py-3 mb-4 text-white focus:border-yellow-400 outline-none"
+                                        disabled={isImporting}
+                                    />
+                                    <label className="flex items-center gap-2 mb-4 cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={importIsPublic}
+                                            onChange={e => setImportIsPublic(e.target.checked)}
+                                            className="w-4 h-4"
+                                            disabled={isImporting}
+                                        />
+                                        <span className="text-sm">Make public</span>
+                                    </label>
+                                    <p className="text-xs text-gray-500 mb-4">Supports Spotify & YouTube playlist URLs.</p>
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={() => setShowImportModal(false)}
+                                            className="flex-1 bg-gray-800 hover:bg-gray-700 py-2 rounded"
+                                            disabled={isImporting}
+                                        >
+                                            Batal
+                                        </button>
+                                        <button
+                                            onClick={handleImport}
+                                            disabled={!importUrl.trim() || isImporting}
+                                            className="flex-1 bg-yellow-400 hover:bg-yellow-300 text-black font-bold py-2 rounded disabled:opacity-50"
+                                        >
+                                            {isImporting ? <Loader className="animate-spin mx-auto" size={20} /> : 'Import'}
+                                        </button>
+                                    </div>
+                                </>
+                            )}
                         </div>
                     </div>
                 )
