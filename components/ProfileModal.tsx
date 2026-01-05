@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Camera, Instagram, Phone, MessageCircle, Globe, Loader, AlertCircle, Save, Edit2, Palette, Trash2 } from 'lucide-react';
+import { X, Camera, Globe, Loader, AlertCircle, Save, Edit2, Palette, Trash2 } from 'lucide-react';
 
 const API_BASE_URL = 'https://api.sith-s25.my.id/api';
 
@@ -296,7 +296,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, 
                                             <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Kontak & Sosmed</h3>
 
                                             <div className="flex items-center gap-3">
-                                                <div className="w-8 flex justify-center text-green-500"><Phone size={20} /></div>
+                                                <div className="w-8 flex justify-center text-green-500"><i className="fa-brands fa-whatsapp text-xl"></i></div>
                                                 <div className="flex-1">
                                                     <input
                                                         className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:border-green-500 outline-none transition-colors"
@@ -308,7 +308,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, 
                                             </div>
 
                                             <div className="flex items-center gap-3">
-                                                <div className="w-8 flex justify-center text-white"><MessageCircle size={20} /></div>
+                                                <div className="w-8 flex justify-center text-white"><i className="fa-brands fa-line text-xl"></i></div>
                                                 <div className="flex-1">
                                                     <input
                                                         className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:border-white outline-none transition-colors"
@@ -320,7 +320,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, 
                                             </div>
 
                                             <div className="flex items-center gap-3">
-                                                <div className="w-8 flex justify-center text-pink-500"><Instagram size={20} /></div>
+                                                <div className="w-8 flex justify-center text-pink-500"><i className="fa-brands fa-instagram text-xl"></i></div>
                                                 <div className="flex-1">
                                                     <input
                                                         className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:border-pink-500 outline-none transition-colors"
@@ -335,7 +335,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, 
                                         <div className="flex justify-center sm:justify-start gap-4">
                                             <div className={`flex flex-col items-center gap-1 ${userData.whatsapp ? 'flex' : 'hidden'}`}>
                                                 <a href={`https://wa.me/+62${userData.whatsapp}`} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full border border-gray-700 bg-gray-800 flex items-center justify-center text-green-500 hover:border-green-500 transition-colors group">
-                                                    <Phone size={20} />
+                                                    <i className="fa-brands fa-whatsapp text-xl"></i>
                                                 </a>
                                                 <span className="text-[10px] text-gray-500">WhatsApp</span>
                                             </div>
@@ -347,7 +347,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, 
                                                     rel="noreferrer"
                                                     className="w-10 h-10 rounded-full border border-gray-700 bg-gray-800 flex items-center justify-center text-white hover:border-white transition-colors group"
                                                 >
-                                                    <MessageCircle size={20} />
+                                                    <i className="fa-brands fa-line text-xl"></i>
                                                 </a>
                                                 <span className="text-[10px] text-gray-500">Line</span>
                                             </div>
@@ -359,7 +359,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, 
                                                     rel="noreferrer"
                                                     className="w-10 h-10 rounded-full border border-gray-700 bg-gray-800 flex items-center justify-center text-pink-500 hover:border-pink-500 transition-colors group"
                                                 >
-                                                    <Instagram size={20} />
+                                                    <i className="fa-brands fa-instagram text-xl"></i>
                                                 </a>
                                                 <span className="text-[10px] text-gray-500">Instagram</span>
                                             </div>
