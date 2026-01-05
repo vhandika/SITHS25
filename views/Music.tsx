@@ -211,13 +211,17 @@ const Music: React.FC = () => {
                 method: 'POST',
                 body: JSON.stringify({ title: newPlaylistTitle, is_public: newPlaylistIsPublic })
             });
+            const data = await res.json();
             if (res.ok) {
                 setShowCreateModal(false);
                 setNewPlaylistTitle('');
                 setNewPlaylistIsPublic(false);
                 fetchPlaylists();
+            } else {
+                alert(data.message || 'Gagal membuat playlist');
             }
         } catch (error) {
+            alert('Gagal membuat playlist');
         }
     };
 
