@@ -32,6 +32,8 @@ interface Playlist {
     share_code?: string;
     subscribed?: boolean;
     used_share_code?: string;
+    spotify_playlist_id?: string;
+    source?: string;
 }
 
 const Music: React.FC = () => {
@@ -523,79 +525,86 @@ const Music: React.FC = () => {
         }
 
         setIsImporting(true);
-        setImportProgress({ current: 0, total: 0, added: 0, failed: 0 });
+        setImportProgress(null);
 
         try {
-            const prefetchEndpoint = source === 'spotify'
-                ? `${API_BASE_URL}/music/import/spotify/prefetch`
-                : `${API_BASE_URL}/music/import/youtube/prefetch`;
+            if (source === 'spotify') {
+                const res = await fetchWithAuth(`${API_BASE_URL}/music/import/spotify`, {
+                    method: 'POST',
+                    body: JSON.stringify({ spotifyUrl: importUrl, isPublic: importIsPublic })
+                });
 
-            const prefetchBody = source === 'spotify'
-                ? { spotifyUrl: importUrl }
-                : { youtubeUrl: importUrl };
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || 'Failed to import');
 
-            const prefetchRes = await fetchWithAuth(prefetchEndpoint, {
-                method: 'POST',
-                body: JSON.stringify(prefetchBody)
-            });
+                alert('Spotify playlist imported!');
+            } else {
+                setImportProgress({ current: 0, total: 0, added: 0, failed: 0 });
 
-            if (!prefetchRes.ok) {
-                const errData = await prefetchRes.json();
-                throw new Error(errData.message || 'Failed to fetch playlist');
-            }
+                const prefetchRes = await fetchWithAuth(`${API_BASE_URL}/music/import/youtube/prefetch`, {
+                    method: 'POST',
+                    body: JSON.stringify({ youtubeUrl: importUrl })
+                });
 
-            const { playlistName, tracks, total } = await prefetchRes.json();
-            setImportProgress({ current: 0, total, added: 0, failed: 0 });
-
-            const createRes = await fetchWithAuth(`${API_BASE_URL}/music/playlists`, {
-                method: 'POST',
-                body: JSON.stringify({ title: playlistName, is_public: importIsPublic })
-            });
-
-            if (!createRes.ok) {
-                const errData = await createRes.json();
-                throw new Error(errData.message || 'Failed to create playlist');
-            }
-
-            const { data: newPlaylist } = await createRes.json();
-
-            const BATCH_SIZE = 5;
-            let totalAdded = 0;
-            let totalFailed = 0;
-
-            for (let i = 0; i < tracks.length; i += BATCH_SIZE) {
-                const batch = tracks.slice(i, i + BATCH_SIZE);
-
-                try {
-                    const batchRes = await fetchWithAuth(`${API_BASE_URL}/music/import/batch`, {
-                        method: 'POST',
-                        body: JSON.stringify({
-                            playlistId: newPlaylist.id,
-                            tracks: batch,
-                            source
-                        })
-                    });
-
-                    if (batchRes.ok) {
-                        const result = await batchRes.json();
-                        totalAdded += result.added;
-                        totalFailed += result.failed;
-                    } else {
-                        totalFailed += batch.length;
-                    }
-                } catch (e) {
-                    totalFailed += batch.length;
+                if (!prefetchRes.ok) {
+                    const errData = await prefetchRes.json();
+                    throw new Error(errData.message || 'Failed to fetch playlist');
                 }
 
-                setImportProgress({
-                    current: Math.min(i + BATCH_SIZE, total),
-                    total,
-                    added: totalAdded,
-                    failed: totalFailed
+                const { playlistName, tracks, total } = await prefetchRes.json();
+                setImportProgress({ current: 0, total, added: 0, failed: 0 });
+
+                const createRes = await fetchWithAuth(`${API_BASE_URL}/music/playlists`, {
+                    method: 'POST',
+                    body: JSON.stringify({ title: playlistName, is_public: importIsPublic })
                 });
+
+                if (!createRes.ok) {
+                    const errData = await createRes.json();
+                    throw new Error(errData.message || 'Failed to create playlist');
+                }
+
+                const { data: newPlaylist } = await createRes.json();
+
+                const BATCH_SIZE = 5;
+                let totalAdded = 0;
+                let totalFailed = 0;
+
+                for (let i = 0; i < tracks.length; i += BATCH_SIZE) {
+                    const batch = tracks.slice(i, i + BATCH_SIZE);
+
+                    try {
+                        const batchRes = await fetchWithAuth(`${API_BASE_URL}/music/import/batch`, {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                playlistId: newPlaylist.id,
+                                tracks: batch,
+                                source
+                            })
+                        });
+
+                        if (batchRes.ok) {
+                            const result = await batchRes.json();
+                            totalAdded += result.added;
+                            totalFailed += result.failed;
+                        } else {
+                            totalFailed += batch.length;
+                        }
+                    } catch (e) {
+                        totalFailed += batch.length;
+                    }
+
+                    setImportProgress({
+                        current: Math.min(i + BATCH_SIZE, total),
+                        total,
+                        added: totalAdded,
+                        failed: totalFailed
+                    });
+                }
+
+                alert(`Import selesai! ${totalAdded} lagu ditambahkan, ${totalFailed} gagal.`);
             }
 
-            alert(`Import selesai! ${totalAdded} lagu ditambahkan, ${totalFailed} gagal.`);
             setShowImportModal(false);
             setImportUrl('');
             setImportIsPublic(false);
@@ -872,67 +881,83 @@ const Music: React.FC = () => {
                                 </div>
                             </div>
 
-                            <div className="flex justify-end mb-2">
-                                <button
-                                    onClick={shuffleTracks}
-                                    className="flex items-center gap-1 px-3 py-1.5 text-sm bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white rounded-lg transition-colors"
-                                    title="Shuffle tracks"
-                                >
-                                    <Shuffle size={14} />
-                                    <span className="hidden sm:inline">Shuffle</span>
-                                </button>
-                            </div>
-
-                            <div className="space-y-2">
-                                {tracks.map((track, idx) => (
-                                    <div
-                                        key={track.id}
-                                        className="flex items-center gap-2 p-2 bg-black rounded hover:bg-gray-800 group transition-colors"
-                                    >
-                                        <div className="flex flex-col gap-0.5">
-                                            <button
-                                                onClick={(e) => { e.stopPropagation(); moveTrack(idx, 'up'); }}
-                                                disabled={idx === 0}
-                                                className={`p-0.5 rounded transition-colors ${idx === 0 ? 'text-gray-700 cursor-not-allowed' : 'text-gray-500 hover:text-white hover:bg-gray-700'}`}
-                                                title="Move up"
-                                            >
-                                                <ChevronUp size={14} />
-                                            </button>
-                                            <button
-                                                onClick={(e) => { e.stopPropagation(); moveTrack(idx, 'down'); }}
-                                                disabled={idx === tracks.length - 1}
-                                                className={`p-0.5 rounded transition-colors ${idx === tracks.length - 1 ? 'text-gray-700 cursor-not-allowed' : 'text-gray-500 hover:text-white hover:bg-gray-700'}`}
-                                                title="Move down"
-                                            >
-                                                <ChevronDown size={14} />
-                                            </button>
-                                        </div>
-
-                                        {track.thumbnail && <img src={track.thumbnail} alt={track.title} loading="lazy" className="w-10 h-10 object-cover rounded" />}
-                                        <div className="flex-1 min-w-0 cursor-pointer" onClick={() => handlePlayTrackFromPlaylist(idx)}>
-                                            <h4 className="font-semibold truncate text-sm">{track.title}</h4>
-                                            {track.artist && <p className="text-xs text-gray-400 truncate">{track.artist}</p>}
-                                        </div>
+                            {selectedPlaylist.spotify_playlist_id ? (
+                                <div className="mt-2">
+                                    <iframe
+                                        src={`https://open.spotify.com/embed/playlist/${selectedPlaylist.spotify_playlist_id}?utm_source=generator&theme=0`}
+                                        width="100%"
+                                        height="450"
+                                        frameBorder="0"
+                                        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                                        loading="lazy"
+                                        className="rounded-xl"
+                                    />
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="flex justify-end mb-2">
                                         <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleDeleteTrack(track.id);
-                                            }}
-                                            className="p-1 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                                            title="Remove Track"
+                                            onClick={shuffleTracks}
+                                            className="flex items-center gap-1 px-3 py-1.5 text-sm bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white rounded-lg transition-colors"
+                                            title="Shuffle tracks"
                                         >
-                                            <Trash2 size={16} />
-                                        </button>
-                                        <button
-                                            onClick={() => handlePlayTrackFromPlaylist(idx)}
-                                            className="p-1 text-yellow-400 hover:text-yellow-300"
-                                            title="Play"
-                                        >
-                                            <Play size={16} />
+                                            <Shuffle size={14} />
+                                            <span className="hidden sm:inline">Shuffle</span>
                                         </button>
                                     </div>
-                                ))}
-                            </div>
+
+                                    <div className="space-y-2">
+                                        {tracks.map((track, idx) => (
+                                            <div
+                                                key={track.id}
+                                                className="flex items-center gap-2 p-2 bg-black rounded hover:bg-gray-800 group transition-colors"
+                                            >
+                                                <div className="flex flex-col gap-0.5">
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); moveTrack(idx, 'up'); }}
+                                                        disabled={idx === 0}
+                                                        className={`p-0.5 rounded transition-colors ${idx === 0 ? 'text-gray-700 cursor-not-allowed' : 'text-gray-500 hover:text-white hover:bg-gray-700'}`}
+                                                        title="Move up"
+                                                    >
+                                                        <ChevronUp size={14} />
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); moveTrack(idx, 'down'); }}
+                                                        disabled={idx === tracks.length - 1}
+                                                        className={`p-0.5 rounded transition-colors ${idx === tracks.length - 1 ? 'text-gray-700 cursor-not-allowed' : 'text-gray-500 hover:text-white hover:bg-gray-700'}`}
+                                                        title="Move down"
+                                                    >
+                                                        <ChevronDown size={14} />
+                                                    </button>
+                                                </div>
+
+                                                {track.thumbnail && <img src={track.thumbnail} alt={track.title} loading="lazy" className="w-10 h-10 object-cover rounded" />}
+                                                <div className="flex-1 min-w-0 cursor-pointer" onClick={() => handlePlayTrackFromPlaylist(idx)}>
+                                                    <h4 className="font-semibold truncate text-sm">{track.title}</h4>
+                                                    {track.artist && <p className="text-xs text-gray-400 truncate">{track.artist}</p>}
+                                                </div>
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleDeleteTrack(track.id);
+                                                    }}
+                                                    className="p-1 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                    title="Remove Track"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                                <button
+                                                    onClick={() => handlePlayTrackFromPlaylist(idx)}
+                                                    className="p-1 text-yellow-400 hover:text-yellow-300"
+                                                    title="Play"
+                                                >
+                                                    <Play size={16} />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </>
+                            )}
                         </div>
                     )}
                 </div>

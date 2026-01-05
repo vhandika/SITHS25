@@ -220,7 +220,18 @@ const MusicPlayer: React.FC = () => {
         if (isSpotifyTrack) {
             setIsReady(true);
             setIsPlaying(true);
-            setDuration(0);
+
+            const durationMs = (currentTrack as any).duration_ms || 0;
+            const durationSec = durationMs / 1000;
+            setDuration(durationSec);
+
+            if (durationMs > 0) {
+                const timer = setTimeout(() => {
+                    handleNextRef.current();
+                }, durationMs + 2000);
+
+                return () => clearTimeout(timer);
+            }
             return;
         }
 
@@ -440,17 +451,6 @@ const MusicPlayer: React.FC = () => {
         <>
             <div ref={containerRef} className="hidden fixed" />
 
-            {isSpotifyTrack && currentTrack && (
-                <iframe
-                    src={`https://open.spotify.com/embed/track/${currentTrack.video_id}?utm_source=generator&theme=0&autoplay=1`}
-                    width="0"
-                    height="0"
-                    frameBorder="0"
-                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                    loading="lazy"
-                    className="fixed -left-[9999px]"
-                />
-            )}
             <div
                 className={`fixed bottom-4 left-1/2 -translate-x-1/2 w-full max-w-4xl px-4 z-50 transition-all duration-300 ease-in-out ${isMinimized
                     ? 'translate-y-[200%] opacity-0 pointer-events-none'
@@ -468,76 +468,101 @@ const MusicPlayer: React.FC = () => {
                         </button>
                     )}
 
-                    <div
-                        ref={scrubRef}
-                        className="w-full h-1 bg-gray-700 rounded-full cursor-pointer relative group flex items-center touch-none"
-                        onMouseDown={handleScrubStart}
-                        onTouchStart={handleScrubStart}
-                    >
-                        <div className="absolute top-0 left-0 h-full bg-yellow-400 rounded-full pointer-events-none" style={{ width: `${progressPercent}%` }} />
-                        <div
-                            className={`absolute w-3 h-3 bg-yellow-400 rounded-full shadow-lg transform transition-transform duration-100 ${isScrubbing ? 'scale-125' : 'scale-0 group-hover:scale-100'}`}
-                            style={{ left: `${progressPercent}%`, transform: `translateX(-50%) ${isScrubbing ? 'scale(1.25)' : ''}` }}
-                        >
-                            {isScrubbing && (
-                                <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap border border-gray-700">
-                                    {formatTime(scrubTime)}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    <div className="flex items-center justify-between gap-4">
-                        <div className="flex items-center gap-3 flex-1 min-w-0">
-                            {currentTrack.thumbnail && (
-                                <img
-                                    src={currentTrack.thumbnail}
-                                    alt={currentTrack.title}
-                                    className="w-12 h-12 rounded-md object-cover shadow-md"
-                                />
-                            )}
-                            <div className="min-w-0 flex-1">
-                                <h3 className="text-white font-semibold truncate text-sm">{currentTrack.title}</h3>
-                                {currentTrack.artist && <p className="text-gray-400 text-xs truncate">{currentTrack.artist}</p>}
+                    {isSpotifyTrack ? (
+                        <div className="w-full">
+                            <iframe
+                                src={`https://open.spotify.com/embed/track/${currentTrack.video_id}?utm_source=generator&theme=0`}
+                                width="100%"
+                                height="152"
+                                frameBorder="0"
+                                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                                loading="lazy"
+                                className="rounded-xl"
+                            />
+                            <div className="flex justify-center gap-2 mt-2">
+                                <button onClick={playPrevious} className="p-2 text-gray-300 hover:text-white">
+                                    <SkipBack size={20} />
+                                </button>
+                                <button onClick={playNext} className="p-2 text-gray-300 hover:text-white">
+                                    <SkipForward size={20} />
+                                </button>
                             </div>
                         </div>
-
-                        <div className="flex items-center gap-2">
-                            <button onClick={playPrevious} className="p-2 text-gray-300 hover:text-white">
-                                <SkipBack size={20} />
-                            </button>
-                            <button onClick={seekBackward} className="p-2 text-gray-300 hover:text-white" title="-10s">
-                                <Rewind size={20} />
-                            </button>
-                            <button
-                                onClick={togglePlay}
-                                className="p-2 text-gray-400 hover:text-white transition-colors"
+                    ) : (
+                        <>
+                            {/* YouTube Player UI */}
+                            <div
+                                ref={scrubRef}
+                                className="w-full h-1 bg-gray-700 rounded-full cursor-pointer relative group flex items-center touch-none"
+                                onMouseDown={handleScrubStart}
+                                onTouchStart={handleScrubStart}
                             >
-                                {!isReady ? <Loader size={24} className="animate-spin" /> : isPlaying ? <Pause size={24} /> : <Play size={24} />}
-                            </button>
-                            <button onClick={seekForward} className="p-2 text-gray-300 hover:text-white" title="+10s">
-                                <FastForward size={20} />
-                            </button>
-                            <button onClick={playNext} className="p-2 text-gray-300 hover:text-white">
-                                <SkipForward size={20} />
-                            </button>
-                        </div>
+                                <div className="absolute top-0 left-0 h-full bg-yellow-400 rounded-full pointer-events-none" style={{ width: `${progressPercent}%` }} />
+                                <div
+                                    className={`absolute w-3 h-3 bg-yellow-400 rounded-full shadow-lg transform transition-transform duration-100 ${isScrubbing ? 'scale-125' : 'scale-0 group-hover:scale-100'}`}
+                                    style={{ left: `${progressPercent}%`, transform: `translateX(-50%) ${isScrubbing ? 'scale(1.25)' : ''}` }}
+                                >
+                                    {isScrubbing && (
+                                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap border border-gray-700">
+                                            {formatTime(scrubTime)}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
 
-                        <div className="hidden sm:flex items-center gap-3 text-gray-400 text-xs">
-                            <span>{formatTime(currentTime)} / {formatTime(duration)}</span>
-                            <button onClick={toggleMute} className="hover:text-white">
-                                {isMuted || volume === 0 ? <VolumeX size={18} /> : <Volume2 size={18} />}
-                            </button>
-                            <input
-                                type="range"
-                                min="0"
-                                max="100"
-                                value={isMuted ? 0 : volume}
-                                onChange={(e) => handleVolumeChange(parseInt(e.target.value))}
-                                className="w-20 h-1 bg-gray-700 rounded-full appearance-none cursor-pointer accent-yellow-400"
-                            />
-                        </div>
-                    </div>
+                            <div className="flex items-center justify-between gap-4">
+                                <div className="flex items-center gap-3 flex-1 min-w-0">
+                                    {currentTrack.thumbnail && (
+                                        <img
+                                            src={currentTrack.thumbnail}
+                                            alt={currentTrack.title}
+                                            className="w-12 h-12 rounded-md object-cover shadow-md"
+                                        />
+                                    )}
+                                    <div className="min-w-0 flex-1">
+                                        <h3 className="text-white font-semibold truncate text-sm">{currentTrack.title}</h3>
+                                        {currentTrack.artist && <p className="text-gray-400 text-xs truncate">{currentTrack.artist}</p>}
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                    <button onClick={playPrevious} className="p-2 text-gray-300 hover:text-white">
+                                        <SkipBack size={20} />
+                                    </button>
+                                    <button onClick={seekBackward} className="p-2 text-gray-300 hover:text-white" title="-10s">
+                                        <Rewind size={20} />
+                                    </button>
+                                    <button
+                                        onClick={togglePlay}
+                                        className="p-2 text-gray-400 hover:text-white transition-colors"
+                                    >
+                                        {!isReady ? <Loader size={24} className="animate-spin" /> : isPlaying ? <Pause size={24} /> : <Play size={24} />}
+                                    </button>
+                                    <button onClick={seekForward} className="p-2 text-gray-300 hover:text-white" title="+10s">
+                                        <FastForward size={20} />
+                                    </button>
+                                    <button onClick={playNext} className="p-2 text-gray-300 hover:text-white">
+                                        <SkipForward size={20} />
+                                    </button>
+                                </div>
+
+                                <div className="hidden sm:flex items-center gap-3 text-gray-400 text-xs">
+                                    <span>{formatTime(currentTime)} / {formatTime(duration)}</span>
+                                    <button onClick={toggleMute} className="hover:text-white">
+                                        {isMuted || volume === 0 ? <VolumeX size={18} /> : <Volume2 size={18} />}
+                                    </button>
+                                    <input
+                                        type="range"
+                                        min="0"
+                                        max="100"
+                                        value={isMuted ? 0 : volume}
+                                        onChange={(e) => handleVolumeChange(parseInt(e.target.value))}
+                                        className="w-20 h-1 bg-gray-700 rounded-full appearance-none cursor-pointer accent-yellow-400"
+                                    />
+                                </div>
+                            </div>
+                        </>
+                    )}
                 </div>
             </div>
 
