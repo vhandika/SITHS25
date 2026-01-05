@@ -130,8 +130,8 @@ const Gallery: React.FC = () => {
                 </div>
 
                 {isLoading ? (
-                    <div className="flex flex-col items-center justify-center py-10 text-yellow-400">
-                        <Loader className="animate-spin mb-2" size={24} />
+                    <div className="flex items-center justify-center py-10">
+                        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-yellow-400"></div>
                     </div>
                 ) : (
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">

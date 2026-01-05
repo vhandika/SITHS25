@@ -56,6 +56,14 @@ const Attendance: React.FC = () => {
     const [photoPopupUrl, setPhotoPopupUrl] = useState<string | null>(null);
 
     useEffect(() => {
+        return () => {
+            if (previewUrl && previewUrl.startsWith('blob:')) {
+                URL.revokeObjectURL(previewUrl);
+            }
+        };
+    }, [previewUrl]);
+
+    useEffect(() => {
         const role = getCookie('userRole');
         const nim = getCookie('userNIM');
 
@@ -465,7 +473,9 @@ const Attendance: React.FC = () => {
 
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                     {loading ? (
-                        <div className="col-span-full flex justify-center py-10"><Loader className="animate-spin text-yellow-400" /></div>
+                        <div className="col-span-full flex justify-center py-10">
+                            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-yellow-400"></div>
+                        </div>
                     ) : (
                         sessions.map((session) => {
                             const userRecord = userStatusMap[session.id];
@@ -744,7 +754,7 @@ const Attendance: React.FC = () => {
                                     <div className="border-2 border-dashed border-gray-700 rounded-lg p-4 text-center">
                                         {isCompressing ? (
                                             <div className="text-yellow-400 text-sm flex flex-col items-center">
-                                                <Loader className="animate-spin mb-2" />
+                                                <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-yellow-400 mb-2"></div>
                                                 Memproses gambar...
                                             </div>
                                         ) : previewUrl ? (

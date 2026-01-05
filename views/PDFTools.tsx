@@ -3,10 +3,10 @@ import {
     FileText, ImagePlus,
     FileCode, Files, FilePenLine
 } from 'lucide-react';
-import PhotoToPdfTool from '../components/PDFTools/PhotoToPdfTool';
-import CodeToPdfTool from '../components/PDFTools/CodeToPdfTool';
-import MergePdfTool from '../components/PDFTools/MergePdfTool';
-import PlaceholderTool from '../components/PDFTools/PlaceholderTool';
+const PhotoToPdfTool = React.lazy(() => import('../components/PDFTools/PhotoToPdfTool'));
+const CodeToPdfTool = React.lazy(() => import('../components/PDFTools/CodeToPdfTool'));
+const MergePdfTool = React.lazy(() => import('../components/PDFTools/MergePdfTool'));
+const PlaceholderTool = React.lazy(() => import('../components/PDFTools/PlaceholderTool'));
 
 type ToolType = 'menu' | 'photo' | 'code' | 'merge' | 'edit';
 
@@ -37,12 +37,18 @@ const PdfTools: React.FC = () => {
     }
 
     return (
-        <div className="min-h-screen w-full bg-black py-16 lg:py-24 px-4 sm:px-6 lg:px-8 mt-16 lg:mt-0 font-sans selection:bg-yellow-400 selection:text-black">
-            {activeTool === 'photo' && <PhotoToPdfTool onBack={() => setActiveTool('menu')} />}
-            {activeTool === 'code' && <CodeToPdfTool onBack={() => setActiveTool('menu')} />}
-            {activeTool === 'merge' && <MergePdfTool onBack={() => setActiveTool('menu')} />}
-            {activeTool === 'edit' && <PlaceholderTool title="Edit PDF" onBack={() => setActiveTool('menu')} />}
-        </div>
+        <React.Suspense fallback={
+            <div className="min-h-screen w-full bg-black flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-yellow-400"></div>
+            </div>
+        }>
+            <div className="min-h-screen w-full bg-black py-16 lg:py-24 px-4 sm:px-6 lg:px-8 mt-16 lg:mt-0 font-sans selection:bg-yellow-400 selection:text-black">
+                {activeTool === 'photo' && <PhotoToPdfTool onBack={() => setActiveTool('menu')} />}
+                {activeTool === 'code' && <CodeToPdfTool onBack={() => setActiveTool('menu')} />}
+                {activeTool === 'merge' && <MergePdfTool onBack={() => setActiveTool('menu')} />}
+                {activeTool === 'edit' && <PlaceholderTool title="Edit PDF" onBack={() => setActiveTool('menu')} />}
+            </div>
+        </React.Suspense>
     );
 };
 

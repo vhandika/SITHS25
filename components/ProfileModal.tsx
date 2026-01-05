@@ -172,7 +172,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, 
 
                 {loading && (
                     <div className="flex-1 flex flex-col items-center justify-center gap-2">
-                        <Loader className="animate-spin text-yellow-400" size={32} />
+                        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-yellow-400"></div>
                     </div>
                 )}
 

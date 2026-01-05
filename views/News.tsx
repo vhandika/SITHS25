@@ -253,7 +253,7 @@ const News: React.FC = () => {
         }, 300);
     };
 
-    if (loading) return <div className="min-h-screen w-full bg-black flex items-center justify-center"><Loader className="animate-spin text-yellow-400" /></div>;
+    if (loading) return <div className="min-h-screen w-full bg-black flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-yellow-400"></div></div>;
     const currentArticle = newsData.length > 0 ? newsData[currentIndex] : null;
 
     return (

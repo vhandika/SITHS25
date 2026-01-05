@@ -28,6 +28,33 @@ const PhotoToPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         localStorage.setItem('pdf_photo_usemargin', String(useMargin));
     }, [fileName, pageSize, orientation, useMargin]);
 
+    useEffect(() => {
+        return () => {
+            images.forEach(url => {
+                if (url && url.startsWith('blob:')) {
+                    URL.revokeObjectURL(url);
+                }
+            });
+        };
+    }, []);
+
+    const imagesRef = useRef(images);
+    useEffect(() => {
+        imagesRef.current = images;
+    }, [images]);
+
+    useEffect(() => {
+        return () => {
+            if (imagesRef.current) {
+                imagesRef.current.forEach(url => {
+                    if (url && url.startsWith('blob:')) {
+                        URL.revokeObjectURL(url);
+                    }
+                });
+            }
+        };
+    }, []);
+
     const cropperRef = useRef<ReactCropperElement>(null);
 
     const getPaperStyle = () => {
@@ -53,6 +80,10 @@ const PhotoToPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     };
 
     const removeImage = (index: number) => {
+        const urlToCheck = images[index];
+        if (urlToCheck && urlToCheck.startsWith('blob:')) {
+            URL.revokeObjectURL(urlToCheck);
+        }
         const newImages = [...images];
         newImages.splice(index, 1);
         setImages(newImages);

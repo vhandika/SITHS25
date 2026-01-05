@@ -100,8 +100,8 @@ const FindNim: React.FC = () => {
                 </div>
 
                 {loading && (
-                    <div className="flex flex-col items-center justify-center py-12 text-yellow-400">
-                        <Loader className="animate-spin mb-2" size={32} />
+                    <div className="flex items-center justify-center py-12">
+                        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-yellow-400"></div>
                     </div>
                 )}
 
