@@ -611,10 +611,14 @@ const Attendance: React.FC = () => {
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         title="Buka Google Sheets"
-                                        className="bg-green-700 hover:bg-green-600 text-white p-2 rounded flex items-center justify-center shrink-0 border border-green-500 transition-colors gap-1 px-3"
+                                        className="transform hover:scale-110 transition-transform flex items-center justify-center shrink-0"
                                     >
-                                        <ExternalLink size={16} />
-                                        <span className="hidden sm:inline text-sm">GSheet</span>
+                                        <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="40" height="40" viewBox="0 0 48 48">
+                                            <path fill="#43a047" d="M37,45H11c-1.657,0-3-1.343-3-3V6c0-1.657,1.343-3,3-3h19l10,10v29C40,43.657,38.657,45,37,45z"></path>
+                                            <path fill="#c8e6c9" d="M40,13h-7c-1.657,0-3-1.343-3-3V3L40,13z"></path>
+                                            <path fill="#2e7d32" d="M30,13h7l-7-7V13z"></path>
+                                            <path fill="#e8f5e9" d="M31.5,23h-15c-0.276,0-0.5-0.224-0.5-0.5s0.224-0.5,0.5-0.5h15c0.276,0,0.5,0.224,0.5,0.5S31.776,23,31.5,23z M31.5,19h-15c-0.276,0-0.5-0.224-0.5-0.5s0.224-0.5,0.5-0.5h15c0.276,0,0.5,0.224,0.5,0.5S31.776,19,31.5,19z M31.5,35h-15c-0.276,0-0.5-0.224-0.5-0.5s0.224-0.5,0.5-0.5h15c0.276,0,0.5,0.224,0.5,0.5S31.776,35,31.5,35z M31.5,27h-15c-0.276,0-0.5-0.224-0.5-0.5V26c0-0.276,0.224-0.5,0.5-0.5h15c0.276,0,0.5,0.224,0.5,0.5v0.5C32,26.776,31.776,27,31.5,27z M31.5,31h-15c-0.276,0-0.5-0.224-0.5-0.5s0.224-0.5,0.5-0.5h15c0.276,0,0.5,0.224,0.5,0.5S31.776,31,31.5,31z"></path>
+                                        </svg>
                                     </a>
                                 </div>
                             </div>
