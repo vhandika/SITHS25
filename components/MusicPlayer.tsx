@@ -140,6 +140,7 @@ const MusicPlayer: React.FC = () => {
                     height: '1',
                     width: '1',
                     videoId: currentTrack ? currentTrack.video_id : '',
+                    host: 'https://www.youtube.com',
                     playerVars: {
                         autoplay: 1,
                         controls: 0,

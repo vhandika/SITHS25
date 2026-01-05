@@ -734,36 +734,43 @@ const Music: React.FC = () => {
                                     <h3 className="text-xl font-bold truncate">{selectedPlaylist.title}</h3>
                                 )}
                                 <div className="flex gap-2 flex-shrink-0">
-                                    <button
-                                        onClick={handleGenerateShareCode}
-                                        disabled={isLoadingShare}
-                                        className="p-1 hover:bg-gray-800 rounded text-gray-400 hover:text-white transition-colors"
-                                        title="Share Playlist"
-                                    >
-                                        <Share2 size={20} />
-                                    </button>
+                                    {!selectedPlaylist.subscribed && (
+                                        <button
+                                            onClick={handleGenerateShareCode}
+                                            disabled={isLoadingShare}
+                                            className="p-1 hover:bg-gray-800 rounded text-gray-400 hover:text-white transition-colors"
+                                            title="Share Playlist"
+                                        >
+                                            <Share2 size={20} />
+                                        </button>
+                                    )}
+
                                     <button
                                         onClick={() => handleDeletePlaylist(selectedPlaylist.id)}
                                         className="p-1 hover:bg-gray-800 rounded text-gray-400 hover:text-white transition-colors"
-                                        title="Delete Playlist"
+                                        title={selectedPlaylist.subscribed ? "Unsubscribe" : "Delete Playlist"}
                                     >
                                         <Trash2 size={20} />
                                     </button>
-                                    <button
-                                        onMouseDown={(e) => e.preventDefault()}
-                                        onClick={() => {
-                                            if (isEditing) {
-                                                handleUpdatePlaylist();
-                                            } else {
-                                                setIsEditing(true);
-                                                setEditTitle(selectedPlaylist.title);
-                                            }
-                                        }}
-                                        className="p-1 hover:bg-gray-800 rounded transition-colors text-gray-400 hover:text-white"
-                                        title={isEditing ? "Save Name" : "Edit Name"}
-                                    >
-                                        {isEditing ? <Check size={20} /> : <Edit2 size={20} />}
-                                    </button>
+
+                                    {!selectedPlaylist.subscribed && (
+                                        <button
+                                            onMouseDown={(e) => e.preventDefault()}
+                                            onClick={() => {
+                                                if (isEditing) {
+                                                    handleUpdatePlaylist();
+                                                } else {
+                                                    setIsEditing(true);
+                                                    setEditTitle(selectedPlaylist.title);
+                                                }
+                                            }}
+                                            className="p-1 hover:bg-gray-800 rounded transition-colors text-gray-400 hover:text-white"
+                                            title={isEditing ? "Save Name" : "Edit Name"}
+                                        >
+                                            {isEditing ? <Check size={20} /> : <Edit2 size={20} />}
+                                        </button>
+                                    )}
+
                                     <button
                                         onClick={() => {
                                             if (isEditing) {
@@ -914,7 +921,7 @@ const Music: React.FC = () => {
 
                             <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
                                 <p className="text-xs text-gray-500 uppercase font-bold mb-2">Select Playlist</p>
-                                {playlists.map(p => (
+                                {playlists.filter(p => !p.subscribed).map(p => (
                                     <button
                                         key={p.id}
                                         onClick={() => confirmAddToPlaylist(p.id)}
