@@ -33,6 +33,8 @@ const MusicPlayer: React.FC = () => {
     const scrubRef = useRef<HTMLDivElement>(null);
     const [isScrubbing, setIsScrubbing] = useState(false);
     const [scrubTime, setScrubTime] = useState(0);
+    const isSpotifyTrack = currentTrack && currentTrack.video_id &&
+        /^[a-zA-Z0-9]{22}$/.test(currentTrack.video_id);
 
     useEffect(() => {
         handleNextRef.current = () => {
@@ -213,7 +215,16 @@ const MusicPlayer: React.FC = () => {
     }, []);
 
     useEffect(() => {
-        if (!currentTrack || !playerRef.current || !isReady) return;
+        if (!currentTrack) return;
+
+        if (isSpotifyTrack) {
+            setIsReady(true);
+            setIsPlaying(true);
+            setDuration(0);
+            return;
+        }
+
+        if (!playerRef.current || !isReady) return;
 
         if (playerRef.current.getVideoData && playerRef.current.getVideoData().video_id === currentTrack.video_id) {
             if (!isPlaying) playerRef.current.playVideo();
@@ -228,7 +239,7 @@ const MusicPlayer: React.FC = () => {
                 playerRef.current.setPlaybackQuality('small');
             }
         }, 1000);
-    }, [currentTrack]);
+    }, [currentTrack, isSpotifyTrack]);
 
     useEffect(() => {
         if (!playerRef.current || !isReady) return;
@@ -428,6 +439,18 @@ const MusicPlayer: React.FC = () => {
     return (
         <>
             <div ref={containerRef} className="hidden fixed" />
+
+            {isSpotifyTrack && currentTrack && (
+                <iframe
+                    src={`https://open.spotify.com/embed/track/${currentTrack.video_id}?utm_source=generator&theme=0&autoplay=1`}
+                    width="0"
+                    height="0"
+                    frameBorder="0"
+                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                    loading="lazy"
+                    className="fixed -left-[9999px]"
+                />
+            )}
             <div
                 className={`fixed bottom-4 left-1/2 -translate-x-1/2 w-full max-w-4xl px-4 z-50 transition-all duration-300 ease-in-out ${isMinimized
                     ? 'translate-y-[200%] opacity-0 pointer-events-none'
