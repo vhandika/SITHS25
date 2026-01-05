@@ -65,11 +65,24 @@ const Music: React.FC = () => {
     const inputRef = useRef<HTMLInputElement>(null);
     const isTyping = useRef(false);
 
-    const showPlaylistDetail = selectedPlaylist !== null && tracks.length > 0;
+    const [currentUserNim, setCurrentUserNim] = useState<string | null>(null);
+
+    const showPlaylistDetail = selectedPlaylist !== null;
     const isSearchMode = searchResults.length > 0;
 
     useEffect(() => {
-        const initGuestId = async () => {
+        const initUserAndGuest = async () => {
+            try {
+                const res = await fetchWithAuth(`${API_BASE_URL}/validate-token`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.user && data.user.nim) {
+                        setCurrentUserNim(data.user.nim);
+                    }
+                }
+            } catch (error) {
+            }
+
             let guestId = localStorage.getItem('music_guest_id');
             if (!guestId) {
                 try {
@@ -82,9 +95,17 @@ const Music: React.FC = () => {
                 } catch (error) {
                 }
             }
+
+            if (guestId) {
+                const parts = guestId.split('.');
+                if (parts.length > 0) {
+                    setCurrentUserNim(current => current || parts[0]);
+                }
+            }
+
             fetchPlaylists();
         };
-        initGuestId();
+        initUserAndGuest();
     }, []);
 
     const joinPlaylist = async (code: string) => {
@@ -738,7 +759,7 @@ const Music: React.FC = () => {
                                     <h3 className="text-xl font-bold truncate">{selectedPlaylist.title}</h3>
                                 )}
                                 <div className="flex gap-2 flex-shrink-0">
-                                    {!selectedPlaylist.subscribed && (
+                                    {selectedPlaylist.creator_nim === currentUserNim && (
                                         <button
                                             onClick={handleGenerateShareCode}
                                             disabled={isLoadingShare}
@@ -749,15 +770,17 @@ const Music: React.FC = () => {
                                         </button>
                                     )}
 
-                                    <button
-                                        onClick={() => handleDeletePlaylist(selectedPlaylist.id)}
-                                        className="p-1 hover:bg-gray-800 rounded text-gray-400 hover:text-white transition-colors"
-                                        title={selectedPlaylist.subscribed ? "Unsubscribe" : "Delete Playlist"}
-                                    >
-                                        <Trash2 size={20} />
-                                    </button>
+                                    {(selectedPlaylist.creator_nim === currentUserNim || selectedPlaylist.subscribed) && (
+                                        <button
+                                            onClick={() => handleDeletePlaylist(selectedPlaylist.id)}
+                                            className="p-1 hover:bg-gray-800 rounded text-gray-400 hover:text-white transition-colors"
+                                            title={selectedPlaylist.subscribed ? "Unsubscribe" : "Delete Playlist"}
+                                        >
+                                            <Trash2 size={20} />
+                                        </button>
+                                    )}
 
-                                    {!selectedPlaylist.subscribed && (
+                                    {selectedPlaylist.creator_nim === currentUserNim && (
                                         <button
                                             onMouseDown={(e) => e.preventDefault()}
                                             onClick={() => {
@@ -856,7 +879,7 @@ const Music: React.FC = () => {
                         </div>
                     )}
                 </div>
-            </div>
+            </div >
 
             {showCreateModal && (
                 <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
@@ -946,182 +969,190 @@ const Music: React.FC = () => {
                 )
             }
 
-            {showShareModal && currentShareCode && (
-                <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-                    <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 w-full max-w-sm">
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-xl font-bold flex items-center gap-2">
-                                <Share2 size={20} className="text-yellow-400" />
-                                Share Playlist
-                            </h2>
-                            <button onClick={() => setShowShareModal(false)} className="text-gray-400 hover:text-white">
-                                <X size={24} />
-                            </button>
-                        </div>
-                        <div className="space-y-4 mb-6">
-                            <div>
-                                <p className="text-gray-400 text-sm mb-2">Share Code:</p>
-                                <div className="bg-black border border-gray-700 rounded-lg p-3 flex items-center justify-between gap-3">
-                                    <span className="text-xl font-mono font-bold text-yellow-400 tracking-widest">{currentShareCode}</span>
-                                    <button onClick={handleCopyCode} className="p-2 hover:bg-gray-800 rounded text-gray-400 hover:text-white" title="Copy Code">
-                                        <Copy size={20} />
-                                    </button>
+            {
+                showShareModal && currentShareCode && (
+                    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+                        <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 w-full max-w-sm">
+                            <div className="flex justify-between items-center mb-4">
+                                <h2 className="text-xl font-bold flex items-center gap-2">
+                                    <Share2 size={20} className="text-yellow-400" />
+                                    Share Playlist
+                                </h2>
+                                <button onClick={() => setShowShareModal(false)} className="text-gray-400 hover:text-white">
+                                    <X size={24} />
+                                </button>
+                            </div>
+                            <div className="space-y-4 mb-6">
+                                <div>
+                                    <p className="text-gray-400 text-sm mb-2">Share Code:</p>
+                                    <div className="bg-black border border-gray-700 rounded-lg p-3 flex items-center justify-between gap-3">
+                                        <span className="text-xl font-mono font-bold text-yellow-400 tracking-widest">{currentShareCode}</span>
+                                        <button onClick={handleCopyCode} className="p-2 hover:bg-gray-800 rounded text-gray-400 hover:text-white" title="Copy Code">
+                                            <Copy size={20} />
+                                        </button>
+                                    </div>
+                                </div>
+                                <div>
+                                    <p className="text-gray-400 text-sm mb-2">Share Link:</p>
+                                    <div className="bg-black border border-gray-700 rounded-lg p-3 flex items-center justify-between gap-3">
+                                        <span className="text-sm text-gray-400 truncate flex-1">{`${window.location.origin}/music?join=${currentShareCode}`}</span>
+                                        <button onClick={handleCopyLink} className="p-2 hover:bg-gray-800 rounded text-gray-400 hover:text-white" title="Copy Link">
+                                            <Link size={20} />
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
-                            <div>
-                                <p className="text-gray-400 text-sm mb-2">Share Link:</p>
-                                <div className="bg-black border border-gray-700 rounded-lg p-3 flex items-center justify-between gap-3">
-                                    <span className="text-sm text-gray-400 truncate flex-1">{`${window.location.origin}/music?join=${currentShareCode}`}</span>
-                                    <button onClick={handleCopyLink} className="p-2 hover:bg-gray-800 rounded text-gray-400 hover:text-white" title="Copy Link">
-                                        <Link size={20} />
-                                    </button>
-                                </div>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={handleRevokeShareCode}
+                                    className="flex-1 bg-red-900/30 hover:bg-red-900/50 text-red-400 py-2 rounded font-bold"
+                                >
+                                    Reset
+                                </button>
+                                <button
+                                    onClick={() => setShowShareModal(false)}
+                                    className="flex-1 bg-gray-800 hover:bg-gray-700 py-2 rounded"
+                                >
+                                    Tutup
+                                </button>
                             </div>
                         </div>
-                        <div className="flex gap-2">
-                            <button
-                                onClick={handleRevokeShareCode}
-                                className="flex-1 bg-red-900/30 hover:bg-red-900/50 text-red-400 py-2 rounded font-bold"
-                            >
-                                Reset
-                            </button>
-                            <button
-                                onClick={() => setShowShareModal(false)}
-                                className="flex-1 bg-gray-800 hover:bg-gray-700 py-2 rounded"
-                            >
-                                Tutup
-                            </button>
-                        </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
-            {showJoinModal && (
-                <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-                    <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 w-full max-w-sm">
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-xl font-bold flex items-center gap-2">
-                                <Link size={20} className="text-yellow-400" />
-                                Join via Code
-                            </h2>
-                            <button onClick={() => setShowJoinModal(false)} className="text-gray-400 hover:text-white">
-                                <X size={24} />
-                            </button>
-                        </div>
-                        <p className="text-gray-400 text-sm mb-4">Masukkan kode 6 karakter:</p>
-                        <input
-                            type="text"
-                            value={joinCode}
-                            onChange={e => setJoinCode(e.target.value.toUpperCase().slice(0, 6))}
-                            placeholder="______"
-                            maxLength={6}
-                            className="w-full bg-black border border-gray-700 rounded-lg px-4 py-3 mb-4 text-center text-2xl font-mono font-bold text-yellow-400 tracking-widest focus:border-yellow-400 outline-none uppercase"
-                        />
-                        <div className="flex gap-2">
-                            <button
-                                onClick={() => setShowJoinModal(false)}
-                                className="flex-1 bg-gray-800 hover:bg-gray-700 py-2 rounded"
-                            >
-                                Batal
-                            </button>
-                            <button
-                                onClick={handleJoinByCode}
-                                disabled={joinCode.length !== 6 || isLoadingShare}
-                                className="flex-1 bg-yellow-400 hover:bg-yellow-300 text-black font-bold py-2 rounded disabled:opacity-50"
-                            >
-                                {isLoadingShare ? <Loader className="animate-spin mx-auto" size={20} /> : 'Join'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {sharedPlaylist && (
-                <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4">
-                    <div className="bg-gray-900 border border-gray-700 rounded-lg w-full max-w-lg max-h-[80vh] flex flex-col">
-                        <div className="p-4 border-b border-gray-800 flex justify-between items-center">
-                            <div>
-                                <h2 className="text-xl font-bold">{sharedPlaylist.playlist.title}</h2>
-                                <p className="text-xs text-gray-400">Shared Playlist</p>
+            {
+                showJoinModal && (
+                    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+                        <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 w-full max-w-sm">
+                            <div className="flex justify-between items-center mb-4">
+                                <h2 className="text-xl font-bold flex items-center gap-2">
+                                    <Link size={20} className="text-yellow-400" />
+                                    Join via Code
+                                </h2>
+                                <button onClick={() => setShowJoinModal(false)} className="text-gray-400 hover:text-white">
+                                    <X size={24} />
+                                </button>
                             </div>
-                            <button onClick={() => setSharedPlaylist(null)} className="text-gray-400 hover:text-white">
-                                <X size={24} />
-                            </button>
-                        </div>
-                        <div className="flex-1 overflow-y-auto p-4">
-                            {sharedPlaylist.tracks.length === 0 ? (
-                                <p className="text-center text-gray-500 py-8">Playlist kosong</p>
-                            ) : (
-                                <div className="space-y-2">
-                                    {sharedPlaylist.tracks.map((track, idx) => (
-                                        <div
-                                            key={track.id}
-                                            className="flex items-center gap-3 p-2 bg-black rounded hover:bg-gray-800 cursor-pointer group"
-                                            onClick={() => playQueue(sharedPlaylist.tracks, idx)}
-                                        >
-                                            {track.thumbnail && <img src={track.thumbnail} alt={track.title} className="w-10 h-10 object-cover rounded" />}
-                                            <div className="flex-1 min-w-0">
-                                                <h4 className="font-semibold truncate text-sm">{track.title}</h4>
-                                                {track.artist && <p className="text-xs text-gray-400 truncate">{track.artist}</p>}
-                                            </div>
-                                            <Play size={16} className="text-yellow-400 opacity-0 group-hover:opacity-100" />
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {showImportModal && (
-                <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-                    <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 w-full max-w-md">
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-xl font-bold flex items-center gap-2">
-                                <Download size={20} className="text-yellow-400" />
-                                Import Playlist
-                            </h2>
-                            <button onClick={() => setShowImportModal(false)} className="text-gray-400 hover:text-white">
-                                <X size={24} />
-                            </button>
-                        </div>
-
-                        <input
-                            type="text"
-                            value={importUrl}
-                            onChange={e => setImportUrl(e.target.value)}
-                            placeholder="Paste URL playlist..."
-                            className="w-full bg-black border border-gray-700 rounded-lg px-4 py-3 mb-4 text-white focus:border-yellow-400 outline-none"
-                        />
-                        <label className="flex items-center gap-2 mb-4 cursor-pointer">
+                            <p className="text-gray-400 text-sm mb-4">Masukkan kode 6 karakter:</p>
                             <input
-                                type="checkbox"
-                                checked={importIsPublic}
-                                onChange={e => setImportIsPublic(e.target.checked)}
-                                className="w-4 h-4"
+                                type="text"
+                                value={joinCode}
+                                onChange={e => setJoinCode(e.target.value.toUpperCase().slice(0, 6))}
+                                placeholder="______"
+                                maxLength={6}
+                                className="w-full bg-black border border-gray-700 rounded-lg px-4 py-3 mb-4 text-center text-2xl font-mono font-bold text-yellow-400 tracking-widest focus:border-yellow-400 outline-none uppercase"
                             />
-                            <span className="text-sm">Make public</span>
-                        </label>
-                        <p className="text-xs text-gray-500 mb-4">Proses import bisa memakan waktu beberapa menit tergantung jumlah lagu.</p>
-                        <div className="flex gap-2">
-                            <button
-                                onClick={() => setShowImportModal(false)}
-                                className="flex-1 bg-gray-800 hover:bg-gray-700 py-2 rounded"
-                            >
-                                Batal
-                            </button>
-                            <button
-                                onClick={handleImport}
-                                disabled={!importUrl.trim() || isImporting}
-                                className="flex-1 bg-yellow-400 hover:bg-yellow-300 text-black font-bold py-2 rounded disabled:opacity-50"
-                            >
-                                {isImporting ? <Loader className="animate-spin mx-auto" size={20} /> : 'Import'}
-                            </button>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => setShowJoinModal(false)}
+                                    className="flex-1 bg-gray-800 hover:bg-gray-700 py-2 rounded"
+                                >
+                                    Batal
+                                </button>
+                                <button
+                                    onClick={handleJoinByCode}
+                                    disabled={joinCode.length !== 6 || isLoadingShare}
+                                    className="flex-1 bg-yellow-400 hover:bg-yellow-300 text-black font-bold py-2 rounded disabled:opacity-50"
+                                >
+                                    {isLoadingShare ? <Loader className="animate-spin mx-auto" size={20} /> : 'Join'}
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
+
+            {
+                sharedPlaylist && (
+                    <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4">
+                        <div className="bg-gray-900 border border-gray-700 rounded-lg w-full max-w-lg max-h-[80vh] flex flex-col">
+                            <div className="p-4 border-b border-gray-800 flex justify-between items-center">
+                                <div>
+                                    <h2 className="text-xl font-bold">{sharedPlaylist.playlist.title}</h2>
+                                    <p className="text-xs text-gray-400">Shared Playlist</p>
+                                </div>
+                                <button onClick={() => setSharedPlaylist(null)} className="text-gray-400 hover:text-white">
+                                    <X size={24} />
+                                </button>
+                            </div>
+                            <div className="flex-1 overflow-y-auto p-4">
+                                {sharedPlaylist.tracks.length === 0 ? (
+                                    <p className="text-center text-gray-500 py-8">Playlist kosong</p>
+                                ) : (
+                                    <div className="space-y-2">
+                                        {sharedPlaylist.tracks.map((track, idx) => (
+                                            <div
+                                                key={track.id}
+                                                className="flex items-center gap-3 p-2 bg-black rounded hover:bg-gray-800 cursor-pointer group"
+                                                onClick={() => playQueue(sharedPlaylist.tracks, idx)}
+                                            >
+                                                {track.thumbnail && <img src={track.thumbnail} alt={track.title} className="w-10 h-10 object-cover rounded" />}
+                                                <div className="flex-1 min-w-0">
+                                                    <h4 className="font-semibold truncate text-sm">{track.title}</h4>
+                                                    {track.artist && <p className="text-xs text-gray-400 truncate">{track.artist}</p>}
+                                                </div>
+                                                <Play size={16} className="text-yellow-400 opacity-0 group-hover:opacity-100" />
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+
+            {
+                showImportModal && (
+                    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+                        <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 w-full max-w-md">
+                            <div className="flex justify-between items-center mb-4">
+                                <h2 className="text-xl font-bold flex items-center gap-2">
+                                    <Download size={20} className="text-yellow-400" />
+                                    Import Playlist
+                                </h2>
+                                <button onClick={() => setShowImportModal(false)} className="text-gray-400 hover:text-white">
+                                    <X size={24} />
+                                </button>
+                            </div>
+
+                            <input
+                                type="text"
+                                value={importUrl}
+                                onChange={e => setImportUrl(e.target.value)}
+                                placeholder="Paste URL playlist..."
+                                className="w-full bg-black border border-gray-700 rounded-lg px-4 py-3 mb-4 text-white focus:border-yellow-400 outline-none"
+                            />
+                            <label className="flex items-center gap-2 mb-4 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={importIsPublic}
+                                    onChange={e => setImportIsPublic(e.target.checked)}
+                                    className="w-4 h-4"
+                                />
+                                <span className="text-sm">Make public</span>
+                            </label>
+                            <p className="text-xs text-gray-500 mb-4">Proses import bisa memakan waktu beberapa menit tergantung jumlah lagu.</p>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => setShowImportModal(false)}
+                                    className="flex-1 bg-gray-800 hover:bg-gray-700 py-2 rounded"
+                                >
+                                    Batal
+                                </button>
+                                <button
+                                    onClick={handleImport}
+                                    disabled={!importUrl.trim() || isImporting}
+                                    className="flex-1 bg-yellow-400 hover:bg-yellow-300 text-black font-bold py-2 rounded disabled:opacity-50"
+                                >
+                                    {isImporting ? <Loader className="animate-spin mx-auto" size={20} /> : 'Import'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
         </div >
     );
 };
