@@ -559,7 +559,7 @@ const Music: React.FC = () => {
 
             const { data: newPlaylist } = await createRes.json();
 
-            const BATCH_SIZE = 10;
+            const BATCH_SIZE = 5;
             let totalAdded = 0;
             let totalFailed = 0;
 
