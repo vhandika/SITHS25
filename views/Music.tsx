@@ -72,6 +72,7 @@ const Music: React.FC = () => {
 
     const showPlaylistDetail = selectedPlaylist !== null;
     const isSearchMode = searchResults.length > 0;
+    const myPlaylists = playlists.filter(p => p.creator_nim === currentUserNim && p.source !== 'spotify' && !p.spotify_playlist_id);
 
     useEffect(() => {
         const initUserAndGuest = async () => {
@@ -569,6 +570,7 @@ const Music: React.FC = () => {
                 const BATCH_SIZE = 5;
                 let totalAdded = 0;
                 let totalFailed = 0;
+                let lastError = null;
 
                 for (let i = 0; i < tracks.length; i += BATCH_SIZE) {
                     const batch = tracks.slice(i, i + BATCH_SIZE);
@@ -587,6 +589,9 @@ const Music: React.FC = () => {
                             const result = await batchRes.json();
                             totalAdded += result.added;
                             totalFailed += result.failed;
+                            if (result.firstError && !lastError) {
+                                lastError = result.firstError;
+                            }
                         } else {
                             totalFailed += batch.length;
                         }
@@ -602,7 +607,7 @@ const Music: React.FC = () => {
                     });
                 }
 
-                alert(`Import selesai! ${totalAdded} lagu ditambahkan, ${totalFailed} gagal.`);
+                alert(`Import selesai! ${totalAdded} lagu ditambahkan, ${totalFailed} gagal.${lastError ? `\nError: ${lastError}` : ''}`);
             }
 
             setShowImportModal(false);
@@ -1030,7 +1035,7 @@ const Music: React.FC = () => {
 
                             <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
                                 <p className="text-xs text-gray-500 uppercase font-bold mb-2">Select Playlist</p>
-                                {playlists.filter(p => !p.subscribed).map(p => (
+                                {myPlaylists.map(p => (
                                     <button
                                         key={p.id}
                                         onClick={() => confirmAddToPlaylist(p.id)}
@@ -1042,7 +1047,7 @@ const Music: React.FC = () => {
                                         <span className="font-medium text-sm">{p.title}</span>
                                     </button>
                                 ))}
-                                {playlists.length === 0 && (
+                                {myPlaylists.length === 0 && (
                                     <p className="text-center text-gray-500 py-4 text-sm">No playlists found. Create one first!</p>
                                 )}
                             </div>
