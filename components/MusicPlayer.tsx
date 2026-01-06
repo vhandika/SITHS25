@@ -11,7 +11,7 @@ const MusicPlayer: React.FC = () => {
     const isMusicPage = location.pathname === '/music';
 
     const [isReady, setIsReady] = useState(false);
-    const [volume, setVolume] = useState(70);
+    const [volume, setVolume] = useState(100);
     const [isMuted, setIsMuted] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
@@ -154,6 +154,7 @@ const MusicPlayer: React.FC = () => {
                     },
                     events: {
                         onReady: (event: any) => {
+                            setIsReady(true);
                             setIsReady(true);
                             event.target.setVolume(volume);
                             event.target.setPlaybackQuality('small');
@@ -415,7 +416,7 @@ const MusicPlayer: React.FC = () => {
 
     const handleTouchScrubMove = (e: TouchEvent) => {
         if (!scrubRef.current) return;
-        e.preventDefault(); // Prevent scrolling while scrubbing
+        e.preventDefault();
         const rect = scrubRef.current.getBoundingClientRect();
         const x = Math.max(0, Math.min(e.touches[0].clientX - rect.left, rect.width));
         const percent = x / rect.width;
@@ -490,7 +491,6 @@ const MusicPlayer: React.FC = () => {
                         </div>
                     ) : (
                         <>
-                            {/* YouTube Player UI */}
                             <div
                                 ref={scrubRef}
                                 className="w-full h-1 bg-gray-700 rounded-full cursor-pointer relative group flex items-center touch-none"
