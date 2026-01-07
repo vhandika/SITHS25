@@ -75,7 +75,16 @@ const Login: React.FC = () => {
 
                 navigate('/');
             } else {
-                setError(data.message || 'Login gagal, cek NIM/Password');
+                if (response.status === 429 && data.retryAfter) {
+                    const minutes = Math.floor(data.retryAfter / 60);
+                    const seconds = data.retryAfter % 60;
+                    const timeStr = minutes > 0
+                        ? `${minutes} menit ${seconds} detik`
+                        : `${seconds} detik`;
+                    setError(`${data.message} Coba lagi dalam ${timeStr}.`);
+                } else {
+                    setError(data.message || 'Login gagal, cek NIM/Password');
+                }
             }
         } catch (err) {
             setError('Gagal menghubungi server.');
