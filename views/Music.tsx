@@ -231,6 +231,17 @@ const Music: React.FC = () => {
 
     const handleCreatePlaylist = async () => {
         if (!newPlaylistTitle.trim()) return;
+
+        // FE-side rate limit cache check
+        const playlistBlockedUntil = localStorage.getItem('playlistBlockedUntil');
+        if (playlistBlockedUntil && Date.now() < parseInt(playlistBlockedUntil)) {
+            const remaining = Math.ceil((parseInt(playlistBlockedUntil) - Date.now()) / 1000);
+            const minutes = Math.floor(remaining / 60);
+            const seconds = remaining % 60;
+            alert(`Rate limit: Tunggu ${minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`} lagi.`);
+            return;
+        }
+
         try {
             const res = await fetchWithAuth(`${API_BASE_URL}/music/playlists`, {
                 method: 'POST',
@@ -238,11 +249,16 @@ const Music: React.FC = () => {
             });
             const data = await res.json();
             if (res.ok) {
+                localStorage.removeItem('playlistBlockedUntil');
                 setShowCreateModal(false);
                 setNewPlaylistTitle('');
                 setNewPlaylistIsPublic(false);
                 fetchPlaylists();
             } else {
+                if (res.status === 429 && data.retryAfter) {
+                    const blockedUntilTime = Date.now() + (data.retryAfter * 1000);
+                    localStorage.setItem('playlistBlockedUntil', blockedUntilTime.toString());
+                }
                 alert(data.message || 'Gagal membuat playlist');
             }
         } catch (error) {
@@ -276,6 +292,17 @@ const Music: React.FC = () => {
 
     const confirmAddToPlaylist = async (playlistId: string) => {
         if (!trackToAdd) return;
+
+        // FE-side rate limit cache check
+        const trackBlockedUntil = localStorage.getItem('trackBlockedUntil');
+        if (trackBlockedUntil && Date.now() < parseInt(trackBlockedUntil)) {
+            const remaining = Math.ceil((parseInt(trackBlockedUntil) - Date.now()) / 1000);
+            const minutes = Math.floor(remaining / 60);
+            const seconds = remaining % 60;
+            alert(`Rate limit: Tunggu ${minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`} lagi.`);
+            return;
+        }
+
         try {
             const res = await fetchWithAuth(`${API_BASE_URL}/music/playlists/${playlistId}/tracks`, {
                 method: 'POST',
@@ -286,15 +313,24 @@ const Music: React.FC = () => {
                     thumbnail: trackToAdd.thumbnail
                 })
             });
+            const data = await res.json();
             if (res.ok) {
+                localStorage.removeItem('trackBlockedUntil');
                 alert('Dimasukkan ke dalam playlist');
                 setShowAddToPlaylistModal(false);
                 setTrackToAdd(null);
                 if (selectedPlaylist && selectedPlaylist.id === playlistId) {
                     fetchTracks(playlistId);
                 }
+            } else {
+                if (res.status === 429 && data.retryAfter) {
+                    const blockedUntilTime = Date.now() + (data.retryAfter * 1000);
+                    localStorage.setItem('trackBlockedUntil', blockedUntilTime.toString());
+                }
+                alert(data.message || 'Gagal menambahkan lagu');
             }
         } catch (error) {
+            alert('Gagal menambahkan lagu');
         }
     };
 
