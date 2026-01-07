@@ -76,34 +76,39 @@ const Music: React.FC = () => {
 
     useEffect(() => {
         const initUserAndGuest = async () => {
+            let isLoggedIn = false;
+
             try {
                 const res = await fetchWithAuth(`${API_BASE_URL}/validate-token`);
                 if (res.ok) {
                     const data = await res.json();
                     if (data.user && data.user.nim) {
                         setCurrentUserNim(data.user.nim);
+                        isLoggedIn = true;
                     }
                 }
             } catch (error) {
             }
 
-            let guestId = localStorage.getItem('music_guest_id');
-            if (!guestId) {
-                try {
-                    const res = await fetch(`${API_BASE_URL}/guest-token`);
-                    const data = await res.json();
-                    if (data.guestId) {
-                        guestId = data.guestId;
-                        localStorage.setItem('music_guest_id', guestId);
+            if (!isLoggedIn) {
+                let guestId = localStorage.getItem('music_guest_id');
+                if (!guestId) {
+                    try {
+                        const res = await fetch(`${API_BASE_URL}/guest-token`);
+                        const data = await res.json();
+                        if (data.guestId) {
+                            guestId = data.guestId;
+                            localStorage.setItem('music_guest_id', guestId);
+                        }
+                    } catch (error) {
                     }
-                } catch (error) {
                 }
-            }
 
-            if (guestId) {
-                const parts = guestId.split('.');
-                if (parts.length > 0) {
-                    setCurrentUserNim(current => current || parts[0]);
+                if (guestId) {
+                    const parts = guestId.split('.');
+                    if (parts.length > 0) {
+                        setCurrentUserNim(parts[0]);
+                    }
                 }
             }
 
