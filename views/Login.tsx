@@ -26,11 +26,34 @@ const Login: React.FC = () => {
     const [rememberMe, setRememberMe] = useState(false);
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [isDelayed, setIsDelayed] = useState(false);
 
     const navigate = useNavigate();
 
     const API_BASE_URL = 'https://api.sith-s25.my.id/api';
     const API_URL = `${API_BASE_URL}/login`;
+
+    const getDelayForFailCount = (count: number): number => {
+        const delays: { [key: number]: number } = {
+            1: 0, 2: 10, 3: 30, 4: 60, 5: 300,
+            6: 300, 7: 600, 8: 600, 9: 900
+        };
+        return delays[count] || 0;
+    };
+
+    useEffect(() => {
+        const checkDelay = () => {
+            const nextAttempt = localStorage.getItem('loginNextAttempt');
+            if (nextAttempt && Date.now() < parseInt(nextAttempt)) {
+                setIsDelayed(true);
+            } else {
+                setIsDelayed(false);
+            }
+        };
+        checkDelay();
+        const interval = setInterval(checkDelay, 1000);
+        return () => clearInterval(interval);
+    }, []);
 
     useEffect(() => {
         deleteCookie('userToken');
@@ -46,19 +69,14 @@ const Login: React.FC = () => {
 
     const handleLogin = async (e?: React.FormEvent | React.MouseEvent) => {
         if (e) e.preventDefault();
+        if (isDelayed) return;
 
         setError('');
         setIsLoading(true);
 
         const blockedUntil = localStorage.getItem('loginBlockedUntil');
         if (blockedUntil && Date.now() < parseInt(blockedUntil)) {
-            const remaining = Math.ceil((parseInt(blockedUntil) - Date.now()) / 1000);
-            const minutes = Math.floor(remaining / 60);
-            const seconds = remaining % 60;
-            const timeStr = minutes > 0
-                ? `${minutes} menit ${seconds} detik`
-                : `${seconds} detik`;
-            setError(`Anda masih diblokir. Coba lagi dalam ${timeStr}.`);
+            setError('Anda masih diblokir. Coba lagi nanti.');
             setIsLoading(false);
             return;
         }
@@ -78,6 +96,8 @@ const Login: React.FC = () => {
 
             if (response.ok) {
                 localStorage.removeItem('loginBlockedUntil');
+                localStorage.removeItem('loginFailCount');
+                localStorage.removeItem('loginNextAttempt');
 
                 if (rememberMe) {
                     setCookie('rememberedNIM', nim, 30);
@@ -90,16 +110,20 @@ const Login: React.FC = () => {
 
                 navigate('/');
             } else {
+                const currentFails = parseInt(localStorage.getItem('loginFailCount') || '0') + 1;
+                localStorage.setItem('loginFailCount', currentFails.toString());
+
+                const delay = getDelayForFailCount(currentFails);
+                if (delay > 0) {
+                    const nextAttempt = Date.now() + (delay * 1000);
+                    localStorage.setItem('loginNextAttempt', nextAttempt.toString());
+                    setIsDelayed(true);
+                }
+
                 if (response.status === 429 && data.retryAfter) {
                     const blockedUntilTime = Date.now() + (data.retryAfter * 1000);
                     localStorage.setItem('loginBlockedUntil', blockedUntilTime.toString());
-
-                    const minutes = Math.floor(data.retryAfter / 60);
-                    const seconds = data.retryAfter % 60;
-                    const timeStr = minutes > 0
-                        ? `${minutes} menit ${seconds} detik`
-                        : `${seconds} detik`;
-                    setError(`${data.message} Coba lagi dalam ${timeStr}.`);
+                    setError('Terlalu banyak percobaan. Coba lagi nanti.');
                 } else {
                     setError(data.message || 'Login gagal, cek NIM/Password');
                 }
@@ -205,11 +229,12 @@ const Login: React.FC = () => {
 
                     <div>
                         <SkewedButton
-                            className="w-full"
-                            icon={!isLoading ? <KeyRound size={16} /> : undefined}
+                            className={`w-full ${isDelayed ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            icon={!isLoading && !isDelayed ? <KeyRound size={16} /> : undefined}
                             onClick={handleLogin}
+                            disabled={isLoading || isDelayed}
                         >
-                            {isLoading ? 'Wait...' : 'Login'}
+                            {isLoading ? 'Wait...' : isDelayed ? 'Wait...' : 'Login'}
                         </SkewedButton>
                     </div>
                 </div>
