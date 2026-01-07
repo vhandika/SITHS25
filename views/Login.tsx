@@ -50,6 +50,19 @@ const Login: React.FC = () => {
         setError('');
         setIsLoading(true);
 
+        const blockedUntil = localStorage.getItem('loginBlockedUntil');
+        if (blockedUntil && Date.now() < parseInt(blockedUntil)) {
+            const remaining = Math.ceil((parseInt(blockedUntil) - Date.now()) / 1000);
+            const minutes = Math.floor(remaining / 60);
+            const seconds = remaining % 60;
+            const timeStr = minutes > 0
+                ? `${minutes} menit ${seconds} detik`
+                : `${seconds} detik`;
+            setError(`Anda masih diblokir. Coba lagi dalam ${timeStr}.`);
+            setIsLoading(false);
+            return;
+        }
+
         try {
             const response = await fetch(API_URL, {
                 method: 'POST',
@@ -64,6 +77,8 @@ const Login: React.FC = () => {
             const data = await response.json();
 
             if (response.ok) {
+                localStorage.removeItem('loginBlockedUntil');
+
                 if (rememberMe) {
                     setCookie('rememberedNIM', nim, 30);
                 } else {
@@ -76,6 +91,9 @@ const Login: React.FC = () => {
                 navigate('/');
             } else {
                 if (response.status === 429 && data.retryAfter) {
+                    const blockedUntilTime = Date.now() + (data.retryAfter * 1000);
+                    localStorage.setItem('loginBlockedUntil', blockedUntilTime.toString());
+
                     const minutes = Math.floor(data.retryAfter / 60);
                     const seconds = data.retryAfter % 60;
                     const timeStr = minutes > 0
