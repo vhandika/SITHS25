@@ -103,28 +103,26 @@ const Attendance: React.FC = () => {
     };
 
     const checkUserAttendanceStatus = async (currentSessions: any[], nim: string) => {
-        const openSessions = currentSessions.filter(s => s.is_open);
-        const statusMap: { [key: number]: { status: string, reason: string | null } } = {};
         const attendanceApi = getAttendanceApiUrl(nim);
 
-        for (const session of openSessions) {
-            try {
-                const res = await fetch(`${attendanceApi}/attendance/my-status/${session.id}`, {
-                    credentials: 'include'
-                });
-                if (res.ok) {
-                    const json = await res.json();
-                    if (json.exists) {
-                        statusMap[session.id] = {
-                            status: json.status,
-                            reason: json.reason
-                        };
-                    }
+        try {
+            const res = await fetch(`${attendanceApi}/attendance/my-status-all`, {
+                credentials: 'include'
+            });
+            if (res.ok) {
+                const statusMap = await res.json();
+                const formattedMap: { [key: number]: { status: string, reason: string | null } } = {};
+                for (const sessionId in statusMap) {
+                    formattedMap[parseInt(sessionId)] = {
+                        status: statusMap[sessionId].status,
+                        reason: statusMap[sessionId].reason
+                    };
                 }
-            } catch (err) {
+                setUserStatusMap(formattedMap);
             }
+        } catch (err) {
+            console.error('Failed to fetch attendance status:', err);
         }
-        setUserStatusMap(statusMap);
     };
 
     const fetchAllUsers = async () => {
