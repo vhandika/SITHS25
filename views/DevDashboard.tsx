@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, Lock, RefreshCw, Smartphone, Monitor, ChevronRight } from 'lucide-react';
-import SkewedButton from '../components/SkewedButton';
+import { Users, Lock, RefreshCw, Smartphone, Monitor, Shield, AlertTriangle, XCircle, Clock } from 'lucide-react';
 import { fetchWithAuth } from '../src/utils/api';
 
 const API_BASE_URL = 'https://api.sith-s25.my.id/api';
@@ -20,13 +19,26 @@ interface ActiveUser {
     } | null;
 }
 
+interface SecurityLog {
+    id: string;
+    event_type: string;
+    ip: string;
+    nim: string | null;
+    details: string | null;
+    user_agent: string | null;
+    created_at: string;
+}
+
 const DevDashboard: React.FC = () => {
     const [activeUsers, setActiveUsers] = useState<ActiveUser[]>([]);
+    const [securityLogs, setSecurityLogs] = useState<SecurityLog[]>([]);
     const [loading, setLoading] = useState(true);
+    const [logsLoading, setLogsLoading] = useState(true);
     const [targetNim, setTargetNim] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [resetStatus, setResetStatus] = useState('');
     const [errorMsg, setErrorMsg] = useState('');
+    const [logsError, setLogsError] = useState('');
     const navigate = useNavigate();
 
     const getCookie = (name: string) => {
@@ -43,8 +55,13 @@ const DevDashboard: React.FC = () => {
         }
 
         loadActiveUsers();
+        loadSecurityLogs();
         const interval = setInterval(loadActiveUsers, 30000);
-        return () => clearInterval(interval);
+        const logsInterval = setInterval(loadSecurityLogs, 60000);
+        return () => {
+            clearInterval(interval);
+            clearInterval(logsInterval);
+        };
     }, []);
 
     const loadActiveUsers = async () => {
@@ -64,6 +81,23 @@ const DevDashboard: React.FC = () => {
             setErrorMsg(e.message || "Gagal memuat data");
         } finally {
             setLoading(false);
+        }
+    };
+
+    const loadSecurityLogs = async () => {
+        setLogsLoading(true);
+        setLogsError('');
+        try {
+            const response = await fetch(`${API_BASE_URL}/dev/security-logs?limit=30`, { credentials: 'include' });
+            if (!response.ok) {
+                throw new Error(`Server Error: ${response.status}`);
+            }
+            const data = await response.json();
+            if (data.data) setSecurityLogs(data.data);
+        } catch (e: any) {
+            setLogsError(e.message || "Gagal memuat security logs");
+        } finally {
+            setLogsLoading(false);
         }
     };
 
@@ -89,6 +123,24 @@ const DevDashboard: React.FC = () => {
     const formatTime = (isoString: string) => {
         const date = new Date(isoString);
         return date.toLocaleTimeString();
+    };
+
+    const formatDateTime = (isoString: string) => {
+        const date = new Date(isoString);
+        return date.toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+    };
+
+    const getEventBadge = (eventType: string) => {
+        switch (eventType) {
+            case 'LOGIN_FAILED':
+                return { bg: 'bg-red-500/20', text: 'text-red-400', border: 'border-red-500/30', icon: <XCircle size={12} /> };
+            case 'RATE_LIMIT_AUTH':
+                return { bg: 'bg-orange-500/20', text: 'text-orange-400', border: 'border-orange-500/30', icon: <Clock size={12} /> };
+            case 'SUSPICIOUS_FILE':
+                return { bg: 'bg-yellow-500/20', text: 'text-yellow-400', border: 'border-yellow-500/30', icon: <AlertTriangle size={12} /> };
+            default:
+                return { bg: 'bg-gray-500/20', text: 'text-gray-400', border: 'border-gray-500/30', icon: <Shield size={12} /> };
+        }
     };
 
     return (
@@ -249,9 +301,77 @@ const DevDashboard: React.FC = () => {
                         </div>
                     </div>
                 </div>
+
+                {/* Security Logs Panel */}
+                <div className="mt-8 bg-gray-900 border border-gray-800 rounded-xl overflow-hidden shadow-2xl">
+                    <div className="p-6">
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                                <Shield className="text-red-400" /> Security Logs
+                            </h2>
+                            <button onClick={loadSecurityLogs} className="p-2 bg-gray-800 hover:bg-gray-700 rounded-full transition-colors">
+                                <RefreshCw size={20} className={`text-yellow-400 ${logsLoading ? 'animate-spin' : ''}`} />
+                            </button>
+                        </div>
+
+                        {logsError && (
+                            <div className="mb-4 p-3 bg-red-900/50 border border-red-700 text-red-200 rounded text-sm">
+                                {logsError}
+                            </div>
+                        )}
+
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-sm text-left text-gray-400">
+                                <thead className="text-xs text-gray-500 uppercase bg-black/40 border-b border-gray-700">
+                                    <tr>
+                                        <th className="px-4 py-3">Event</th>
+                                        <th className="px-4 py-3">IP / NIM</th>
+                                        <th className="px-4 py-3 hidden md:table-cell">Details</th>
+                                        <th className="px-4 py-3 text-right">Time</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-800">
+                                    {securityLogs.map((log) => {
+                                        const badge = getEventBadge(log.event_type);
+                                        return (
+                                            <tr key={log.id} className="hover:bg-white/5 transition-colors">
+                                                <td className="px-4 py-3">
+                                                    <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded text-xs font-medium border ${badge.bg} ${badge.text} ${badge.border}`}>
+                                                        {badge.icon}
+                                                        {log.event_type.replace(/_/g, ' ')}
+                                                    </span>
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    <div className="text-white font-mono text-xs">{log.ip}</div>
+                                                    {log.nim && <div className="text-gray-500 text-xs">NIM: {log.nim}</div>}
+                                                </td>
+                                                <td className="px-4 py-3 hidden md:table-cell">
+                                                    <span className="text-gray-400 text-xs truncate max-w-[200px] block" title={log.details || ''}>
+                                                        {log.details || '-'}
+                                                    </span>
+                                                </td>
+                                                <td className="px-4 py-3 text-right font-mono text-gray-300 text-xs">
+                                                    {formatDateTime(log.created_at)}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                    {securityLogs.length === 0 && !logsLoading && (
+                                        <tr>
+                                            <td colSpan={4} className="px-4 py-12 text-center text-gray-600 italic">
+                                                Belum ada security logs.
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     );
 };
 
 export default DevDashboard;
+
