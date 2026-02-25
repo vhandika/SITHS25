@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import SkewedButton from '../components/SkewedButton';
 import { KeyRound, LogIn, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '../contexts/ToastContext';
 
 const setCookie = (name: string, value: string, days: number = 7) => {
     const expires = new Date(Date.now() + days * 864e5).toUTCString();
@@ -29,6 +30,7 @@ const Login: React.FC = () => {
     const [isDelayed, setIsDelayed] = useState(false);
 
     const navigate = useNavigate();
+    const { showToast } = useToast();
 
     const API_BASE_URL = 'https://api.sith-s25.my.id/api';
     const API_URL = `${API_BASE_URL}/login`;
@@ -137,7 +139,7 @@ const Login: React.FC = () => {
 
     const handleForgotPassword = (e: React.MouseEvent) => {
         e.preventDefault();
-        alert("Untuk reset password, silakan hubungi Vhandika");
+        showToast('Untuk reset password, silakan hubungi Vhandika', 'info');
     };
 
     const handleKeyDown = (e: React.KeyboardEvent) => {

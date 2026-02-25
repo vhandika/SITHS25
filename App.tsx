@@ -3,8 +3,10 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react"
 import { MusicProvider } from './contexts/MusicContext';
+import { ToastProvider } from './contexts/ToastContext';
 import Sidebar from './components/Sidebar';
 import ActivityTracker from './components/ActivityTracker';
+import ToastContainer from './components/Toast';
 
 const Home = lazy(() => import('./views/Home'));
 const Library = lazy(() => import('./views/Library'));
@@ -30,36 +32,39 @@ const LoadingFallback = () => (
 const App: React.FC = () => {
     return (
         <BrowserRouter>
-            <MusicProvider>
-                <ActivityTracker />
-                <div className="flex min-h-screen bg-black">
-                    <Sidebar />
-                    <main className="flex-1 lg:ml-20">
-                        <Suspense fallback={<LoadingFallback />}>
-                            <Routes>
-                                <Route path="/" element={<Home />} />
-                                <Route path="/library" element={<Library />} />
-                                <Route path="/news" element={<News />} />
-                                <Route path="/about" element={<AboutUs />} />
-                                <Route path="/contact" element={<ContactUs />} />
-                                <Route path="/login" element={<Login />} />
-                                <Route path="/change-password" element={<ChangePassword />} />
-                                <Route path="/find-nim" element={<FindNim />} />
-                                <Route path="/attendance" element={<Attendance />} />
-                                <Route path="/gallery" element={<Gallery />} />
-                                <Route path="/PDFTools" element={<PDFTools />} />
-                                <Route path="/music" element={<Music />} />
-                                <Route path="/dev" element={<DevDashboard />} />
-                            </Routes>
+            <ToastProvider>
+                <MusicProvider>
+                    <ActivityTracker />
+                    <ToastContainer />
+                    <div className="flex min-h-screen bg-black">
+                        <Sidebar />
+                        <main className="flex-1 lg:ml-20">
+                            <Suspense fallback={<LoadingFallback />}>
+                                <Routes>
+                                    <Route path="/" element={<Home />} />
+                                    <Route path="/library" element={<Library />} />
+                                    <Route path="/news" element={<News />} />
+                                    <Route path="/about" element={<AboutUs />} />
+                                    <Route path="/contact" element={<ContactUs />} />
+                                    <Route path="/login" element={<Login />} />
+                                    <Route path="/change-password" element={<ChangePassword />} />
+                                    <Route path="/find-nim" element={<FindNim />} />
+                                    <Route path="/attendance" element={<Attendance />} />
+                                    <Route path="/gallery" element={<Gallery />} />
+                                    <Route path="/PDFTools" element={<PDFTools />} />
+                                    <Route path="/music" element={<Music />} />
+                                    <Route path="/dev" element={<DevDashboard />} />
+                                </Routes>
+                            </Suspense>
+                        </main>
+                        <Suspense fallback={null}>
+                            <MusicPlayer />
                         </Suspense>
-                    </main>
-                    <Suspense fallback={null}>
-                        <MusicPlayer />
-                    </Suspense>
-                </div>
-                <Analytics />
-                <SpeedInsights />
-            </MusicProvider>
+                    </div>
+                    <Analytics />
+                    <SpeedInsights />
+                </MusicProvider>
+            </ToastProvider>
         </BrowserRouter>
     );
 };

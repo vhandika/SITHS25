@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useToast } from '../../contexts/ToastContext';
 import { jsPDF } from 'jspdf';
 import {
     Upload, FileDown, Trash2, FileText, Crop as CropIcon, Check, X,
@@ -9,6 +10,7 @@ import Cropper, { ReactCropperElement } from "react-cropper";
 import "cropperjs/dist/cropper.css";
 
 const PhotoToPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
+    const { showToast } = useToast();
     const [images, setImages] = useState<string[]>([]);
     const [isGenerating, setIsGenerating] = useState(false);
     const [fileName, setFileName] = useState<string>(() => localStorage.getItem('pdf_photo_filename') || `PDF_${new Date().toISOString().slice(0, 10)}`);
@@ -236,7 +238,7 @@ const PhotoToPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             pdf.save(finalName);
         } catch (error: any) {
             console.error(error);
-            alert(`Gagal convert PDF: ${error instanceof Error ? error.message : String(error)}`);
+            showToast(`Gagal convert PDF: ${error instanceof Error ? error.message : String(error)}`, 'error');
         }
         finally { setIsGenerating(false); }
     };

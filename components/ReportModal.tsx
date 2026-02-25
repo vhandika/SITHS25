@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Send, AlertTriangle, Loader, CheckCircle } from 'lucide-react';
+import { useToast } from '../contexts/ToastContext';
 
 const API_BASE_URL = 'https://api.sith-s25.my.id/api';
 
@@ -19,11 +20,12 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
     const [content, setContent] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
+    const { showToast } = useToast();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!content.trim() || content.length < 5) {
-            alert("Harap isi laporan dengan jelas (min. 5 karakter)");
+            showToast('Harap isi laporan dengan jelas (min. 5 karakter)', 'error');
             return;
         }
 
@@ -50,10 +52,10 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
                     setContent('');
                 }, 2000);
             } else {
-                alert("Gagal mengirim laporan.");
+                showToast('Gagal mengirim laporan.', 'error');
             }
         } catch (error) {
-            alert("Terjadi kesalahan koneksi.");
+            showToast('Terjadi kesalahan koneksi.', 'error');
         } finally {
             setIsSubmitting(false);
         }

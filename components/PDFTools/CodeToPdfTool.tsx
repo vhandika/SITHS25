@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useToast } from '../../contexts/ToastContext';
 import { jsPDF } from 'jspdf';
 import {
     Upload, FileDown, Trash2, FileText, ArrowLeft, Settings2, Pencil,
@@ -75,6 +76,7 @@ self.onmessage = async (e) => {
 `;
 
 const CodeToPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
+    const { showToast } = useToast();
     const [language, setLanguage] = useState<'javascript' | 'python'>(() => (localStorage.getItem('pdf_code_language') as 'javascript' | 'python') || 'python');
 
     const [code, setCode] = useState<string>(() => {
@@ -451,7 +453,7 @@ const CodeToPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 renderProcessedLines(outLines, true, "OUTPUT");
             }
             pdf.save(fileName.trim() ? `${fileName}.pdf` : 'Code.pdf');
-        } catch (error) { alert("Gagal render PDF."); }
+        } catch (error) { showToast('Gagal render PDF.', 'error'); }
         finally { setIsGenerating(false); }
     };
 

@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useToast } from '../../contexts/ToastContext';
 import { PDFDocument } from 'pdf-lib';
 import {
     Upload, Trash2, Files, ArrowLeft, Settings2, Pencil
 } from 'lucide-react';
 
 const MergePdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
+    const { showToast } = useToast();
     const [files, setFiles] = useState<{ id: string, file: File }[]>([]);
     const [isMerging, setIsMerging] = useState(false);
     const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
@@ -124,7 +126,7 @@ const MergePdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
         } catch (error) {
-            alert("Gagal menggabungkan PDF. Pastikan file tidak corrupt.");
+            showToast('Gagal menggabungkan PDF. Pastikan file tidak corrupt.', 'error');
         }
         setIsMerging(false);
     };

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Camera, Globe, Loader, AlertCircle, Save, Edit2, Palette, Trash2 } from 'lucide-react';
+import { useToast } from '../contexts/ToastContext';
 
 const API_BASE_URL = 'https://api.sith-s25.my.id/api';
 
@@ -21,6 +22,7 @@ const SOLID_COLORS = [
 ];
 
 const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, onClose }) => {
+    const { showToast } = useToast();
     const [userData, setUserData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -108,9 +110,9 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, 
                 setDeleteBanner(false);
                 fetchProfile();
             } else {
-                alert("Gagal update profil");
+                showToast('Gagal update profil', 'error');
             }
-        } catch (e) { alert("Error koneksi"); }
+        } catch (e) { showToast('Error koneksi', 'error'); }
         finally { setIsSaving(false); }
     };
 

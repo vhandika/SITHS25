@@ -3,6 +3,7 @@ import { Search, Plus, Music2, Lock, Globe, Play, Loader, X, Trash2, Edit2, Chec
 import { useMusicPlayer } from '../contexts/MusicContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { fetchWithAuth } from '../src/utils/api';
+import { useToast } from '../contexts/ToastContext';
 
 const API_BASE_URL = 'https://api.sith-s25.my.id/api';
 
@@ -39,6 +40,7 @@ interface Playlist {
 const Music: React.FC = () => {
     const location = useLocation();
     const navigate = useNavigate();
+    const { showToast } = useToast();
     const { playTrack, playQueue, setQueue, queue, currentIndex, setCurrentIndex } = useMusicPlayer();
     const [playlists, setPlaylists] = useState<Playlist[]>([]);
     const [selectedPlaylist, setSelectedPlaylist] = useState<Playlist | null>(null);
@@ -125,15 +127,15 @@ const Music: React.FC = () => {
             });
             const data = await res.json();
             if (res.ok) {
-                alert('Berhasil join playlist!');
+                showToast('Berhasil join playlist!', 'success');
                 setShowJoinModal(false);
                 setJoinCode('');
                 fetchPlaylists();
             } else {
-                alert(data.message || 'Gagal join playlist');
+                showToast(data.message || 'Gagal join playlist', 'error');
             }
         } catch (error) {
-            alert('Gagal join playlist');
+            showToast('Gagal join playlist', 'error');
         } finally {
             setIsLoadingShare(false);
         }
@@ -237,13 +239,12 @@ const Music: React.FC = () => {
     const handleCreatePlaylist = async () => {
         if (!newPlaylistTitle.trim()) return;
 
-        // FE-side rate limit cache check
         const playlistBlockedUntil = localStorage.getItem('playlistBlockedUntil');
         if (playlistBlockedUntil && Date.now() < parseInt(playlistBlockedUntil)) {
             const remaining = Math.ceil((parseInt(playlistBlockedUntil) - Date.now()) / 1000);
             const minutes = Math.floor(remaining / 60);
             const seconds = remaining % 60;
-            alert(`Rate limit: Tunggu ${minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`} lagi.`);
+            showToast(`Rate limit: Tunggu ${minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`} lagi.`, 'error');
             return;
         }
 
@@ -264,10 +265,10 @@ const Music: React.FC = () => {
                     const blockedUntilTime = Date.now() + (data.retryAfter * 1000);
                     localStorage.setItem('playlistBlockedUntil', blockedUntilTime.toString());
                 }
-                alert(data.message || 'Gagal membuat playlist');
+                showToast(data.message || 'Gagal membuat playlist', 'error');
             }
         } catch (error) {
-            alert('Gagal membuat playlist');
+            showToast('Gagal membuat playlist', 'error');
         }
     };
 
@@ -298,13 +299,12 @@ const Music: React.FC = () => {
     const confirmAddToPlaylist = async (playlistId: string) => {
         if (!trackToAdd) return;
 
-        // FE-side rate limit cache check
         const trackBlockedUntil = localStorage.getItem('trackBlockedUntil');
         if (trackBlockedUntil && Date.now() < parseInt(trackBlockedUntil)) {
             const remaining = Math.ceil((parseInt(trackBlockedUntil) - Date.now()) / 1000);
             const minutes = Math.floor(remaining / 60);
             const seconds = remaining % 60;
-            alert(`Rate limit: Tunggu ${minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`} lagi.`);
+            showToast(`Rate limit: Tunggu ${minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`} lagi.`, 'error');
             return;
         }
 
@@ -321,7 +321,7 @@ const Music: React.FC = () => {
             const data = await res.json();
             if (res.ok) {
                 localStorage.removeItem('trackBlockedUntil');
-                alert('Dimasukkan ke dalam playlist');
+                showToast('Dimasukkan ke dalam playlist', 'success');
                 setShowAddToPlaylistModal(false);
                 setTrackToAdd(null);
                 if (selectedPlaylist && selectedPlaylist.id === playlistId) {
@@ -332,10 +332,10 @@ const Music: React.FC = () => {
                     const blockedUntilTime = Date.now() + (data.retryAfter * 1000);
                     localStorage.setItem('trackBlockedUntil', blockedUntilTime.toString());
                 }
-                alert(data.message || 'Gagal menambahkan lagu');
+                showToast(data.message || 'Gagal menambahkan lagu', 'error');
             }
         } catch (error) {
-            alert('Gagal menambahkan lagu');
+            showToast('Gagal menambahkan lagu', 'error');
         }
     };
 
@@ -368,7 +368,7 @@ const Music: React.FC = () => {
                 }
                 fetchPlaylists();
             } else {
-                alert('Gagal');
+                showToast('Gagal', 'error');
             }
         } catch (error) {
         }
@@ -386,7 +386,7 @@ const Music: React.FC = () => {
             if (res.ok) {
                 fetchTracks(selectedPlaylist.id);
             } else {
-                alert('Gagal');
+                showToast('Gagal', 'error');
             }
         } catch (error) {
         }
@@ -479,10 +479,10 @@ const Music: React.FC = () => {
                 setSelectedPlaylist(updatedPlaylist);
                 setPlaylists(playlists.map(p => p.id === updatedPlaylist.id ? updatedPlaylist : p));
                 setIsEditing(false);
-                alert('Playlist updated!');
+                showToast('Playlist updated!', 'success');
             } else {
                 const data = await res.json();
-                alert(data.message || 'Gagal');
+                showToast(data.message || 'Gagal', 'error');
             }
         } catch (error) {
         }
@@ -500,7 +500,7 @@ const Music: React.FC = () => {
                 setCurrentShareCode(data.share_code);
                 setShowShareModal(true);
             } else {
-                alert(data.message || 'Gagal generate kode');
+                showToast(data.message || 'Gagal generate kode', 'error');
             }
         } catch (error) {
         } finally {
@@ -532,7 +532,7 @@ const Music: React.FC = () => {
             if (res.ok) {
                 setCurrentShareCode(null);
                 setShowShareModal(false);
-                alert('Oke');
+                showToast('Share code dihapus', 'success');
             }
         } catch (error) {
         }
@@ -540,7 +540,7 @@ const Music: React.FC = () => {
 
     const handleJoinByCode = async () => {
         if (!joinCode.trim() || joinCode.length !== 6) {
-            alert('Kode harus 6 karakter');
+            showToast('Kode harus 6 karakter', 'error');
             return;
         }
         await joinPlaylist(joinCode);
@@ -556,13 +556,13 @@ const Music: React.FC = () => {
 
     const handleImport = async () => {
         if (!importUrl.trim()) {
-            alert('Masukkan URL playlist Spotify atau YouTube');
+            showToast('Masukkan URL playlist Spotify atau YouTube', 'error');
             return;
         }
 
         const source = detectImportSource(importUrl);
         if (!source) {
-            alert('URL tidak valid. Gunakan link playlist Spotify atau YouTube.');
+            showToast('URL tidak valid. Gunakan link playlist Spotify atau YouTube.', 'error');
             return;
         }
 
@@ -579,7 +579,7 @@ const Music: React.FC = () => {
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.message || 'Failed to import');
 
-                alert('Spotify playlist imported!');
+                showToast('Spotify playlist imported!', 'success');
             } else {
                 setImportProgress({ current: 0, total: 0, added: 0, failed: 0 });
 
@@ -648,7 +648,7 @@ const Music: React.FC = () => {
                     });
                 }
 
-                alert(`Import selesai! ${totalAdded} lagu ditambahkan, ${totalFailed} gagal.${lastError ? `\nError: ${lastError}` : ''}`);
+                showToast(`Import selesai! ${totalAdded} lagu ditambahkan, ${totalFailed} gagal.`, 'success');
             }
 
             setShowImportModal(false);
@@ -657,7 +657,7 @@ const Music: React.FC = () => {
             setImportProgress(null);
             fetchPlaylists();
         } catch (error: any) {
-            alert(error.message || 'Gagal import playlist');
+            showToast(error.message || 'Gagal import playlist', 'error');
             setImportProgress(null);
         } finally {
             setIsImporting(false);

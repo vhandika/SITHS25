@@ -3,6 +3,7 @@ import { Plus, X, Link as LinkIcon, User, Camera, Folder, Trash2, Loader } from 
 import SkewedButton from '../components/SkewedButton';
 import { fetchWithAuth } from '../src/utils/api';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '../contexts/ToastContext';
 
 interface GalleryItem {
     id: number;
@@ -22,6 +23,7 @@ const getCookie = (name: string) => {
 
 const Gallery: React.FC = () => {
     const navigate = useNavigate();
+    const { showToast } = useToast();
     const [items, setItems] = useState<GalleryItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -73,12 +75,12 @@ const Gallery: React.FC = () => {
                 setLink('');
                 setIsModalOpen(false);
                 fetchGallery();
-                alert("Berhasil upload link!");
+                showToast('Berhasil upload link!', 'success');
             } else {
-                alert(data.message || 'Gagal upload');
+                showToast(data.message || 'Gagal upload', 'error');
             }
         } catch (error) {
-            alert('Terjadi kesalahan koneksi ke server');
+            showToast('Terjadi kesalahan koneksi ke server', 'error');
         } finally {
             setIsSubmitting(false);
         }
@@ -99,13 +101,13 @@ const Gallery: React.FC = () => {
             const data = await res.json();
 
             if (res.ok) {
-                alert("Folder berhasil dihapus");
+                showToast('Folder berhasil dihapus', 'success');
                 fetchGallery();
             } else {
-                alert(data.message || "Gagal menghapus folder");
+                showToast(data.message || 'Gagal menghapus folder', 'error');
             }
         } catch (error) {
-            alert("Terjadi kesalahan koneksi");
+            showToast('Terjadi kesalahan koneksi', 'error');
         }
     };
 

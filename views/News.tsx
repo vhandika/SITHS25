@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Newspaper, Plus, X, Lock, Pencil, Trash2, ChevronLeft, ChevronRight, Loader, Instagram } from 'lucide-react';
 import SkewedButton from '../components/SkewedButton';
 import { fetchWithAuth } from '../src/utils/api';
+import { useToast } from '../contexts/ToastContext';
 
 const API_BASE_URL = 'https://api.sith-s25.my.id/api';
 
@@ -91,6 +92,7 @@ const NewsCard: React.FC<{
 );
 
 const News: React.FC = () => {
+    const { showToast } = useToast();
     const [newsData, setNewsData] = useState<NewsArticle[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(null);
@@ -145,7 +147,7 @@ const News: React.FC = () => {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
             if (file.size > 5 * 1024 * 1024) {
-                alert("Maksimal ukuran file 5MB");
+                showToast('Maksimal ukuran file 5MB', 'error');
                 return;
             }
             setSelectedFile(file);
@@ -163,13 +165,13 @@ const News: React.FC = () => {
             });
 
             if (response.ok) {
-                alert("Berita dihapus.");
+                showToast('Berita dihapus.', 'success');
                 fetchNews();
             } else {
-                alert("Gagal menghapus berita.");
+                showToast('Gagal menghapus berita.', 'error');
             }
         } catch (error) {
-            alert("Terjadi kesalahan.");
+            showToast('Terjadi kesalahan.', 'error');
         }
     };
 
@@ -191,7 +193,7 @@ const News: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!userToken) return alert("Sesi habis, login ulang.");
+        if (!userToken) { showToast('Sesi habis, login ulang.', 'error'); return; }
         setIsUploading(true);
 
         try {
@@ -218,12 +220,12 @@ const News: React.FC = () => {
             const result = await response.json();
             if (!response.ok) throw new Error(result.message || 'Gagal');
 
-            alert(`Berita berhasil ${isEditing ? 'diupdate' : 'diposting'}!`);
+            showToast(`Berita berhasil ${isEditing ? 'diupdate' : 'diposting'}!`, 'success');
             handleCloseModal();
             fetchNews();
 
         } catch (err: any) {
-            alert(`Error: ${err.message}`);
+            showToast(`Error: ${err.message}`, 'error');
         } finally {
             setIsUploading(false);
         }
@@ -351,7 +353,7 @@ const News: React.FC = () => {
 
             <footer className="mt-12 border-t border-gray-800 pt-12 pb-8 text-center text-gray-500">
                 <span className="text-4xl font-bold tracking-[.2em] text-gray-700 block mb-4">SITH-S 25</span>
-                <p className="text-xs mb-6">Copyright © SITES Angkatan 25.</p>
+                <p className="text-xs mb-6">Copyright © SITES Angkatan 2025.</p>
                 <div className="flex justify-center">
                     <a
                         href="https://www.instagram.com/sithsitb25?igsh=Mmg2Nm43aW4zYW91"
@@ -434,7 +436,7 @@ const News: React.FC = () => {
                     >
                         <div className="flex justify-between items-center mb-6 border-b border-gray-800 pb-4">
                             <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-                                {isEditing ? <Pencil className="text-blue-400" /> : <Plus className="text-yellow-400" />}
+                                {isEditing ? <Pencil className="text-yellow-400" /> : <Plus className="text-yellow-400" />}
                                 {isEditing ? 'Edit' : 'Add News'}
                             </h2>
                             <button onClick={() => !isUploading && handleCloseModal()} className="text-gray-400 hover:text-white"><X size={24} /></button>
@@ -470,7 +472,7 @@ const News: React.FC = () => {
                             </div>
                             <div className="pt-4 flex justify-end gap-3">
                                 <button type="button" onClick={() => !isUploading && handleCloseModal()} className="px-4 py-2 text-gray-400" disabled={isUploading}>Batal</button>
-                                <button type="submit" disabled={isUploading} className={`px-6 py-2 font-bold uppercase text-white ${isEditing ? 'bg-blue-600 hover:bg-blue-500' : 'bg-yellow-400 text-black hover:bg-yellow-300'}`}>
+                                <button type="submit" disabled={isUploading} className={`px-6 py-2 font-bold uppercase text-white ${isEditing ? 'bg-yellow-600 hover:bg-yellow-500' : 'bg-yellow-400 text-black hover:bg-yellow-300'}`}>
                                     {isUploading ? 'Proses...' : (isEditing ? 'Update' : 'Posting')}
                                 </button>
                             </div>

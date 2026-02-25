@@ -8,6 +8,7 @@ import SkewedButton from '../components/SkewedButton';
 import imageCompression from 'browser-image-compression';
 import { fetchWithAuth } from '../src/utils/api';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '../contexts/ToastContext';
 
 const API_BASE_URL = 'https://api.sith-s25.my.id/api';
 const API_INTERNAL_GANJIL = 'https://ganjil.sith-s25.my.id/api';
@@ -32,6 +33,7 @@ const getCookie = (name: string) => {
 
 const Attendance: React.FC = () => {
     const navigate = useNavigate();
+    const { showToast } = useToast();
     const [sessions, setSessions] = useState<any[]>([]);
     const [allUsers, setAllUsers] = useState<any[]>([]);
     const [userRole, setUserRole] = useState<string | null>(null);
@@ -156,17 +158,17 @@ const Attendance: React.FC = () => {
             ]);
 
             if (resGanjil.ok && resGenap.ok) {
-                alert('Sesi berhasil dibuat!');
+                showToast('Sesi berhasil dibuat!', 'success');
                 setIsCreateModalOpen(false);
                 setNewSessionData({ title: '', description: '', is_photo_required: false });
                 fetchSessions();
             } else {
                 const errGanjil = !resGanjil.ok ? await resGanjil.json() : null;
                 const errGenap = !resGenap.ok ? await resGenap.json() : null;
-                alert(errGanjil?.message || errGenap?.message || 'Gagal membuat sesi');
+                showToast(errGanjil?.message || errGenap?.message || 'Gagal membuat sesi', 'error');
             }
         } catch (error: any) {
-            alert(`Gagal membuat sesi: ${error.message || 'Error Koneksi'}`);
+            showToast(`Gagal membuat sesi: ${error.message || 'Error Koneksi'}`, 'error');
         } finally {
             setIsSubmitting(false);
         }
@@ -182,10 +184,10 @@ const Attendance: React.FC = () => {
                 fetchWithAuth(`${API_INTERNAL_GENAP}/attendance/close/${id}`, { method: 'PUT' })
             ]);
             if (resGanjil.ok || resGenap.ok) {
-                alert("Sesi berhasil ditutup.");
+                showToast('Sesi berhasil ditutup.', 'success');
                 fetchSessions();
             }
-        } catch (err: any) { alert(`Terjadi kesalahan: ${err.message}`); }
+        } catch (err: any) { showToast(`Terjadi kesalahan: ${err.message}`, 'error'); }
     };
 
     const handleViewStats = async (e: React.MouseEvent, session: any) => {
@@ -223,9 +225,9 @@ const Attendance: React.FC = () => {
                     r.id === recordId ? { ...r, status: 'Hadir' } : r
                 ));
             } else {
-                alert("Gagal verifikasi user.");
+                showToast('Gagal verifikasi user.', 'error');
             }
-        } catch (error: any) { alert(`Error koneksi: ${error.message}`); }
+        } catch (error: any) { showToast(`Error koneksi: ${error.message}`, 'error'); }
     };
 
     const handleChecklistUser = async (targetUser: any) => {
@@ -254,9 +256,9 @@ const Attendance: React.FC = () => {
                 };
                 setStatsRecords([...statsRecords, newRecord]);
             } else {
-                alert("Gagal menghadirkan user.");
+                showToast('Gagal menghadirkan user.', 'error');
             }
-        } catch (error: any) { alert(`Gagal menghadirkan user: ${error.message}`); }
+        } catch (error: any) { showToast(`Gagal menghadirkan user: ${error.message}`, 'error'); }
     };
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -281,7 +283,7 @@ const Attendance: React.FC = () => {
                 }
 
                 if (compressedFile.size > 5 * 1024 * 1024) {
-                    alert("Gambarnya kegedean buset (> 5MB). Server nolak bang.");
+                    showToast('Gambarnya kegedean buset (> 5MB). Server nolak bang.', 'error');
                     setPhotoFile(null);
                     setPreviewUrl(null);
                     e.target.value = '';
@@ -292,7 +294,7 @@ const Attendance: React.FC = () => {
 
             } catch (error) {
                 if (originalFile.size > 5 * 1024 * 1024) {
-                    alert("Gagal kompres & File Asli > 5MB. Ganti foto lain.");
+                    showToast('Gagal kompres & File Asli > 5MB. Ganti foto lain.', 'error');
                     setPhotoFile(null);
                     setPreviewUrl(null);
                     e.target.value = '';
@@ -325,16 +327,16 @@ const Attendance: React.FC = () => {
             const json = await res.json();
 
             if (res.ok) {
-                alert(json.message);
+                showToast(json.message, 'success');
                 setUserStatusMap(prev => ({
                     ...prev,
                     [selectedSession.id]: { status: 'Pending', reason: null }
                 }));
                 closeModals();
             } else {
-                alert(json.message || "Gagal absen");
+                showToast(json.message || 'Gagal absen', 'error');
             }
-        } catch (error: any) { alert(`Terjadi kesalahan: ${error.message}`); }
+        } catch (error: any) { showToast(`Terjadi kesalahan: ${error.message}`, 'error'); }
         finally { setIsSubmitting(false); }
     };
 
@@ -367,16 +369,16 @@ const Attendance: React.FC = () => {
             const json = await res.json();
 
             if (res.ok) {
-                alert("Permohonan izin berhasil dikirim!");
+                showToast('Permohonan izin berhasil dikirim!', 'success');
                 setUserStatusMap(prev => ({
                     ...prev,
                     [selectedSessionPermission.id]: { status: 'Izin', reason: finalReason }
                 }));
                 closeModals();
             } else {
-                alert(json.message || "Gagal mengirim izin");
+                showToast(json.message || 'Gagal mengirim izin', 'error');
             }
-        } catch (error: any) { alert(`Terjadi kesalahan: ${error.message}`); }
+        } catch (error: any) { showToast(`Terjadi kesalahan: ${error.message}`, 'error'); }
         finally { setIsSubmitting(false); }
     };
 
