@@ -14,10 +14,10 @@ interface Contact {
 const contacts: Contact[] = [
   {
     id: 1,
-    name: 'Yarvis',
+    name: 'Yarvish',
     role: 'Ketua Angkatan',
     avatarUrl: '/assets',
-    waLink: 'https://wa.me/9999999',
+    waLink: 'https://wa.me/6281326260687',
     igLink: 'https://instagram.com/9999',
     lineLink: 'https://line.me/ti/p/9999',
   },
