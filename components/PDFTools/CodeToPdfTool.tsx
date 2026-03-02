@@ -112,7 +112,6 @@ const CodeToPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         localStorage.setItem('pdf_code_stdin', pythonStdin);
     }, [code, fileName, fontSize, language, pageSize, bgTheme, isColored, pythonStdin]);
 
-    // Cleanup worker on unmount
     useEffect(() => {
         return () => {
             if (workerRef.current) {
@@ -327,87 +326,41 @@ const CodeToPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             }
         } else {
             try {
-                const pythonWrapper = `import sys
-import builtins
-
-def custom_input(prompt=''):
-    if prompt:
-        sys.stdout.write(str(prompt))
-        sys.stdout.flush()
-    line = sys.stdin.readline()
-    if line:
-        sys.stdout.write(line)
-        sys.stdout.flush()
-        return line.rstrip('\\n')
-    return ''
-
-builtins.input = custom_input
-`;
-                const finalCode = pythonWrapper + code;
+                const backendUrl = import.meta.env.VITE_API_URL;
                 
-                let apiUrl = 'https://api.piston.rocks/execute';
-                let response = await fetch(apiUrl, {
+                const response = await fetch(`${backendUrl}/execute-python`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
-                        language: 'python', 
-                        version: '3.10.0', 
-                        files: [{ content: finalCode }], 
-                        stdin: pythonStdin 
+                        code: code,
+                        stdin: pythonStdin
                     })
                 });
                 
                 if (!response.ok) {
-                    apiUrl = 'https://api.jdoodle.com/v1/execute';
-                    response = await fetch(apiUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            clientId: 'd5bd6a8eabb9ee0d53e33ef124a95a47',
-                            clientSecret: '4527a17f9c3e1deff91d89e8e03899d0b2afdfc87c0df40aba9eef4cd00a82f7',
-                            script: finalCode,
-                            language: 'python3',
-                            versionIndex: '3',
-                            stdin: pythonStdin
-                        })
-                    });
-                }
-                
-                if (!response.ok) {
-                    printToTerminal(`Error: Service unavailable (${response.status})`, 'output');
+                    printToTerminal(`Error: HTTP ${response.status}`, 'output');
                     setIsRunning(false);
                     return;
                 }
                 
                 const data = await response.json();
                 
-                if (data.run) {
-                    if (data.run.stdout) {
-                        data.run.stdout.split('\n').forEach((line: string) => {
+                if (data.success) {
+                    if (data.stdout) {
+                        data.stdout.split('\n').forEach((line: string) => {
                             if (line.trim()) printToTerminal(line, 'output');
                         });
                     }
-                    if (data.run.stderr) {
-                        printToTerminal(`Error: ${data.run.stderr}`, 'output');
+                    if (data.stderr) {
+                        printToTerminal(`Error: ${data.stderr}`, 'output');
                     }
-                } 
-                else if (data.output !== undefined) {
-                    if (data.output) {
-                        data.output.split('\n').forEach((line: string) => {
-                            if (line.trim()) printToTerminal(line, 'output');
-                        });
-                    }
-                    if (data.error) {
-                        printToTerminal(`Error: ${data.error}`, 'output');
-                    }
-                } 
-                else {
-                    printToTerminal("Error: Unexpected API response", 'output');
+                } else {
+                    printToTerminal(`Error: ${data.message || 'Unknown error'}`, 'output');
                 }
                 
                 printToTerminal("> Finished.", 'system');
             } catch (e: any) { 
-                printToTerminal(`Error: ${e.message || 'Connection failed. Check internet connection.'}`, 'output');
+                printToTerminal(`Error: ${e.message || 'Connection failed'}`, 'output');
             }
             setIsRunning(false);
         }
