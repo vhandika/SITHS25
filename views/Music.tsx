@@ -49,6 +49,7 @@ const Music: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [isSearching, setIsSearching] = useState(false);
     const [showCreateModal, setShowCreateModal] = useState(false);
+    const [isCreatingPlaylist, setIsCreatingPlaylist] = useState(false);
     const [newPlaylistTitle, setNewPlaylistTitle] = useState('');
     const [newPlaylistIsPublic, setNewPlaylistIsPublic] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
@@ -237,7 +238,7 @@ const Music: React.FC = () => {
     };
 
     const handleCreatePlaylist = async () => {
-        if (!newPlaylistTitle.trim()) return;
+        if (!newPlaylistTitle.trim() || isCreatingPlaylist) return;
 
         const playlistBlockedUntil = localStorage.getItem('playlistBlockedUntil');
         if (playlistBlockedUntil && Date.now() < parseInt(playlistBlockedUntil)) {
@@ -248,6 +249,7 @@ const Music: React.FC = () => {
             return;
         }
 
+        setIsCreatingPlaylist(true);
         try {
             const res = await fetchWithAuth(`${API_BASE_URL}/music/playlists`, {
                 method: 'POST',
@@ -269,6 +271,8 @@ const Music: React.FC = () => {
             }
         } catch (error) {
             showToast('Gagal membuat playlist', 'error');
+        } finally {
+            setIsCreatingPlaylist(false);
         }
     };
 
@@ -1038,9 +1042,10 @@ const Music: React.FC = () => {
                             </button>
                             <button
                                 onClick={handleCreatePlaylist}
-                                className="flex-1 bg-yellow-400 hover:bg-yellow-300 text-black font-bold py-2 rounded"
+                                disabled={isCreatingPlaylist || !newPlaylistTitle.trim()}
+                                className={`flex-1 font-bold py-2 rounded flex items-center justify-center gap-2 ${isCreatingPlaylist || !newPlaylistTitle.trim() ? 'bg-gray-700 text-gray-500 cursor-not-allowed' : 'bg-yellow-400 hover:bg-yellow-300 text-black'}`}
                             >
-                                Create
+                                {isCreatingPlaylist ? <><Loader className="animate-spin" size={16} /> Creating...</> : 'Create'}
                             </button>
                         </div>
                     </div>

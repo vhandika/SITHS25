@@ -327,21 +327,63 @@ const CodeToPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             }
         } else {
             try {
-                const pythonWrapper = `import sys\nimport builtins\ndef input(prompt=''):\n    if prompt: sys.stdout.write(str(prompt)); sys.stdout.flush()\n    line = sys.stdin.readline()\n    if line: sys.stdout.write(line); sys.stdout.flush(); return line.rstrip('\\n')\n    return ''\nbuiltins.input = input\n`;
-                const finalCode = pythonWrapper + "\n" + code;
+                const pythonWrapper = `import sys
+import builtins
+
+def custom_input(prompt=''):
+    if prompt:
+        sys.stdout.write(str(prompt))
+        sys.stdout.flush()
+    line = sys.stdin.readline()
+    if line:
+        sys.stdout.write(line)
+        sys.stdout.flush()
+        return line.rstrip('\\n')
+    return ''
+
+builtins.input = custom_input
+`;
+                const finalCode = pythonWrapper + code;
                 const response = await fetch('https://emkc.org/api/v2/piston/execute', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ language: 'python', version: '3.10.0', files: [{ content: finalCode }], stdin: pythonStdin })
+                    body: JSON.stringify({ 
+                        language: 'python', 
+                        version: '3.10.0', 
+                        files: [{ content: finalCode }], 
+                        stdin: pythonStdin 
+                    })
                 });
-                const data = await response.json();
-                if (data.run) {
-                    if (data.run.stdout) data.run.stdout.split('\n').forEach((line: string) => printToTerminal(line, 'output'));
-                    if (data.run.stderr) printToTerminal(data.run.stderr, 'output');
-                } else {
-                    printToTerminal("Error: Failed to execute.", 'output');
+                
+                if (!response.ok) {
+                    printToTerminal(`Error: HTTP ${response.status} - ${response.statusText}`, 'output');
+                    setIsRunning(false);
+                    return;
                 }
-            } catch (e) { printToTerminal("Offline / API Error.", 'output'); }
+                
+                const data = await response.json();
+                
+                if (data.compile) {
+                    if (data.compile.stderr) {
+                        printToTerminal(`Compile Error: ${data.compile.stderr}`, 'output');
+                    }
+                } else if (data.run) {
+                    if (data.run.stdout) {
+                        data.run.stdout.split('\n').forEach((line: string) => {
+                            if (line.trim()) printToTerminal(line, 'output');
+                        });
+                    }
+                    if (data.run.stderr) {
+                        printToTerminal(`Runtime Error: ${data.run.stderr}`, 'output');
+                    }
+                } else {
+                    printToTerminal("Error: Unexpected response from API", 'output');
+                }
+                
+                printToTerminal("> Finished.", 'system');
+            } catch (e: any) { 
+                printToTerminal(`Error: ${e.message || 'Unknown error occurred'}`, 'output');
+            }
             setIsRunning(false);
         }
     };
