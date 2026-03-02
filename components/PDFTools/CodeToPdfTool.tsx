@@ -344,7 +344,9 @@ def custom_input(prompt=''):
 builtins.input = custom_input
 `;
                 const finalCode = pythonWrapper + code;
-                const response = await fetch('https://emkc.org/api/v2/piston/execute', {
+                
+                let apiUrl = 'https://api.piston.rocks/execute';
+                let response = await fetch(apiUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
@@ -356,33 +358,56 @@ builtins.input = custom_input
                 });
                 
                 if (!response.ok) {
-                    printToTerminal(`Error: HTTP ${response.status} - ${response.statusText}`, 'output');
+                    apiUrl = 'https://api.jdoodle.com/v1/execute';
+                    response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            clientId: 'd5bd6a8eabb9ee0d53e33ef124a95a47',
+                            clientSecret: '4527a17f9c3e1deff91d89e8e03899d0b2afdfc87c0df40aba9eef4cd00a82f7',
+                            script: finalCode,
+                            language: 'python3',
+                            versionIndex: '3',
+                            stdin: pythonStdin
+                        })
+                    });
+                }
+                
+                if (!response.ok) {
+                    printToTerminal(`Error: Service unavailable (${response.status})`, 'output');
                     setIsRunning(false);
                     return;
                 }
                 
                 const data = await response.json();
                 
-                if (data.compile) {
-                    if (data.compile.stderr) {
-                        printToTerminal(`Compile Error: ${data.compile.stderr}`, 'output');
-                    }
-                } else if (data.run) {
+                if (data.run) {
                     if (data.run.stdout) {
                         data.run.stdout.split('\n').forEach((line: string) => {
                             if (line.trim()) printToTerminal(line, 'output');
                         });
                     }
                     if (data.run.stderr) {
-                        printToTerminal(`Runtime Error: ${data.run.stderr}`, 'output');
+                        printToTerminal(`Error: ${data.run.stderr}`, 'output');
                     }
-                } else {
-                    printToTerminal("Error: Unexpected response from API", 'output');
+                } 
+                else if (data.output !== undefined) {
+                    if (data.output) {
+                        data.output.split('\n').forEach((line: string) => {
+                            if (line.trim()) printToTerminal(line, 'output');
+                        });
+                    }
+                    if (data.error) {
+                        printToTerminal(`Error: ${data.error}`, 'output');
+                    }
+                } 
+                else {
+                    printToTerminal("Error: Unexpected API response", 'output');
                 }
                 
                 printToTerminal("> Finished.", 'system');
             } catch (e: any) { 
-                printToTerminal(`Error: ${e.message || 'Unknown error occurred'}`, 'output');
+                printToTerminal(`Error: ${e.message || 'Connection failed. Check internet connection.'}`, 'output');
             }
             setIsRunning(false);
         }
