@@ -72,6 +72,7 @@ const Music: React.FC = () => {
     const isTyping = useRef(false);
 
     const [currentUserNim, setCurrentUserNim] = useState<string | null>(null);
+    const [isGuest, setIsGuest] = useState(false);
 
     const showPlaylistDetail = selectedPlaylist !== null;
     const isSearchMode = searchResults.length > 0;
@@ -87,6 +88,7 @@ const Music: React.FC = () => {
                     const data = await res.json();
                     if (data.user && data.user.nim) {
                         setCurrentUserNim(data.user.nim);
+                        setIsGuest(data.user.role === 'guest');
                         isLoggedIn = true;
                     }
                 }
@@ -111,6 +113,7 @@ const Music: React.FC = () => {
                     const parts = guestId.split('.');
                     if (parts.length > 0) {
                         setCurrentUserNim(parts[0]);
+                        setIsGuest(true);
                     }
                 }
             }
@@ -1024,15 +1027,20 @@ const Music: React.FC = () => {
                             placeholder="Playlist name"
                             className="w-full bg-black border border-gray-700 rounded px-4 py-2 mb-4 text-white focus:border-yellow-400 outline-none"
                         />
-                        <label className="flex items-center gap-2 mb-4 cursor-pointer">
-                            <input
-                                type="checkbox"
-                                checked={newPlaylistIsPublic}
-                                onChange={e => setNewPlaylistIsPublic(e.target.checked)}
-                                className="w-4 h-4"
-                            />
-                            <span className="text-sm">Make public</span>
-                        </label>
+                        {!isGuest && (
+                            <label className="flex items-center gap-2 mb-4 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={newPlaylistIsPublic}
+                                    onChange={e => setNewPlaylistIsPublic(e.target.checked)}
+                                    className="w-4 h-4"
+                                />
+                                <span className="text-sm">Make public</span>
+                            </label>
+                        )}
+                        {isGuest && (
+                            <p className="text-xs text-gray-500 mb-4">* Guest playlists are always public.</p>
+                        )}
                         <div className="flex gap-2">
                             <button
                                 onClick={() => setShowCreateModal(false)}
@@ -1282,16 +1290,21 @@ const Music: React.FC = () => {
                                         className="w-full bg-black border border-gray-700 rounded-lg px-4 py-3 mb-4 text-white focus:border-yellow-400 outline-none"
                                         disabled={isImporting}
                                     />
-                                    <label className="flex items-center gap-2 mb-4 cursor-pointer">
-                                        <input
-                                            type="checkbox"
-                                            checked={importIsPublic}
-                                            onChange={e => setImportIsPublic(e.target.checked)}
-                                            className="w-4 h-4"
-                                            disabled={isImporting}
-                                        />
-                                        <span className="text-sm">Make public</span>
-                                    </label>
+                                    {!isGuest && (
+                                        <label className="flex items-center gap-2 mb-4 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={importIsPublic}
+                                                onChange={e => setImportIsPublic(e.target.checked)}
+                                                className="w-4 h-4"
+                                                disabled={isImporting}
+                                            />
+                                            <span className="text-sm">Make public</span>
+                                        </label>
+                                    )}
+                                    {isGuest && (
+                                        <p className="text-xs text-gray-500 mb-4">* Guest playlists are always public.</p>
+                                    )}
                                     <p className="text-xs text-gray-500 mb-4">Supports Spotify & YouTube playlist URLs.</p>
                                     <div className="flex gap-2">
                                         <button
