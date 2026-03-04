@@ -25,6 +25,17 @@ const Home: React.FC = () => {
     const savedBg = localStorage.getItem('homeBackgroundImage');
     const [backgroundImageUrl, setBackgroundImageUrl] = useState(savedBg || HD_BG);
 
+    const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    const handleMouseMove = (e: React.MouseEvent) => {
+        if (!containerRef.current) return;
+        const { left, top, width, height } = containerRef.current.getBoundingClientRect();
+        const x = (e.clientX - left - width / 2) * 0.12;
+        const y = (e.clientY - top - height / 2) * 0.12;
+        setMousePos({ x, y });
+    };
+
     const [birthdayUsers, setBirthdayUsers] = useState<User[]>([]);
     const [showBirthdayModal, setShowBirthdayModal] = useState(false);
     const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -148,7 +159,11 @@ const Home: React.FC = () => {
     };
 
     return (
-        <div className="relative flex h-screen min-h-[600px] w-full items-center justify-center overflow-hidden selection:bg-yellow-400 selection:text-black bg-gray-900">
+        <div
+            ref={containerRef}
+            onMouseMove={handleMouseMove}
+            className="relative flex h-screen min-h-[600px] w-full items-center justify-center overflow-hidden selection:bg-yellow-400 selection:text-black bg-gray-900"
+        >
             <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-black to-gray-800" />
 
             <div
@@ -156,18 +171,20 @@ const Home: React.FC = () => {
                 style={{ backgroundImage: `url('${backgroundImageUrl}')` }}
             >
                 <div className="absolute inset-0 bg-black/60"></div>
-                <div className="absolute top-0 left-0 w-1/2 h-1/2 bg-yellow-400/10" style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)' }}></div>
-                <div className="absolute bottom-0 right-0 w-1/3 h-1/3 bg-yellow-400/5" style={{ clipPath: 'polygon(100% 0, 100% 100%, 0 100%)' }}></div>
             </div>
 
             <div className="relative z-10 flex flex-col items-center p-4 text-center">
-                <div className="absolute -top-8 left-0 right-0 mx-auto w-40 border-t-2 border-yellow-400"></div>
+                <div className="mb-8 flex flex-col items-center animate-fade-in relative group">
 
-                <h1 className="text-5xl font-bold uppercase tracking-widest text-white drop-shadow-lg md:text-7xl lg:text-8xl">
-                    <span className="text-yellow-400">SITH-S</span> 25
-                </h1>
+                    <img
+                        src="/logo.png"
+                        alt="SITH-S 25 Logo"
+                        className="h-64 w-64 object-contain md:h-80 md:w-80 lg:h-[480px] lg:w-[480px] transition-all duration-700 hover:scale-[1.02] active:scale-95 cursor-pointer"
+                        onClick={() => triggerConfetti()}
+                    />
+                </div>
 
-                <div className="mt-10 flex flex-col gap-4 sm:flex-row">
+                <div className="mt-8 flex flex-col gap-4 sm:hidden">
                     <SkewedButton icon={<BookOpen />} onClick={() => navigate('/library')}>
                         Library
                     </SkewedButton>
