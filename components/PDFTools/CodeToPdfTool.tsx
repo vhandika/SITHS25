@@ -326,23 +326,20 @@ const CodeToPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             }
         } else {
             try {
-                const backendUrl = import.meta.env.VITE_API_URL;
-                
-                const response = await fetch(`${backendUrl}/execute-python`, {
+                // Call the working backend API
+                const response = await fetch('https://api.sith-s25.my.id/api/execute-python', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
+                    body: JSON.stringify({
                         code: code,
-                        stdin: pythonStdin
+                        stdin: pythonStdin || ''
                     })
                 });
-                
+
                 if (!response.ok) {
-                    printToTerminal(`Error: HTTP ${response.status}`, 'output');
-                    setIsRunning(false);
-                    return;
+                    throw new Error(`HTTP ${response.status}`);
                 }
-                
+
                 const data = await response.json();
                 
                 if (data.success) {
@@ -352,7 +349,7 @@ const CodeToPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                         });
                     }
                     if (data.stderr) {
-                        printToTerminal(`Error: ${data.stderr}`, 'output');
+                        printToTerminal(data.stderr, 'output');
                     }
                 } else {
                     printToTerminal(`Error: ${data.message || 'Unknown error'}`, 'output');
@@ -360,7 +357,7 @@ const CodeToPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 
                 printToTerminal("> Finished.", 'system');
             } catch (e: any) { 
-                printToTerminal(`Error: ${e.message || 'Connection failed'}`, 'output');
+                printToTerminal(`Error: ${e.message}`, 'output');
             }
             setIsRunning(false);
         }
