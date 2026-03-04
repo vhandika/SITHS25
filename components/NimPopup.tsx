@@ -121,8 +121,8 @@ const NimPopup: React.FC<NimPopupProps> = ({ onSuccess }) => {
                         <div className="pt-2">
                             <SkewedButton
                                 className="w-full"
+                                type="submit"
                                 icon={isLoading ? null : <CheckCircle2 size={18} />}
-                                onClick={() => { }}
                                 disabled={isLoading}
                             >
                                 {isLoading ? 'Menyimpan...' : 'OK'}

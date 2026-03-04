@@ -3,12 +3,14 @@ import React from 'react';
 
 interface SkewedButtonProps {
     children: React.ReactNode;
-    onClick?: () => void;
+    onClick?: (e: React.MouseEvent) => void;
     className?: string;
     icon?: React.ReactNode;
     variant?: 'primary' | 'secondary';
     href?: string;
     target?: string;
+    disabled?: boolean;
+    type?: 'button' | 'submit' | 'reset';
 }
 
 const SkewedButton: React.FC<SkewedButtonProps> = ({
@@ -19,20 +21,22 @@ const SkewedButton: React.FC<SkewedButtonProps> = ({
     variant = 'primary',
     href,
     target,
+    disabled = false,
+    type = 'button',
 }) => {
-    const baseClasses = "relative inline-block group cursor-pointer select-none text-white font-bold tracking-wider uppercase transition-all duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2 focus:ring-offset-black";
+    const baseClasses = `relative inline-block group cursor-pointer select-none text-white font-bold tracking-wider uppercase transition-all duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2 focus:ring-offset-black ${disabled ? 'opacity-50 cursor-not-allowed grayscale' : ''}`;
 
     const variantClasses = {
         primary: {
             bg: 'bg-yellow-400',
             text: 'text-black',
-            hoverBg: 'hover:bg-yellow-300',
+            hoverBg: disabled ? '' : 'hover:bg-yellow-300',
             border: 'border-yellow-400'
         },
         secondary: {
             bg: 'bg-transparent',
             text: 'text-white',
-            hoverBg: 'hover:bg-gray-800',
+            hoverBg: disabled ? '' : 'hover:bg-gray-800',
             border: 'border-white'
         }
     };
@@ -44,11 +48,13 @@ const SkewedButton: React.FC<SkewedButtonProps> = ({
                 {icon && <span className='transform skew-x-12'>{icon}</span>}
                 <span className="transform skew-x-12">{children}</span>
             </div>
-            <div className={`absolute inset-0 z-0 transform -skew-x-12 border-2 ${selectedVariant.border} transition-transform duration-300 group-hover:translate-x-1 group-hover:translate-y-1`}></div>
+            {!disabled && (
+                <div className={`absolute inset-0 z-0 transform -skew-x-12 border-2 ${selectedVariant.border} transition-transform duration-300 group-hover:translate-x-1 group-hover:translate-y-1`}></div>
+            )}
         </>
     );
 
-    if (href) {
+    if (href && !disabled) {
         return (
             <a
                 href={href}
@@ -64,7 +70,8 @@ const SkewedButton: React.FC<SkewedButtonProps> = ({
     return (
         <button
             onClick={onClick}
-            type="button"
+            type={type}
+            disabled={disabled}
             className={`${baseClasses} ${className}`}
         >
             {content}
