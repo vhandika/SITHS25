@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
   Library as LibraryIcon, ArrowUpRight, ChevronDown
 } from 'lucide-react';
+import LibraryViewer from '../components/LibraryViewer';
 
 export interface LibraryItem {
   id: number;
@@ -11,6 +12,8 @@ export interface LibraryItem {
   driveLink: string;
   semester: number;
   category: 'mikrobiologi' | 'biologi';
+  type?: 'file' | 'folder';
+  children?: LibraryItem[];
 }
 
 const libraryData: LibraryItem[] = [
@@ -22,6 +25,104 @@ const libraryData: LibraryItem[] = [
     driveLink: 'https://drive.google.com/drive/folders/17mAc-fHvjR-Ffj-H5ISX0Kuuo5rqnVQ2',
     semester: 1,
     category: 'mikrobiologi',
+    type: 'folder',
+    children: [
+      {
+        id: 101,
+        title: 'Soal UTS',
+        description: '',
+        image: '',
+        driveLink: 'https://drive.google.com/drive/folders/1fzPl9C1zYXJwyJeH93KuB5tqvudwjMVd?usp=drive_link',
+        semester: 1,
+        category: 'mikrobiologi',
+        type: 'folder',
+        children: [
+         {
+        id: 1,
+        title: 'Soal UTS 2024',
+        description: '',
+        image: '',
+        driveLink: 'https://drive.google.com/file/d/1rAPOmC2LH3-3CtOc7wGDQ1Gj7uHDGRBc/view?usp=drive_link',
+        semester: 1,
+        category: 'mikrobiologi',
+        type: 'file'
+      },
+      {
+        id: 2,
+        title: 'Soal UTS 2023',
+        description: '',
+        image: '',
+        driveLink: 'https://drive.google.com/file/d/1jG2K-rCRf_iAAb-v96NSxLNqDqkYRIm1/view?usp=drive_link',
+        semester: 1,
+        category: 'mikrobiologi',
+        type: 'file'
+      },
+      {
+        id: 3,
+        title: 'Soal UTS 2022',
+        description: '',
+        image: '',
+        driveLink: 'https://drive.google.com/file/d/1miTF-Q9JD1_biuudjFQRu5ddOpCP_Ja3/view?usp=drive_link',
+        semester: 1,
+        category: 'mikrobiologi',
+        type: 'file'
+      },
+      {
+        id: 4,
+        title: 'Soal UTS 2021',
+        description: '',
+        image: '',
+        driveLink: 'https://drive.google.com/file/d/1X5Nvbkab1UsGZufXtd05HJM2swYhMFaC/view?usp=drive_link',
+        semester: 1,
+        category: 'mikrobiologi',
+        type: 'file'
+      },
+      {
+        id: 5,
+        title: 'Soal UTS 2019',
+        description: '',
+        image: '',
+        driveLink: 'https://drive.google.com/file/d/1npHqDYZj3qURmuIDMM_Igw23f06-qZVo/view?usp=drive_link',
+        semester: 1,
+        category: 'mikrobiologi',
+        type: 'file'
+      },
+      {
+        id: 6,
+        title: 'Latihan UTS',
+        description: '',
+        image: '',
+        driveLink: 'https://drive.google.com/file/d/1Xk3D4BkchcIbIkyQRaccx9fXDhILpq6G/view?usp=drive_link',
+        semester: 1,
+        category: 'mikrobiologi',
+        type: 'file'
+      }
+        ]
+      },
+      {
+        id: 102,
+        title: 'Soal UAS',
+        description: '',
+        image: '',
+        driveLink: 'https://drive.google.com/drive/folders/17mAc-fHvjR-Ffj-H5ISX0Kuuo5rqnVQ2',
+        semester: 1,
+        category: 'mikrobiologi',
+        type: 'folder',
+        children: [
+        
+        ]
+      },
+      {
+        id: 103,
+        title: 'Silabus MA1101 Matematika I.pdf',
+        description: 'File Silabus resmi.',
+        image: '',
+        driveLink: 'https://drive.google.com/file/d/1xsGqZZq7r58F2xIyjsvkukXCUP7VMjOE/view?usp=drive_link',
+        semester: 1,
+        category: 'mikrobiologi',
+        type: 'file'
+      }
+    ]
   },
   {
     id: 2,
@@ -31,6 +132,219 @@ const libraryData: LibraryItem[] = [
     driveLink: 'https://drive.google.com/drive/folders/17uRIaxFB33GZ20YXJDABBs-DdImj2_v7',
     semester: 1,
     category: 'mikrobiologi',
+    type: 'folder',
+    children: [
+      {
+        id: 104,
+        title: 'Soal UTS',
+        description: '',
+        image: '',
+        driveLink: 'https://drive.google.com/file/d/1X5Nvbkab1UsGZufXtd05HJM2swYhMFaC/view?usp=drive_link',
+        semester: 1,
+        category: 'mikrobiologi',
+        type: 'folder',
+        children: [
+          {
+            id: 1,
+            title: 'Solusi UTS sesi 1 2025',
+            description: '',
+            image: '',
+            driveLink: 'https://drive.google.com/file/d/15mNrsubg3WMMrHY0y1ugCW1nvFQCheAS/view?usp=drive_link',
+            semester: 1,
+            category: 'mikrobiologi',
+            type: 'file'
+          },
+          {
+            id: 2,
+            title: 'Solusi UTS sesi 2 2025',
+            description: '',
+            image: '',
+            driveLink: 'https://drive.google.com/file/d/1RiVSbB6phP18MuybetdP7bL6SaB20CNY/view?usp=drive_link',
+            semester: 1,
+            category: 'mikrobiologi',
+            type: 'file'
+          },
+          {
+            id: 3,
+            title: 'Solusi UTS sesi 3 2025',
+            description: '',
+            image: '',
+            driveLink: 'https://drive.google.com/file/d/1s2VyPhEKCzloyvph6Oo_UIlE2zcozyj8/view?usp=drive_link',
+            semester: 1,
+            category: 'mikrobiologi',
+            type: 'file'
+          }
+        ]
+      },
+      {
+        id: 205,
+        title: 'Soal UAS',
+        description: '',
+        image: '',
+        driveLink: 'https://drive.google.com/file/d/1X5Nvbkab1UsGZufXtd05HJM2swYhMFaC/view?usp=drive_link',
+        semester: 1,
+        category: 'mikrobiologi',
+        type: 'folder',
+        children: [
+          {
+            id: 1,
+            title: 'Solusi UAS sesi 1 2025',
+            description: '',
+            image: '',
+            driveLink: 'https://drive.google.com/file/d/1_oiuCjhmHVe5q0r8gyThp91rlPQICLvZ/view?usp=drive_link',
+            semester: 1,
+            category: 'mikrobiologi',
+            type: 'file'
+          },
+          {
+            id: 2,
+            title: 'Solusi UAS sesi 2 2025',
+            description: '',
+            image: '',
+            driveLink: 'https://drive.google.com/file/d/1X9PJnnx3UUF3F4pfBQCERca6Uhr_k9t4/view?usp=drive_link',
+            semester: 1,
+            category: 'mikrobiologi',
+            type: 'file'
+          }
+        ]
+      },
+      {
+        id: 206,
+        title: 'Soal UP',
+        description: '',
+        image: '',
+        driveLink: 'https://drive.google.com/file/d/1xsGqZZq7r58F2xIyjsvkukXCUP7VMjOE/view?usp=drive_link',
+        semester: 1,
+        category: 'mikrobiologi',
+        type: 'folder',
+        children: [
+          {
+            id: 1,
+            title: 'Solusi UP 2025',
+            description: '',
+            image: '',
+            driveLink: 'https://drive.google.com/file/d/1w_aZbVPDDhydfpadv2SNBPtCQ-4K1zwA/view?usp=drive_link',
+            semester: 1,
+            category: 'mikrobiologi',
+            type: 'file'
+          }
+        ]
+      },
+      {
+        id: 207,
+        title: 'Soal LTM',
+        description: '',
+        image: '',
+        driveLink: 'https://drive.google.com/file/d/1xsGqZZq7r58F2xIyjsvkukXCUP7VMjOE/view?usp=drive_link',
+        semester: 1,
+        category: 'mikrobiologi',
+        type: 'folder',
+        children: [
+          {
+            id: 1,
+            title: 'Soal LTM 1 2025',
+            description: '',
+            image: '',
+            driveLink: 'https://drive.google.com/file/d/1idhzVCBIHopU7xUNp2rjM0UFuzud63PZ/view?usp=drive_link',
+            semester: 1,
+            category: 'mikrobiologi',
+            type: 'file'
+          },
+          {
+            id: 2,
+            title: 'Soal LTM 2 2025',
+            description: '',
+            image: '',
+            driveLink: 'https://drive.google.com/file/d/17B2IkGLrvhGpZwdefIzNt2cB2P2hHA52/view?usp=drive_link',
+            semester: 1,
+            category: 'mikrobiologi',
+            type: 'file'
+          },
+          {
+            id: 3,
+            title: 'Soal LTM 3 2025',
+            description: '',
+            image: '',
+            driveLink: 'https://drive.google.com/file/d/1bt54jr1KTCSJ-Y0Uc3Rw1ZDAY06f7G-z/view?usp=drive_link',
+            semester: 1,
+            category: 'mikrobiologi',
+            type: 'file'
+          },
+          {
+            id: 4,
+            title: 'Soal LTM 4 2025',
+            description: '',
+            image: '',
+            driveLink: 'https://drive.google.com/file/d/1fP9AoJw90Voes14wthHw0sjAMATDBKO1/view?usp=drive_link',
+            semester: 1,
+            category: 'mikrobiologi',
+            type: 'file'
+          },
+          {
+            id: 5,
+            title: 'Solusi LTM 5 2025',
+            description: '',
+            image: '',
+            driveLink: 'https://drive.google.com/file/d/1ppmpeXN0CAfd0ErVpvkcw5YIE_7oMKJa/view?usp=drive_link',
+            semester: 1,
+            category: 'mikrobiologi',
+            type: 'file'
+          },
+          {
+            id: 6,
+            title: 'Solusi LTM 6 2025',
+            description: '',
+            image: '',
+            driveLink: 'https://drive.google.com/file/d/1RiO7DpopZnKuKUQ7Y4ORqUOqEqkHIDAm/view?usp=drive_link',
+            semester: 1,
+            category: 'mikrobiologi',
+            type: 'file'
+          },
+          {
+            id: 7,
+            title: 'Solusi LTM 7 2025',
+            description: '',
+            image: '',
+            driveLink: 'https://drive.google.com/file/d/1UHytUCltUDgiHUdS39sDw36X3le9ejrM/view?usp=drive_link',
+            semester: 1,
+            category: 'mikrobiologi',
+            type: 'file'
+          }
+        ]
+      },
+      {
+        id: 208,
+        title: 'Silabus Perkuliahan',
+        description: '',
+        image: '',
+        driveLink: 'https://drive.google.com/file/d/1UHytUCltUDgiHUdS39sDw36X3le9ejrM/view?usp=drive_link',
+        semester: 1,
+        category: 'mikrobiologi',
+        type: 'folder',
+        children: [
+          {
+            id: 1,
+            title: 'Satuan Acara Perkuliahan Fisika Dasar I 2025/2026',
+            description: '',
+            image: '',
+            driveLink: 'https://drive.google.com/file/d/1bhZZkV1plertI7YORLOWTHLuz5Klwvar/view?usp=drive_link',
+            semester: 1,
+            category: 'mikrobiologi',
+            type: 'file'
+          },
+          {
+            id: 2,
+            title: 'Peraturan Perkuliahan Fisika Dasar I 2025/2026',
+            description: '',
+            image: '',
+            driveLink: 'https://drive.google.com/file/d/1njGFkm1rtP1uL1xiq29pPRfv8TqOF22S/view?usp=drive_link',
+            semester: 1,
+            category: 'mikrobiologi',
+            type: 'file'
+          }
+        ]
+      }
+    ]
   },
   {
     id: 3,
@@ -40,6 +354,7 @@ const libraryData: LibraryItem[] = [
     driveLink: 'https://drive.google.com/drive/folders/17wZPpaTlpktOX6KvTw-g5LSoGO2v0Dmy',
     semester: 1,
     category: 'mikrobiologi',
+    type: 'folder'
   },
   {
     id: 4,
@@ -49,6 +364,7 @@ const libraryData: LibraryItem[] = [
     driveLink: 'https://drive.google.com/drive/folders/181BGu_hCEZclmuF4uMfCeKHTQMGUl80q',
     semester: 1,
     category: 'mikrobiologi',
+    type: 'folder'
   },
   {
     id: 5,
@@ -58,6 +374,7 @@ const libraryData: LibraryItem[] = [
     driveLink: 'https://drive.google.com/drive/folders/181BaH0ZtwQwAzgO--YLpeMxR1s2-wnNU',
     semester: 1,
     category: 'mikrobiologi',
+    type: 'folder'
   },
   {
     id: 6,
@@ -67,6 +384,7 @@ const libraryData: LibraryItem[] = [
     driveLink: 'https://drive.google.com/drive/folders/1UXK6BdA_G9cnK8h5yFkLtreH2NusL32O?usp=drive_link',
     semester: 1,
     category: 'mikrobiologi',
+    type: 'folder'
   },
   {
     id: 7,
@@ -76,6 +394,7 @@ const libraryData: LibraryItem[] = [
     driveLink: 'https://drive.google.com/drive/folders/1mTZKJckkdk3YeF5x-eZDeEerspTCkaiB',
     semester: 1,
     category: 'mikrobiologi',
+    type: 'folder'
   },
   {
     id: 8,
@@ -85,6 +404,7 @@ const libraryData: LibraryItem[] = [
     driveLink: 'https://drive.google.com/drive/folders/1PIs9eUDa-klzzagF5cne2Bd9IXns-rq2',
     semester: 1,
     category: 'mikrobiologi',
+    type: 'folder'
   },
   {
     id: 1,
@@ -94,6 +414,104 @@ const libraryData: LibraryItem[] = [
     driveLink: 'https://drive.google.com/drive/folders/17mAc-fHvjR-Ffj-H5ISX0Kuuo5rqnVQ2',
     semester: 1,
     category: 'biologi',
+    type: 'folder',
+    children: [
+      {
+        id: 101,
+        title: 'Soal UTS',
+        description: '',
+        image: '',
+        driveLink: 'https://drive.google.com/drive/folders/1fzPl9C1zYXJwyJeH93KuB5tqvudwjMVd?usp=drive_link',
+        semester: 1,
+        category: 'biologi',
+        type: 'folder',
+        children: [
+         {
+        id: 1,
+        title: 'Soal UTS 2024',
+        description: '',
+        image: '',
+        driveLink: 'https://drive.google.com/file/d/1rAPOmC2LH3-3CtOc7wGDQ1Gj7uHDGRBc/view?usp=drive_link',
+        semester: 1,
+        category: 'biologi',
+        type: 'file'
+      },
+      {
+        id: 2,
+        title: 'Soal UTS 2023',
+        description: '',
+        image: '',
+        driveLink: 'https://drive.google.com/file/d/1jG2K-rCRf_iAAb-v96NSxLNqDqkYRIm1/view?usp=drive_link',
+        semester: 1,
+        category: 'biologi',
+        type: 'file'
+      },
+      {
+        id: 3,
+        title: 'Soal UTS 2022',
+        description: '',
+        image: '',
+        driveLink: 'https://drive.google.com/file/d/1miTF-Q9JD1_biuudjFQRu5ddOpCP_Ja3/view?usp=drive_link',
+        semester: 1,
+        category: 'biologi',
+        type: 'file'
+      },
+      {
+        id: 4,
+        title: 'Soal UTS 2021',
+        description: '',
+        image: '',
+        driveLink: 'https://drive.google.com/file/d/1X5Nvbkab1UsGZufXtd05HJM2swYhMFaC/view?usp=drive_link',
+        semester: 1,
+        category: 'biologi',
+        type: 'file'
+      },
+      {
+        id: 5,
+        title: 'Soal UTS 2019',
+        description: '',
+        image: '',
+        driveLink: 'https://drive.google.com/file/d/1npHqDYZj3qURmuIDMM_Igw23f06-qZVo/view?usp=drive_link',
+        semester: 1,
+        category: 'biologi',
+        type: 'file'
+      },
+      {
+        id: 6,
+        title: 'Latihan UTS',
+        description: '',
+        image: '',
+        driveLink: 'https://drive.google.com/file/d/1Xk3D4BkchcIbIkyQRaccx9fXDhILpq6G/view?usp=drive_link',
+        semester: 1,
+        category: 'biologi',
+        type: 'file'
+      }
+        ]
+      },
+      {
+        id: 102,
+        title: 'Soal UAS',
+        description: '',
+        image: '',
+        driveLink: 'https://drive.google.com/drive/folders/17mAc-fHvjR-Ffj-H5ISX0Kuuo5rqnVQ2',
+        semester: 1,
+        category: 'biologi',
+        type: 'folder',
+        children: [
+        
+        ]
+      },
+      {
+        id: 103,
+        title: 'Silabus MA1101 Matematika I.pdf',
+        description: 'File Silabus resmi.',
+        image: '',
+        driveLink: 'https://drive.google.com/file/d/1xsGqZZq7r58F2xIyjsvkukXCUP7VMjOE/view?usp=drive_link',
+        semester: 1,
+        category: 'biologi',
+        type: 'file'
+      }
+    ]
   },
   {
     id: 2,
@@ -103,60 +521,279 @@ const libraryData: LibraryItem[] = [
     driveLink: 'https://drive.google.com/drive/folders/17uRIaxFB33GZ20YXJDABBs-DdImj2_v7',
     semester: 1,
     category: 'biologi',
+    type: 'folder',
+    children: [
+      {
+        id: 104,
+        title: 'Soal UTS',
+        description: '',
+        image: '',
+        driveLink: 'https://drive.google.com/file/d/1X5Nvbkab1UsGZufXtd05HJM2swYhMFaC/view?usp=drive_link',
+        semester: 1,
+        category: 'biologi',
+        type: 'folder',
+        children: [
+          {
+            id: 1,
+            title: 'Solusi UTS sesi 1 2025',
+            description: '',
+            image: '',
+            driveLink: 'https://drive.google.com/file/d/15mNrsubg3WMMrHY0y1ugCW1nvFQCheAS/view?usp=drive_link',
+            semester: 1,
+            category: 'biologi',
+            type: 'file'
+          },
+          {
+            id: 2,
+            title: 'Solusi UTS sesi 2 2025',
+            description: '',
+            image: '',
+            driveLink: 'https://drive.google.com/file/d/1RiVSbB6phP18MuybetdP7bL6SaB20CNY/view?usp=drive_link',
+            semester: 1,
+            category: 'biologi',
+            type: 'file'
+          },
+          {
+            id: 3,
+            title: 'Solusi UTS sesi 3 2025',
+            description: '',
+            image: '',
+            driveLink: 'https://drive.google.com/file/d/1s2VyPhEKCzloyvph6Oo_UIlE2zcozyj8/view?usp=drive_link',
+            semester: 1,
+            category: 'biologi',
+            type: 'file'
+          }
+        ]
+      },
+      {
+        id: 205,
+        title: 'Soal UAS',
+        description: '',
+        image: '',
+        driveLink: 'https://drive.google.com/file/d/1X5Nvbkab1UsGZufXtd05HJM2swYhMFaC/view?usp=drive_link',
+        semester: 1,
+        category: 'biologi',
+        type: 'folder',
+        children: [
+          {
+            id: 1,
+            title: 'Solusi UAS sesi 1 2025',
+            description: '',
+            image: '',
+            driveLink: 'https://drive.google.com/file/d/1_oiuCjhmHVe5q0r8gyThp91rlPQICLvZ/view?usp=drive_link',
+            semester: 1,
+            category: 'biologi',
+            type: 'file'
+          },
+          {
+            id: 2,
+            title: 'Solusi UAS sesi 2 2025',
+            description: '',
+            image: '',
+            driveLink: 'https://drive.google.com/file/d/1X9PJnnx3UUF3F4pfBQCERca6Uhr_k9t4/view?usp=drive_link',
+            semester: 1,
+            category: 'biologi',
+            type: 'file'
+          }
+        ]
+      },
+      {
+        id: 206,
+        title: 'Soal UP',
+        description: '',
+        image: '',
+        driveLink: 'https://drive.google.com/file/d/1xsGqZZq7r58F2xIyjsvkukXCUP7VMjOE/view?usp=drive_link',
+        semester: 1,
+        category: 'biologi',
+        type: 'folder',
+        children: [
+          {
+            id: 1,
+            title: 'Solusi UP 2025',
+            description: '',
+            image: '',
+            driveLink: 'https://drive.google.com/file/d/1w_aZbVPDDhydfpadv2SNBPtCQ-4K1zwA/view?usp=drive_link',
+            semester: 1,
+            category: 'biologi',
+            type: 'file'
+          }
+        ]
+      },
+      {
+        id: 207,
+        title: 'Soal LTM',
+        description: '',
+        image: '',
+        driveLink: 'https://drive.google.com/file/d/1xsGqZZq7r58F2xIyjsvkukXCUP7VMjOE/view?usp=drive_link',
+        semester: 1,
+        category: 'biologi',
+        type: 'folder',
+        children: [
+          {
+            id: 1,
+            title: 'Soal LTM 1 2025',
+            description: '',
+            image: '',
+            driveLink: 'https://drive.google.com/file/d/1idhzVCBIHopU7xUNp2rjM0UFuzud63PZ/view?usp=drive_link',
+            semester: 1,
+            category: 'biologi',
+            type: 'file'
+          },
+          {
+            id: 2,
+            title: 'Soal LTM 2 2025',
+            description: '',
+            image: '',
+            driveLink: 'https://drive.google.com/file/d/17B2IkGLrvhGpZwdefIzNt2cB2P2hHA52/view?usp=drive_link',
+            semester: 1,
+            category: 'biologi',
+            type: 'file'
+          },
+          {
+            id: 3,
+            title: 'Soal LTM 3 2025',
+            description: '',
+            image: '',
+            driveLink: 'https://drive.google.com/file/d/1bt54jr1KTCSJ-Y0Uc3Rw1ZDAY06f7G-z/view?usp=drive_link',
+            semester: 1,
+            category: 'biologi',
+            type: 'file'
+          },
+          {
+            id: 4,
+            title: 'Soal LTM 4 2025',
+            description: '',
+            image: '',
+            driveLink: 'https://drive.google.com/file/d/1fP9AoJw90Voes14wthHw0sjAMATDBKO1/view?usp=drive_link',
+            semester: 1,
+            category: 'biologi',
+            type: 'file'
+          },
+          {
+            id: 5,
+            title: 'Solusi LTM 5 2025',
+            description: '',
+            image: '',
+            driveLink: 'https://drive.google.com/file/d/1ppmpeXN0CAfd0ErVpvkcw5YIE_7oMKJa/view?usp=drive_link',
+            semester: 1,
+            category: 'biologi',
+            type: 'file'
+          },
+          {
+            id: 6,
+            title: 'Solusi LTM 6 2025',
+            description: '',
+            image: '',
+            driveLink: 'https://drive.google.com/file/d/1RiO7DpopZnKuKUQ7Y4ORqUOqEqkHIDAm/view?usp=drive_link',
+            semester: 1,
+            category: 'biologi',
+            type: 'file'
+          },
+          {
+            id: 7,
+            title: 'Solusi LTM 7 2025',
+            description: '',
+            image: '',
+            driveLink: 'https://drive.google.com/file/d/1UHytUCltUDgiHUdS39sDw36X3le9ejrM/view?usp=drive_link',
+            semester: 1,
+            category: 'biologi',
+            type: 'file'
+          }
+        ]
+      },
+      {
+        id: 208,
+        title: 'Silabus Perkuliahan',
+        description: '',
+        image: '',
+        driveLink: 'https://drive.google.com/file/d/1UHytUCltUDgiHUdS39sDw36X3le9ejrM/view?usp=drive_link',
+        semester: 1,
+        category: 'biologi',
+        type: 'folder',
+        children: [
+          {
+            id: 1,
+            title: 'Satuan Acara Perkuliahan Fisika Dasar I 2025/2026',
+            description: '',
+            image: '',
+            driveLink: 'https://drive.google.com/file/d/1bhZZkV1plertI7YORLOWTHLuz5Klwvar/view?usp=drive_link',
+            semester: 1,
+            category: 'biologi',
+            type: 'file'
+          },
+          {
+            id: 2,
+            title: 'Peraturan Perkuliahan Fisika Dasar I 2025/2026',
+            description: '',
+            image: '',
+            driveLink: 'https://drive.google.com/file/d/1njGFkm1rtP1uL1xiq29pPRfv8TqOF22S/view?usp=drive_link',
+            semester: 1,
+            category: 'biologi',
+            type: 'file'
+          }
+        ]
+      }
+    ]
   },
   {
-    id: 3,
+    id: 11,
     title: 'Kimia Dasar I',
     description: '',
     image: 'https://www.meritstore.in/wp-content/uploads/2016/12/10-reasons-to-love-Chemistry.png',
     driveLink: 'https://drive.google.com/drive/folders/17wZPpaTlpktOX6KvTw-g5LSoGO2v0Dmy',
     semester: 1,
     category: 'biologi',
+    type: 'folder'
   },
   {
-    id: 4,
+    id: 12,
     title: 'Berpikir Komputasional',
     description: '',
     image: 'https://bebras.uc.ac.id/wp-content/uploads/2023/03/4555e65ca6dc17e33db2bdc37b4bf285.jpg',
     driveLink: 'https://drive.google.com/drive/folders/181BGu_hCEZclmuF4uMfCeKHTQMGUl80q',
     semester: 1,
     category: 'biologi',
+    type: 'folder'
   },
   {
-    id: 5,
+    id: 13,
     title: 'Bahasa Indonesia',
     description: '',
     image: 'https://img.tempo.co/indonesiana/images/all/2022/04/27/f202204271847093.jpg',
     driveLink: 'https://drive.google.com/drive/folders/181BaH0ZtwQwAzgO--YLpeMxR1s2-wnNU',
     semester: 1,
     category: 'biologi',
+    type: 'folder'
   },
   {
-    id: 6,
+    id: 14,
     title: 'Pengantar Prinsip Keberlanjutan',
     description: '',
     image: 'https://www.shutterstock.com/shutterstock/videos/3524171411/thumb/12.jpg?ip=x480',
     driveLink: 'https://drive.google.com/drive/folders/1UXK6BdA_G9cnK8h5yFkLtreH2NusL32O?usp=drive_link',
     semester: 1,
     category: 'biologi',
+    type: 'folder'
   },
   {
-    id: 7,
+    id: 15,
     title: 'Laboratorium Fisika Dasar',
     description: '',
     image: 'https://physics.ipb.ac.id/wp-content/uploads/2022/11/IMG20221101093144-scaled.jpg',
     driveLink: 'https://drive.google.com/drive/folders/1mTZKJckkdk3YeF5x-eZDeEerspTCkaiB',
     semester: 1,
     category: 'biologi',
+    type: 'folder'
   },
   {
-    id: 8,
+    id: 16,
     title: 'Laboratorium Kimia Dasar',
     description: '',
     image: 'https://www.acrossinternational.com.au/web/image/28268-29c10fb8/Chemistry%20Lab%20Equipment%20.jpg',
     driveLink: 'https://drive.google.com/drive/folders/1PIs9eUDa-klzzagF5cne2Bd9IXns-rq2',
     semester: 1,
     category: 'biologi',
+    type: 'folder'
   },
 
 ];
@@ -165,6 +802,14 @@ const Library: React.FC = () => {
   const [selectedSemester, setSelectedSemester] = useState<number>(1);
   const [selectedCategory, setSelectedCategory] = useState<'mikrobiologi' | 'biologi'>('mikrobiologi');
   const [isSemesterOpen, setIsSemesterOpen] = useState(false);
+
+  const [isViewerOpen, setIsViewerOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<LibraryItem | null>(null);
+
+  const handleOpenViewer = (item: LibraryItem) => {
+    setSelectedItem(item);
+    setIsViewerOpen(true);
+  };
 
   const filteredItems = libraryData.filter(item =>
     item.semester === selectedSemester && item.category === selectedCategory
@@ -248,7 +893,11 @@ const Library: React.FC = () => {
           {filteredItems.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
               {filteredItems.map((item) => (
-                <a key={item.id} href={item.driveLink} target="_blank" rel="noopener noreferrer" className="group relative block bg-black rounded-xl overflow-hidden shadow-lg hover:shadow-yellow-500/40 transition-all duration-300 transform hover:-translate-y-2 border-2 border-transparent hover:border-yellow-400">
+                <button
+                  key={item.id}
+                  onClick={() => handleOpenViewer(item)}
+                  className="group relative block w-full text-left bg-black rounded-xl overflow-hidden shadow-lg hover:shadow-yellow-500/40 transition-all duration-300 transform hover:-translate-y-2 border-2 border-transparent hover:border-yellow-400"
+                >
                   <img src={item.image} alt={item.title} className="w-full h-56 object-cover transform group-hover:scale-110 transition-transform duration-500" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-transparent"></div>
                   <div className="absolute bottom-0 left-0 right-0 p-5 text-left">
@@ -256,7 +905,7 @@ const Library: React.FC = () => {
                     <p className="mt-1 text-gray-300 text-sm">{item.description}</p>
                   </div>
                   <ArrowUpRight className="absolute top-4 right-4 w-6 h-6 text-gray-400 group-hover:text-yellow-400 transition-colors duration-300 opacity-0 group-hover:opacity-100 transform scale-75 group-hover:scale-100" />
-                </a>
+                </button>
               ))}
             </div>
           ) : (
@@ -270,6 +919,14 @@ const Library: React.FC = () => {
           )}
         </div>
       </div>
+
+      <LibraryViewer
+        isOpen={isViewerOpen}
+        onClose={() => setIsViewerOpen(false)}
+        currentItem={selectedItem}
+        relatedItems={filteredItems}
+        onSelectItem={(item) => setSelectedItem(item)}
+      />
     </div>
   );
 };
