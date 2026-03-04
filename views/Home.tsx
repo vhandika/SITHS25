@@ -174,12 +174,11 @@ const Home: React.FC = () => {
             </div>
 
             <div className="relative z-10 flex flex-col items-center p-4 text-center">
-                <div className="mb-8 flex flex-col items-center animate-fade-in relative group">
-
+                <div className="mb-8 flex flex-col items-center relative group">
                     <img
                         src="/logo.png"
                         alt="SITH-S 25 Logo"
-                        className="h-64 w-64 object-contain md:h-80 md:w-80 lg:h-[480px] lg:w-[480px] transition-all duration-700 hover:scale-[1.02] active:scale-95 cursor-default"
+                        className={`h-64 w-64 object-contain md:h-80 md:w-80 lg:h-[480px] lg:w-[480px] transition-all duration-1000 hover:scale-[1.02] active:scale-95 cursor-default ${bgLoaded ? 'opacity-100' : 'opacity-0'}`}
                     />
                 </div>
 
@@ -198,17 +197,19 @@ const Home: React.FC = () => {
                 </div>
             </div>
 
-            {birthdayUsers.length > 0 && (
-                <div className="absolute bottom-5 left-5 z-30 animate-bounce">
-                    <button
-                        onClick={handleOpenModal}
-                        className="flex items-center gap-2 bg-yellow-400 text-black px-4 py-2 rounded-full font-bold shadow-[0_0_20px_rgba(250,204,21,0.6)] hover:scale-105 transition-transform border-2 border-white/20 text-sm"
-                    >
-                        <Gift size={18} className="animate-pulse shrink-0" />
-                        <span>Ada yang Ulang Tahun!</span>
-                    </button>
-                </div>
-            )}
+            {
+                birthdayUsers.length > 0 && (
+                    <div className="absolute bottom-5 left-5 z-30 animate-bounce">
+                        <button
+                            onClick={handleOpenModal}
+                            className="flex items-center gap-2 bg-yellow-400 text-black px-4 py-2 rounded-full font-bold shadow-[0_0_20px_rgba(250,204,21,0.6)] hover:scale-105 transition-transform border-2 border-white/20 text-sm"
+                        >
+                            <Gift size={18} className="animate-pulse shrink-0" />
+                            <span>Ada yang Ulang Tahun!</span>
+                        </button>
+                    </div>
+                )
+            }
 
             <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" id="bg-upload" />
 
@@ -223,28 +224,30 @@ const Home: React.FC = () => {
                 </span>
             </button>
 
-            {showBirthdayModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm animate-fade-in">
-                    <div className="relative w-full max-w-sm bg-gray-900 border border-yellow-400 rounded-xl p-8 text-center shadow-[0_0_50px_rgba(250,204,21,0.2)] animate-pop-in">
+            {
+                showBirthdayModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm animate-fade-in">
+                        <div className="relative w-full max-w-sm bg-gray-900 border border-yellow-400 rounded-xl p-8 text-center shadow-[0_0_50px_rgba(250,204,21,0.2)] animate-pop-in">
 
-                        <button onClick={handleCloseModal} className="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors">
-                            <X size={24} />
-                        </button>
+                            <button onClick={handleCloseModal} className="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors">
+                                <X size={24} />
+                            </button>
 
-                        <h2 className="text-3xl font-bold text-white uppercase tracking-wider mb-2 mt-2">Happy Birthday!</h2>
-                        <p className="text-gray-400 mb-8 text-sm">Selamat ulang tahun yaa buat:</p>
+                            <h2 className="text-3xl font-bold text-white uppercase tracking-wider mb-2 mt-2">Happy Birthday!</h2>
+                            <p className="text-gray-400 mb-8 text-sm">Selamat ulang tahun yaa buat:</p>
 
-                        <div className="flex flex-col gap-4 max-h-[300px] overflow-y-auto custom-scrollbar px-2">
-                            {birthdayUsers.map((user, index) => (
-                                <div key={index} className="bg-white/5 p-4 rounded-lg">
-                                    <h3 className="text-xl font-bold text-white tracking-wide">{user.name}</h3>
-                                    <p className="text-sm text-yellow-400 mt-1 italic">Wish you all the best!</p>
-                                </div>
-                            ))}
+                            <div className="flex flex-col gap-4 max-h-[300px] overflow-y-auto custom-scrollbar px-2">
+                                {birthdayUsers.map((user, index) => (
+                                    <div key={index} className="bg-white/5 p-4 rounded-lg">
+                                        <h3 className="text-xl font-bold text-white tracking-wide">{user.name}</h3>
+                                        <p className="text-sm text-yellow-400 mt-1 italic">Wish you all the best!</p>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             <style>{`
                 @keyframes popUp {
@@ -258,7 +261,7 @@ const Home: React.FC = () => {
                 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
                 .custom-scrollbar::-webkit-scrollbar-thumb { background: #555; border-radius: 10px; }
             `}</style>
-        </div>
+        </div >
     );
 };
 

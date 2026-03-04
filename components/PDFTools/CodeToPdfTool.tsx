@@ -45,7 +45,66 @@ print("--------------------------------");
 print(\`Karyawan \${nama},\`);
 print(\`Mendapatkan Gaji Pokok: Rp \${gaji_pokok}\`);`;
 
-const WORKER_SCRIPT = `
+const PYTHON_WORKER_SCRIPT = `
+importScripts("https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js");
+
+let pyodide = null;
+
+self.onmessage = async (e) => {
+    const { type, code, stdinLines } = e.data;
+    
+    if (type === 'execute') {
+        try {
+            if (!pyodide) {
+                self.postMessage({ type: 'status', text: '> Loading Python engine...' });
+                pyodide = await loadPyodide({
+                    indexURL: "https://cdn.jsdelivr.net/pyodide/v0.25.0/full/"
+                });
+                self.postMessage({ type: 'status', text: '> Engine loaded.' });
+                self.postMessage({ type: 'loaded' });
+            }
+
+            pyodide.setStdout({
+                batched: (text) => self.postMessage({ type: 'print', text })
+            });
+            pyodide.setStderr({
+                batched: (text) => self.postMessage({ type: 'print', text })
+            });
+
+            const patchedCode = \`
+import builtins
+import sys
+
+_stdin_lines = $\{JSON.stringify(stdinLines)}
+_stdin_idx = 0
+
+def _patched_input(prompt=""):
+    global _stdin_idx
+    if prompt: 
+        sys.stdout.write(str(prompt))
+        sys.stdout.flush()
+    
+    if _stdin_idx < len(_stdin_lines):
+        val = _stdin_lines[_stdin_idx]
+        _stdin_idx += 1
+        sys.stdout.write(str(val) + "\\\\n")
+        sys.stdout.flush()
+        return val
+    return ""
+
+builtins.input = _patched_input
+$\{code}
+\`;
+            await pyodide.runPythonAsync(patchedCode);
+            self.postMessage({ type: 'finished' });
+        } catch (err) {
+            self.postMessage({ type: 'error', message: err.message });
+        }
+    }
+};
+`;
+
+const JS_WORKER_SCRIPT = `
 self.onmessage = async (e) => {
     const { type, code } = e.data;
     if (type === 'execute') {
@@ -96,13 +155,14 @@ const CodeToPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const [activeTab, setActiveTab] = useState<'editor' | 'preview'>('editor');
     const [isRunning, setIsRunning] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
+    const [isPyLoading, setIsPyLoading] = useState(false);
     const workerRef = useRef<Worker | null>(null);
+    const currentLangRef = useRef<string | null>(null);
 
     useEffect(() => {
         if (language === 'python') localStorage.setItem('pdf_code_content_python', code);
         else localStorage.setItem('pdf_code_content_javascript', code);
 
-        localStorage.setItem('pdf_code_filename', fileName);
         localStorage.setItem('pdf_code_filename', fileName);
         localStorage.setItem('pdf_code_fontsize', String(fontSize));
         localStorage.setItem('pdf_code_language', language);
@@ -111,6 +171,16 @@ const CodeToPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         localStorage.setItem('pdf_code_iscolored', String(isColored));
         localStorage.setItem('pdf_code_stdin', pythonStdin);
     }, [code, fileName, fontSize, language, pageSize, bgTheme, isColored, pythonStdin]);
+
+    // Cleanup and termination when language changes
+    useEffect(() => {
+        if (workerRef.current) {
+            workerRef.current.terminate();
+            workerRef.current = null;
+        }
+        setIsRunning(false);
+        setIsPyLoading(false);
+    }, [language]);
 
     useEffect(() => {
         return () => {
@@ -289,78 +359,61 @@ const CodeToPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     };
 
     const runCode = async () => {
-        if (workerRef.current) workerRef.current.terminate();
+        // Terminate existing worker if it's already running OR if switching languages
+        if (workerRef.current && (isRunning || currentLangRef.current !== language)) {
+            workerRef.current.terminate();
+            workerRef.current = null;
+        }
+
         setTerminalLogs([{ type: 'system', text: `> Running ${language}...` }]);
         setIsRunning(true);
 
-        if (language === 'javascript') {
+        if (!workerRef.current) {
             try {
-                const blob = new Blob([WORKER_SCRIPT], { type: 'application/javascript' });
+                const scriptContent = language === 'javascript' ? JS_WORKER_SCRIPT : PYTHON_WORKER_SCRIPT;
+                const blob = new Blob([scriptContent], { type: 'application/javascript' });
                 const worker = new Worker(URL.createObjectURL(blob));
                 workerRef.current = worker;
+                currentLangRef.current = language;
 
                 worker.onmessage = async (e) => {
                     const { type, text, prompt, message } = e.data;
-                    if (type === 'print') {
-                        printToTerminal(text);
+                    if (type === 'status') {
+                        printToTerminal(text, 'system');
+                        if (text.includes("Loading")) setIsPyLoading(true);
+                    } else if (type === 'loaded') {
+                        setIsPyLoading(false);
+                    } else if (type === 'print') {
+                        setIsPyLoading(false);
+                        printToTerminal(text, 'output');
                     } else if (type === 'input_request') {
                         const val = await waitForInput(prompt);
                         worker.postMessage({ type: 'input_response', value: val });
                     } else if (type === 'finished') {
                         printToTerminal("> Finished.", 'system');
                         setIsRunning(false);
-                        worker.terminate();
-                        workerRef.current = null;
+                        setIsPyLoading(false);
                     } else if (type === 'error') {
                         printToTerminal(`Error: ${message}`, 'output');
                         setIsRunning(false);
+                        setIsPyLoading(false);
                         worker.terminate();
                         workerRef.current = null;
                     }
                 };
-
-                worker.postMessage({ type: 'execute', code });
             } catch (e: any) {
-                printToTerminal(`Error: ${e.message}`, 'output');
+                printToTerminal(`Error initializing worker: ${e.message}`, 'output');
                 setIsRunning(false);
+                return;
             }
-        } else {
-            try {
-                // Call the working backend API
-                const response = await fetch('https://api.sith-s25.my.id/api/execute-python', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        code: code,
-                        stdin: pythonStdin || ''
-                    })
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-
-                const data = await response.json();
-                
-                if (data.success) {
-                    if (data.stdout) {
-                        data.stdout.split('\n').forEach((line: string) => {
-                            if (line.trim()) printToTerminal(line, 'output');
-                        });
-                    }
-                    if (data.stderr) {
-                        printToTerminal(data.stderr, 'output');
-                    }
-                } else {
-                    printToTerminal(`Error: ${data.message || 'Unknown error'}`, 'output');
-                }
-                
-                printToTerminal("> Finished.", 'system');
-            } catch (e: any) { 
-                printToTerminal(`Error: ${e.message}`, 'output');
-            }
-            setIsRunning(false);
         }
+
+        const stdinLines = (pythonStdin || "").split('\n');
+        workerRef.current?.postMessage({
+            type: 'execute',
+            code,
+            stdinLines
+        });
     };
 
     const clearTerminal = () => {
@@ -565,7 +618,9 @@ const CodeToPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                         ))}</pre>
                                     <textarea ref={textareaRef} onScroll={handleEditorScroll} value={code} onChange={handleCodeChange} onKeyDown={handleKeyDown} className={`absolute inset-0 w-full h-full p-4 font-mono text-sm leading-relaxed resize-none outline-none bg-transparent whitespace-pre custom-scrollbar overflow-auto ${isColored ? `text-transparent ${isLightBackground(bgTheme) ? 'caret-black' : 'caret-white'}` : (isLightBackground(bgTheme) ? 'text-black' : 'text-[#d4d4d4]')}`} spellCheck={false} />
                                 </div>
-                                <button onClick={runCode} disabled={isRunning} className="hidden lg:flex absolute bottom-6 right-6 bg-green-600 hover:bg-green-500 text-white px-5 py-3 rounded-full shadow-lg font-bold z-10 items-center gap-2">{isRunning ? "Running..." : "Run"}</button>
+                                <button onClick={runCode} disabled={isRunning || isPyLoading} className="hidden lg:flex absolute bottom-6 right-6 bg-green-600 hover:bg-green-500 text-white px-5 py-3 rounded-full shadow-lg font-bold z-10 items-center gap-2">
+                                    {isPyLoading ? "Loading Engine..." : (isRunning ? "Running..." : "Run")}
+                                </button>
                             </div>
                             {language === 'python' && (
                                 <div className="bg-gray-900 border border-gray-700 rounded-xl p-4"><label className="block text-xs font-bold text-gray-400 mb-2 flex justify-between"><span>Input</span><span className="text-[10px] text-gray-500">Ketik input per baris</span></label>
