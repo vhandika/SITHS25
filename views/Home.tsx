@@ -179,8 +179,7 @@ const Home: React.FC = () => {
                     <img
                         src="/logo.png"
                         alt="SITH-S 25 Logo"
-                        className="h-64 w-64 object-contain md:h-80 md:w-80 lg:h-[480px] lg:w-[480px] transition-all duration-700 hover:scale-[1.02] active:scale-95 cursor-pointer"
-                        onClick={() => triggerConfetti()}
+                        className="h-64 w-64 object-contain md:h-80 md:w-80 lg:h-[480px] lg:w-[480px] transition-all duration-700 hover:scale-[1.02] active:scale-95 cursor-default"
                     />
                 </div>
 
