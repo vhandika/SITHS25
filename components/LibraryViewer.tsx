@@ -138,18 +138,38 @@ const LibraryViewer: React.FC<LibraryViewerProps> = ({ isOpen, onClose, currentI
                         }}
                     >
                         <div className="p-4 border-b border-white/5 bg-white/5 flex items-center justify-between shrink-0">
-                            <div className="flex items-center gap-2 text-[10px] font-black text-gray-500 uppercase tracking-widest">
-                                <LayoutList size={12} />
-                                {isRoot ? 'Daftar Materi' : viewingItem?.title}
+                            <div className="flex items-center gap-2 text-[10px] font-black text-gray-500 uppercase tracking-widest min-w-0 flex-1">
+                                <LayoutList size={12} className="shrink-0" />
+                                <span className="truncate">{isRoot ? 'Daftar Materi' : viewingItem?.title}</span>
                             </div>
-                            {!isRoot && (
-                                <button
-                                    onClick={handleBack}
-                                    className="flex items-center gap-1 text-[10px] font-black text-yellow-400 hover:text-yellow-300 transition-colors uppercase"
-                                >
-                                    <ChevronLeft size={14} /> Back
-                                </button>
-                            )}
+                            <div className="flex items-center gap-3 shrink-0 ml-4">
+                                {!isRoot && (
+                                    <button
+                                        onClick={handleBack}
+                                        className="flex items-center gap-1 text-[10px] font-black text-yellow-400 hover:text-yellow-300 transition-colors uppercase"
+                                    >
+                                        <ChevronLeft size={14} /> Back
+                                    </button>
+                                )}
+                                <div className="flex items-center gap-2 md:hidden border-l border-white/10 pl-3">
+                                    <a
+                                        href={rootItem?.driveLink || currentItem?.driveLink}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="p-1.5 text-gray-400 hover:text-white transition-colors"
+                                        title="Open Drive"
+                                    >
+                                        <ExternalLink size={16} />
+                                    </a>
+                                    <button
+                                        onClick={onClose}
+                                        className="p-1.5 text-red-400/80 hover:text-red-400 transition-colors"
+                                        title="Close"
+                                    >
+                                        <X size={18} />
+                                    </button>
+                                </div>
+                            </div>
                         </div>
 
                         <div className="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar">
