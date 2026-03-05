@@ -113,7 +113,7 @@ const About: React.FC = () => {
                 className={`mx-auto max-w-4xl px-6 pb-16 text-center transition-all duration-1000 ease-out transform ${visibleSections['about'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
                     }`}
             >
-                <h2 className="mb-6 text-2xl md:text-4xl font-bold uppercase tracking-widest text-white">
+                <h2 className="mb-8 text-2xl md:text-4xl font-bold uppercase tracking-widest text-white border-b border-gray-800 pb-4">
                     Tentang <span className="text-yellow-400">SITH-S</span>
                 </h2>
                 <p className="text-sm md:text-xl leading-relaxed text-gray-300 text-justify md:text-center">
