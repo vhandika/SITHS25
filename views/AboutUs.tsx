@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Users, ChevronRight, Instagram, ChevronLeft } from 'lucide-react';
 
 const bannerImages = [
-    "rem.png"
+    "BG1.png"
 ];
 
 interface Activity {
@@ -39,6 +39,7 @@ const About: React.FC = () => {
     const missionRef = useRef<HTMLDivElement>(null);
     const timelineRef = useRef<HTMLDivElement>(null);
     const detailRef = useRef<HTMLDivElement>(null);
+    const logoSectionRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const observerOptions = { threshold: 0.1, rootMargin: "0px" };
@@ -52,6 +53,7 @@ const About: React.FC = () => {
         if (visionRef.current) observer.observe(visionRef.current);
         if (missionRef.current) observer.observe(missionRef.current);
         if (timelineRef.current) observer.observe(timelineRef.current);
+        if (logoSectionRef.current) observer.observe(logoSectionRef.current);
 
         return () => observer.disconnect();
     }, []);
@@ -85,7 +87,7 @@ const About: React.FC = () => {
                 <div className="w-40 h-1 bg-yellow-400 mx-auto mt-8"></div>
             </div>
 
-            <div className="relative w-full max-w-6xl mx-auto h-[220px] md:h-[500px] overflow-hidden rounded-lg md:rounded-xl border border-gray-800 shadow-2xl group mb-16 px-4 md:px-0">
+            <div className="relative w-full max-w-6xl mx-auto h-[220px] md:h-[500px] overflow-hidden rounded-lg md:rounded-xl border border-gray-800 shadow-2xl group mb-16 px-4 md:px-0 animate-banner-entrance">
                 <div
                     className="flex h-full transition-transform duration-700 ease-out"
                     style={{ transform: `translateX(-${currentBanner * 100}%)` }}
@@ -115,8 +117,39 @@ const About: React.FC = () => {
                     Tentang <span className="text-yellow-400">SITH-S</span>
                 </h2>
                 <p className="text-sm md:text-xl leading-relaxed text-gray-300 text-justify md:text-center">
-                    Sekolah Ilmu dan Teknologi Hayati - Program Sains (SITH-S) adalah jurusan wibu.
+                    Sekolah Ilmu dan Teknologi Hayati - Sains (SITH-S) ITB memegang peranan penting dalam memajukan bidang life sciences melalui pengembangan biosains dan bioteknologi yang krusial bagi pengelolaan sumber daya alam di masa depan. Berpusat di Kampus Ganesha, SITH-S menjadi wadah akademik utama bagi mahasiswa yang ingin mendalami rumpun keilmuan sains hayati secara mendalam melalui program studi Biologi dan Mikrobiologi. Sementara itu, fokus pendidikan SITH juga diperluas melalui SITH-C di Kampus Cirebon yang secara spesifik menyelenggarakan program studi Biologi untuk menjangkau potensi daerah yang lebih luas.
                 </p>
+            </div>
+
+            <div
+                id="logo-section"
+                ref={logoSectionRef}
+                className={`mx-auto max-w-4xl px-6 py-16 text-center transition-all duration-1000 ease-out transform ${visibleSections['logo-section'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+                    }`}
+            >
+                <h2 className="mb-12 text-2xl md:text-4xl font-bold uppercase tracking-widest text-white">
+                    SITH-S Angkatan <span className="text-yellow-400">2025</span>
+                </h2>
+
+                <div className="flex flex-col items-center mb-16">
+                    <img
+                        src="/logo.png"
+                        alt="Logo SITH-S 2025"
+                        className="w-64 h-64 md:w-80 md:h-80 lg:w-[450px] lg:h-[450px] object-contain mb-8 drop-shadow-[0_0_25px_rgba(250,204,21,0.4)] hover:scale-105 transition-transform duration-500"
+                    />
+                </div>
+
+                <div className="text-center max-w-4xl mx-auto">
+                    <h3 className="text-xl md:text-2xl font-bold uppercase tracking-wide text-yellow-400 mb-8 border-b border-gray-800 pb-4">Makna Logo</h3>
+                    <p className="text-sm md:text-xl leading-relaxed text-gray-300 italic px-4">
+                        "
+                        Secara keseluruhan, logo angkatan Akshaya Rediviva menunjukkan harapan
+                        agar Akshaya Rediviva menjadi angkatan yang mampu bertahan
+                        menghadapi setiap tantangan, berkembang seiring berjalannya waktu dan
+                        perubahan fase, serta terus bangkit kembali ketika dihadapkan pada
+                        kesulitan."
+                    </p>
+                </div>
             </div>
 
             <div className="mx-auto max-w-6xl px-6 py-8 md:py-24 flex flex-col gap-12 md:gap-24">
@@ -132,7 +165,7 @@ const About: React.FC = () => {
                     <div>
                         <h3 className="hidden md:block text-3xl font-bold uppercase tracking-wide text-yellow-400 mb-4">Visi</h3>
                         <p className="text-base md:text-xl text-gray-300 leading-relaxed border-l-2 border-gray-700 pl-4">
-                            "Wibu wibu wibu"
+                            "Menjadi wadah pengembangan diri yang berkarakter, solid, dan berdaya guna dalam menguasai ilmu hayati serta berkontribusi nyata bagi lingkungan, masyarakat, dan masa depan yang berkelanjutan"
                         </p>
                     </div>
                 </div>
@@ -151,17 +184,22 @@ const About: React.FC = () => {
                         <ul className="space-y-3 md:space-y-4 text-base md:text-lg text-gray-300">
                             <li className="flex items-center md:justify-end gap-3">
                                 <ChevronRight className="text-yellow-400 h-4 w-4 md:hidden" />
-                                <span>ntah</span>
+                                <span>Menumbuhkan rasa solidaritas dan kekeluargaan di antara seluruh anggota SITH Sains</span>
                                 <ChevronRight className="hidden md:block text-yellow-400 h-5 w-5" />
                             </li>
                             <li className="flex items-center md:justify-end gap-3">
                                 <ChevronRight className="text-yellow-400 h-4 w-4 md:hidden" />
-                                <span>ntah</span>
+                                <span>Menyiadakan wadah eksplorasi untuk menggali potensi agar angkatan sites aktif secara akademik dan nonakademik</span>
                                 <ChevronRight className="hidden md:block text-yellow-400 h-5 w-5" />
                             </li>
                             <li className="flex items-center md:justify-end gap-3">
                                 <ChevronRight className="text-yellow-400 h-4 w-4 md:hidden" />
-                                <span>ntah</span>
+                                <span>Menanamkan nilai kebersamaan, empati, dan semangat saling mendukung dalam setiap langkah perjuangan</span>
+                                <ChevronRight className="hidden md:block text-yellow-400 h-5 w-5" />
+                            </li>
+                            <li className="flex items-center md:justify-end gap-3">
+                                <ChevronRight className="text-yellow-400 h-4 w-4 md:hidden" />
+                                <span>Menguatkan sinergi antara mahasiswa, dosen, dan alumni untuk menciptakan SITH Sains yang bersatu, berdaya, dan berdampak positif</span>
                                 <ChevronRight className="hidden md:block text-yellow-400 h-5 w-5" />
                             </li>
                         </ul>
@@ -317,6 +355,13 @@ const About: React.FC = () => {
                 }
                 .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
                 .animate-slide-up { animation: slideUp 0.5s ease-out 0.2s forwards; opacity: 0; }
+                @keyframes bannerEntrance {
+                    0% { opacity: 0; filter: brightness(0); transform: scale(1.02); }
+                    100% { opacity: 1; filter: brightness(1); transform: scale(1); }
+                }
+                .animate-banner-entrance {
+                    animation: bannerEntrance 2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+                }
             `}</style>
         </div>
     );
