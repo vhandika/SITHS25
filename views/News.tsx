@@ -16,12 +16,30 @@ const getCookie = (name: string) => {
 const LinkifiedContent: React.FC<{ text: string }> = ({ text }) => {
     if (!text) return null;
     const urlRegex = /(https?:\/\/[^\s]+)/g;
+    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'];
+
     return (
         <div className="space-y-4 text-gray-300 leading-relaxed text-base text-left">
             {text.split('\n').map((paragraph, index) => (
                 <p key={index} className="min-h-[1rem] whitespace-pre-wrap">
                     {paragraph.split(urlRegex).map((part, i) => {
                         if (part.match(urlRegex)) {
+                            const lowerPart = part.toLowerCase();
+                            const isImage = imageExtensions.some(ext => lowerPart.endsWith(ext) || lowerPart.includes(ext + '?'));
+
+                            if (isImage) {
+                                return (
+                                    <span key={i} className="block my-4">
+                                        <img
+                                            src={part}
+                                            alt="Content"
+                                            className="max-w-full h-auto rounded-lg border border-gray-800 shadow-xl mx-auto"
+                                            loading="lazy"
+                                        />
+                                    </span>
+                                );
+                            }
+
                             return (
                                 <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="text-yellow-400 hover:text-yellow-300 hover:underline break-all" onClick={(e) => e.stopPropagation()}>
                                     {part}
@@ -231,6 +249,42 @@ const News: React.FC = () => {
         }
     };
 
+    const handleContentImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            if (file.size > 5 * 1024 * 1024) {
+                showToast('Maksimal ukuran file 5MB', 'error');
+                return;
+            }
+
+            setIsUploading(true);
+            try {
+                const formDataUpload = new FormData();
+                formDataUpload.append('image', file);
+
+                const response = await fetchWithAuth(`${API_BASE_URL}/upload-image-content`, {
+                    method: 'POST',
+                    body: formDataUpload
+                });
+
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.message || 'Gagal upload');
+
+                const imageUrl = result.url;
+                setFormData(prev => ({
+                    ...prev,
+                    content: prev.content + (prev.content.endsWith('\n') || prev.content === '' ? '' : '\n') + imageUrl + '\n'
+                }));
+                showToast('Gambar berhasil diupload', 'success');
+            } catch (err: any) {
+                showToast(`Error: ${err.message}`, 'error');
+            } finally {
+                setIsUploading(false);
+                e.target.value = '';
+            }
+        }
+    };
+
     const openAddModal = () => {
         setIsEditing(false);
         setEditId(null);
@@ -277,6 +331,15 @@ const News: React.FC = () => {
                 
                 .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
                 .animate-fade-out { animation: fadeOut 0.3s ease-in forwards; }
+
+                /* CSS untuk menghilangkan scrollbar bawaan di modal */
+                .hide-scrollbar::-webkit-scrollbar {
+                    display: none;
+                }
+                .hide-scrollbar {
+                    -ms-overflow-style: none;
+                    scrollbar-width: none;
+                }
             `}</style>
 
             <div className="mx-auto max-w-7xl">
@@ -380,25 +443,26 @@ const News: React.FC = () => {
             {selectedArticle && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4 transition-all" onClick={handleCloseModal}>
                     <div className={`absolute inset-0 bg-black/95 backdrop-blur-sm ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`}></div>
+                    
+                    <button
+                        onClick={handleCloseModal}
+                        className="absolute top-4 right-4 md:top-6 md:right-6 bg-black/50 backdrop-blur-md p-2 rounded-full text-white hover:bg-yellow-400 hover:text-black transition-all z-[60]"
+                    >
+                        <X size={24} />
+                    </button>
+
                     <div
-                        className={`relative w-full max-w-4xl h-full md:h-[90vh] bg-gray-900 md:rounded-xl overflow-hidden shadow-2xl flex flex-col ${isClosing ? 'animate-pop-out' : 'animate-pop-in'}`}
+                        className={`relative w-full max-w-4xl h-full md:max-h-[90vh] bg-gray-900 md:rounded-xl overflow-y-auto hide-scrollbar shadow-2xl flex flex-col ${isClosing ? 'animate-pop-out' : 'animate-pop-in'}`}
                         onClick={e => e.stopPropagation()}
                     >
-                        <div className="relative w-full h-[50vh] md:h-[60%] flex-shrink-0">
+                        <div className="relative w-full min-h-[50vh] md:min-h-[60vh] flex-shrink-0">
                             <img
                                 src={selectedArticle.image_url || 'https://via.placeholder.com/800x600'}
-                                className="w-full h-full object-cover"
+                                className="absolute inset-0 w-full h-full object-cover"
                                 alt={selectedArticle.title}
                             />
-
                             <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/60 to-transparent"></div>
 
-                            <button
-                                onClick={handleCloseModal}
-                                className="absolute top-4 right-4 bg-black/50 backdrop-blur-md p-2 rounded-full text-white hover:bg-yellow-400 hover:text-black transition-all z-50"
-                            >
-                                <X size={24} />
-                            </button>
                             <div className="absolute bottom-0 left-0 w-full p-6 md:p-8 z-20 text-left">
                                 <div className="flex gap-3 mb-3">
                                     <span className="bg-yellow-400 px-3 py-1 text-xs font-bold text-black uppercase tracking-wider transform -skew-x-12 inline-block shadow-lg">
@@ -415,7 +479,8 @@ const News: React.FC = () => {
                                 </p>
                             </div>
                         </div>
-                        <div className="flex-1 overflow-y-auto custom-scrollbar bg-gray-900 p-6 md:p-10 text-left">
+                        
+                        <div className="flex-1 bg-gray-900 p-6 md:p-10 text-left">
                             <div className="max-w-3xl mx-auto">
                                 <LinkifiedContent text={selectedArticle.content} />
                             </div>
@@ -432,7 +497,7 @@ const News: React.FC = () => {
                     ></div>
 
                     <div
-                        className={`relative w-full max-w-2xl bg-gray-900 rounded-lg border border-gray-700 shadow-2xl p-6 overflow-y-auto max-h-[90vh] text-left ${isClosing ? 'animate-pop-out' : 'animate-pop-in'}`}
+                        className={`relative w-full max-w-2xl bg-gray-900 rounded-lg border border-gray-700 shadow-2xl p-6 overflow-y-auto max-h-[90vh] text-left hide-scrollbar ${isClosing ? 'animate-pop-out' : 'animate-pop-in'}`}
                     >
                         <div className="flex justify-between items-center mb-6 border-b border-gray-800 pb-4">
                             <h2 className="text-2xl font-bold text-white flex items-center gap-2">
@@ -468,7 +533,14 @@ const News: React.FC = () => {
                             </div>
                             <div>
                                 <label className="text-gray-400 text-sm block mb-1">Isi</label>
-                                <textarea required rows={5} className="w-full bg-black/50 border border-gray-700 rounded p-3 text-white focus:border-yellow-400 outline-none" value={formData.content} onChange={e => setFormData({ ...formData, content: e.target.value })} />
+                                <div className="mb-2">
+                                    <label className="inline-flex items-center px-4 py-2 bg-gray-800 text-gray-300 rounded text-sm cursor-pointer hover:bg-gray-700 transition-colors border border-gray-700">
+                                        <Plus size={16} className="mr-2" />
+                                        Upload Gambar
+                                        <input type="file" accept="image/*" onChange={handleContentImageUpload} className="hidden" disabled={isUploading} />
+                                    </label>
+                                </div>
+                                <textarea required rows={8} className="w-full bg-black/50 border border-gray-700 rounded p-3 text-white focus:border-yellow-400 outline-none font-mono text-sm" value={formData.content} onChange={e => setFormData({ ...formData, content: e.target.value })} />
                             </div>
                             <div className="pt-4 flex justify-end gap-3">
                                 <button type="button" onClick={() => !isUploading && handleCloseModal()} className="px-4 py-2 text-gray-400" disabled={isUploading}>Batal</button>
