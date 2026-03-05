@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Users, ChevronRight, Instagram, ChevronLeft } from 'lucide-react';
 
 const bannerImages = [
-    "BG1.png"
+    "BG1.webp"
 ];
 
 interface Activity {
@@ -45,7 +45,15 @@ const About: React.FC = () => {
         const observerOptions = { threshold: 0.1, rootMargin: "0px" };
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
-                setVisibleSections(prev => ({ ...prev, [entry.target.id]: entry.isIntersecting }));
+                const targetId = entry.target.id;
+                const isIntersecting = entry.isIntersecting;
+
+                setVisibleSections(prev => {
+                    if (prev[targetId] !== isIntersecting) {
+                        return { ...prev, [targetId]: isIntersecting };
+                    }
+                    return prev;
+                });
             });
         }, observerOptions);
 
@@ -356,11 +364,13 @@ const About: React.FC = () => {
                 .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
                 .animate-slide-up { animation: slideUp 0.5s ease-out 0.2s forwards; opacity: 0; }
                 @keyframes bannerEntrance {
-                    0% { opacity: 0; filter: brightness(0); transform: scale(1.02); }
-                    100% { opacity: 1; filter: brightness(1); transform: scale(1); }
+                    0% { opacity: 0; transform: scale(1.01); }
+                    100% { opacity: 1; transform: scale(1); }
                 }
                 .animate-banner-entrance {
-                    animation: bannerEntrance 2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+                    animation: bannerEntrance 1.5s ease-out forwards;
+                    backface-visibility: hidden;
+                    will-change: opacity, transform;
                 }
             `}</style>
         </div>
