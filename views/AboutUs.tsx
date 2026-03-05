@@ -40,6 +40,8 @@ const About: React.FC = () => {
     const timelineRef = useRef<HTMLDivElement>(null);
     const detailRef = useRef<HTMLDivElement>(null);
     const logoSectionRef = useRef<HTMLDivElement>(null);
+    const maknaLogoRef = useRef<HTMLDivElement>(null);
+    const maknaNamaRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const observerOptions = { threshold: 0.1, rootMargin: "0px" };
@@ -62,6 +64,8 @@ const About: React.FC = () => {
         if (missionRef.current) observer.observe(missionRef.current);
         if (timelineRef.current) observer.observe(timelineRef.current);
         if (logoSectionRef.current) observer.observe(logoSectionRef.current);
+        if (maknaLogoRef.current) observer.observe(maknaLogoRef.current);
+        if (maknaNamaRef.current) observer.observe(maknaNamaRef.current);
 
         return () => observer.disconnect();
     }, []);
@@ -132,31 +136,55 @@ const About: React.FC = () => {
             <div
                 id="logo-section"
                 ref={logoSectionRef}
-                className={`mx-auto max-w-4xl px-6 py-16 text-center transition-all duration-1000 ease-out transform ${visibleSections['logo-section'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+                className={`mx-auto max-w-5xl px-6 pt-16 pb-8 text-center transition-all duration-1000 ease-out transform ${visibleSections['logo-section'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
                     }`}
             >
                 <h2 className="mb-12 text-2xl md:text-4xl font-bold uppercase tracking-widest text-white">
                     SITH-S Angkatan <span className="text-yellow-400">2025</span>
                 </h2>
 
-                <div className="flex flex-col items-center mb-16">
+                <div className="flex flex-col items-center mb-8">
                     <img
                         src="/logo.png"
                         alt="Logo SITH-S 2025"
-                        className="w-64 h-64 md:w-80 md:h-80 lg:w-[450px] lg:h-[450px] object-contain mb-8 drop-shadow-[0_0_25px_rgba(250,204,21,0.4)] hover:scale-105 transition-transform duration-500"
+                        className="w-64 h-64 md:w-80 md:h-80 lg:w-[450px] lg:h-[450px] object-contain drop-shadow-[0_0_25px_rgba(250,204,21,0.4)] hover:scale-105 transition-transform duration-500"
                     />
                 </div>
+            </div>
 
-                <div className="text-center max-w-4xl mx-auto">
-                    <h3 className="text-xl md:text-2xl font-bold uppercase tracking-wide text-yellow-400 mb-8 border-b border-gray-800 pb-4">Makna Logo</h3>
-                    <p className="text-sm md:text-xl leading-relaxed text-gray-300 italic px-4">
-                        "
-                        Secara keseluruhan, logo angkatan Akshaya Rediviva menunjukkan harapan
-                        agar Akshaya Rediviva menjadi angkatan yang mampu bertahan
-                        menghadapi setiap tantangan, berkembang seiring berjalannya waktu dan
-                        perubahan fase, serta terus bangkit kembali ketika dihadapkan pada
-                        kesulitan."
-                    </p>
+            <div className="mx-auto max-w-5xl px-6 pb-16 overflow-hidden">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 text-center md:text-left">
+                    
+                    <div
+                        id="makna-logo"
+                        ref={maknaLogoRef}
+                        className={`flex flex-col transition-all duration-1000 ease-out transform ${visibleSections['makna-logo'] ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-12 md:-translate-x-20'}`}
+                    >
+                        <h3 className="text-xl md:text-2xl font-bold uppercase tracking-wide text-yellow-400 mb-6 border-b border-gray-800 pb-4 text-center">
+                            Makna Logo
+                        </h3>
+                        <p className="text-sm md:text-lg leading-relaxed text-gray-300 italic px-2 md:px-0 text-center md:text-justify">
+                            "Secara keseluruhan, logo angkatan Akshaya Rediviva menunjukkan harapan
+                            agar Akshaya Rediviva menjadi angkatan yang mampu bertahan
+                            menghadapi setiap tantangan, berkembang seiring berjalannya waktu dan
+                            perubahan fase, serta terus bangkit kembali ketika dihadapkan pada
+                            kesulitan."
+                        </p>
+                    </div>
+
+                    <div
+                        id="makna-nama"
+                        ref={maknaNamaRef}
+                        className={`flex flex-col transition-all duration-1000 ease-out transform ${visibleSections['makna-nama'] ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-12 md:translate-x-20'}`}
+                    >
+                        <h3 className="text-xl md:text-2xl font-bold uppercase tracking-wide text-yellow-400 mb-6 border-b border-gray-800 pb-4 text-center">
+                            Makna Nama Angkatan
+                        </h3>
+                        <p className="text-sm md:text-lg leading-relaxed text-gray-300 italic px-2 md:px-0 text-center md:text-justify">
+                            "Semangat Abadi dan Jiwa yang Terlahir Kembali, Akshaya Redeviva mencerminkan identitas SITH-S/C’25 sebagai angkatan yang memiliki ketahanan abadi dalam berkarya dan keberanian untuk terus berevolusi demi membawa perubahan positif di bidang ilmu dan teknologi hayati."
+                        </p>
+                    </div>
+
                 </div>
             </div>
 
