@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
     CalendarCheck, Plus, Upload, Camera, Users,
     BarChart3, CheckCircle, XCircle, Search, UserCheck, UserX, Lock, Clock, Loader, FileText,
@@ -29,6 +29,93 @@ const getCookie = (name: string) => {
         const parts = v.split('=');
         return parts[0].trim() === name ? decodeURIComponent(parts[1]) : r;
     }, '');
+};
+
+const ParticleBackground: React.FC = () => {
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        let animationFrameId: number;
+        let particles: any[] = [];
+
+        const resize = () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            initParticles();
+        };
+
+        const initParticles = () => {
+            particles = [];
+            const particleCount = Math.min(Math.floor(window.innerWidth / 12), 100);
+            for (let i = 0; i < particleCount; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    vx: (Math.random() - 0.5) * 0.8,
+                    vy: (Math.random() - 0.5) * 0.8,
+                    radius: Math.random() * 2 + 1
+                });
+            }
+        };
+
+        const draw = () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            for (let i = 0; i < particles.length; i++) {
+                let p = particles[i];
+
+                p.x += p.vx;
+                p.y += p.vy;
+
+                if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+                if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(250, 204, 21, 0.8)';
+                ctx.fill();
+
+                for (let j = i + 1; j < particles.length; j++) {
+                    let p2 = particles[j];
+                    let dx = p.x - p2.x;
+                    let dy = p.y - p2.y;
+                    let dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist < 140) {
+                        ctx.beginPath();
+                        const opacity = 0.35 - (dist / 140) * 0.35; 
+                        ctx.strokeStyle = `rgba(250, 204, 21, ${opacity})`;
+                        ctx.lineWidth = 1.2;
+                        ctx.moveTo(p.x, p.y);
+                        ctx.lineTo(p2.x, p2.y);
+                        ctx.stroke();
+                    }
+                }
+            }
+            animationFrameId = requestAnimationFrame(draw);
+        };
+
+        window.addEventListener('resize', resize);
+        resize();
+        draw();
+
+        return () => {
+            window.removeEventListener('resize', resize);
+            cancelAnimationFrame(animationFrameId);
+        };
+    }, []);
+
+    return (
+        <canvas
+            ref={canvasRef}
+            className="fixed inset-0 w-full h-full pointer-events-none z-0"
+        />
+    );
 };
 
 const Attendance: React.FC = () => {
@@ -447,485 +534,489 @@ const Attendance: React.FC = () => {
         };
     }, [allUsers, statsRecords, viewStatsId, searchFilter, sessions]);
 
-    // Google Sheets link
     const GSHEET_URL = 'https://docs.google.com/spreadsheets/d/146MsEriqhrN2s-FzmgS9HAXZ2K5zWYYxuVLi-dcC4W8/edit';
 
     return (
-        <div className="min-h-screen w-full bg-black py-16 lg:py-24 px-4 sm:px-6 lg:px-8 mt-16 lg:mt-0 font-sans text-white relative selection:bg-yellow-400 selection:text-black">
-            <div className="mx-auto max-w-7xl">
+        <div className="min-h-screen w-full py-16 lg:py-24 px-4 sm:px-6 lg:px-8 mt-16 lg:mt-0 font-sans text-white relative selection:bg-yellow-400 selection:text-black">
+            
+            <ParticleBackground />
 
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
-                    <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 flex items-center justify-center bg-yellow-400 text-black transform -skew-x-12">
-                            <span className="transform skew-x-12"><CalendarCheck size={32} /></span>
+            <div className="relative z-10">
+                <div className="mx-auto max-w-7xl">
+
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
+                        <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 flex items-center justify-center bg-yellow-400 text-black transform -skew-x-12">
+                                <span className="transform skew-x-12"><CalendarCheck size={32} /></span>
+                            </div>
+                            <h1 className="text-4xl font-bold tracking-wider uppercase text-white sm:text-5xl">Absensi</h1>
                         </div>
-                        <h1 className="text-4xl font-bold tracking-wider uppercase text-white sm:text-5xl">Absensi</h1>
+
+                        {isAdminOrSekretaris && (
+                            <div className="hidden md:block">
+                                <SkewedButton onClick={() => setIsCreateModalOpen(true)} icon={<Plus size={18} />}>
+                                    Buat Baru
+                                </SkewedButton>
+                            </div>
+                        )}
                     </div>
 
-                    {isAdminOrSekretaris && (
-                        <div className="hidden md:block">
-                            <SkewedButton onClick={() => setIsCreateModalOpen(true)} icon={<Plus size={18} />}>
-                                Buat Baru
-                            </SkewedButton>
-                        </div>
-                    )}
-                </div>
+                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                        {loading ? (
+                            <div className="col-span-full flex justify-center py-10">
+                                <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-yellow-400"></div>
+                            </div>
+                        ) : (
+                            sessions.map((session) => {
+                                const userRecord = userStatusMap[session.id];
+                                const isIzinMenyusul = userRecord?.status === 'Izin' && userRecord?.reason?.includes('[MENYUSUL]');
+                                const isDone = userRecord && !isIzinMenyusul;
 
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                    {loading ? (
-                        <div className="col-span-full flex justify-center py-10">
-                            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-yellow-400"></div>
-                        </div>
-                    ) : (
-                        sessions.map((session) => {
-                            const userRecord = userStatusMap[session.id];
-                            const isIzinMenyusul = userRecord?.status === 'Izin' && userRecord?.reason?.includes('[MENYUSUL]');
-                            const isDone = userRecord && !isIzinMenyusul;
+                                return (
+                                    <div key={session.id} className={`relative p-6 rounded-lg border text-left ${session.is_open ? 'border-yellow-400/50 bg-gray-900/60 backdrop-blur-sm' : 'border-gray-800 bg-black/60 backdrop-blur-sm'} transition-all hover:border-yellow-400/80 flex flex-col`}>
 
-                            return (
-                                <div key={session.id} className={`relative p-6 rounded-lg border text-left ${session.is_open ? 'border-yellow-400/50 bg-gray-900/60' : 'border-gray-800 bg-black'} transition-all hover:border-yellow-400/80 flex flex-col`}>
+                                        <div className="flex justify-between items-start mb-4 gap-3">
+                                            <div className="flex-1 w-0">
+                                                <h3
+                                                    className="text-xl font-bold text-white overflow-x-auto whitespace-nowrap [&::-webkit-scrollbar]:hidden"
+                                                    style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                                                >
+                                                    {session.title}
+                                                </h3>
+                                            </div>
 
-                                    <div className="flex justify-between items-start mb-4 gap-3">
-                                        <div className="flex-1 w-0">
-                                            <h3
-                                                className="text-xl font-bold text-white overflow-x-auto whitespace-nowrap [&::-webkit-scrollbar]:hidden"
-                                                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-                                            >
-                                                {session.title}
-                                            </h3>
+                                            {session.is_open ? (
+                                                <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded border border-green-500/50 flex items-center gap-1 shrink-0"><CheckCircle size={12} /> Buka</span>
+                                            ) : (
+                                                <span className="px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded border border-red-500/50 flex items-center gap-1 shrink-0"><XCircle size={12} /> Tutup</span>
+                                            )}
                                         </div>
 
-                                        {session.is_open ? (
-                                            <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded border border-green-500/50 flex items-center gap-1 shrink-0"><CheckCircle size={12} /> Buka</span>
-                                        ) : (
-                                            <span className="px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded border border-red-500/50 flex items-center gap-1 shrink-0"><XCircle size={12} /> Tutup</span>
-                                        )}
-                                    </div>
+                                        <p className="text-gray-400 text-sm mb-4 min-h-[40px] line-clamp-2">{session.description || 'Tidak ada deskripsi.'}</p>
 
-                                    <p className="text-gray-400 text-sm mb-4 min-h-[40px] line-clamp-2">{session.description || 'Tidak ada deskripsi.'}</p>
-
-                                    <div className="mt-auto pt-4 border-t border-gray-800/50">
-                                        {session.is_open && (
-                                            <>
-                                                {!isDone ? (
-                                                    <div className="flex gap-2">
-                                                        {isIzinMenyusul ? (
-                                                            <button
-                                                                onClick={() => setSelectedSession(session)}
-                                                                className="w-full py-2 bg-yellow-600 text-white font-bold uppercase text-xs sm:text-sm hover:bg-yellow-500 transition-colors rounded flex items-center justify-center gap-1 animate-pulse"
-                                                            >
-                                                                <ArrowRightCircle size={16} /> Menyusul Sekarang
-                                                            </button>
-                                                        ) : (
-                                                            <>
+                                        <div className="mt-auto pt-4 border-t border-gray-800/50">
+                                            {session.is_open && (
+                                                <>
+                                                    {!isDone ? (
+                                                        <div className="flex gap-2">
+                                                            {isIzinMenyusul ? (
                                                                 <button
                                                                     onClick={() => setSelectedSession(session)}
-                                                                    className="flex-1 py-2 bg-yellow-400 text-black font-bold uppercase text-xs sm:text-sm hover:bg-yellow-300 transition-colors rounded flex items-center justify-center gap-1"
+                                                                    className="w-full py-2 bg-yellow-600 text-white font-bold uppercase text-xs sm:text-sm hover:bg-yellow-500 transition-colors rounded flex items-center justify-center gap-1 animate-pulse"
                                                                 >
-                                                                    <CheckCircle size={16} /> Hadir
+                                                                    <ArrowRightCircle size={16} /> Menyusul Sekarang
                                                                 </button>
-
-                                                                <button
-                                                                    onClick={() => setSelectedSessionPermission(session)}
-                                                                    className="flex-1 py-2 bg-blue-600 text-white font-bold uppercase text-xs sm:text-sm hover:bg-blue-500 transition-colors rounded flex items-center justify-center gap-1"
-                                                                >
-                                                                    <FileText size={16} /> Izin
-                                                                </button>
-                                                            </>
-                                                        )}
-                                                    </div>
-                                                ) : (
-                                                    <button disabled className="w-full py-2 bg-gray-800 text-gray-500 font-bold uppercase text-sm rounded cursor-not-allowed border border-gray-700 flex items-center justify-center gap-2">
-                                                        <CheckCircle size={16} /> {userRecord?.status === 'Izin' ? 'Sudah Izin' : 'Sudah Hadir'}
-                                                    </button>
-                                                )}
-                                            </>
-                                        )}
-
-                                        {isAdminOrSekretaris && (
-                                            <div className="flex gap-2 mt-3 pt-2 border-t border-gray-800">
-                                                <button onClick={(e) => handleViewStats(e, session)} className="flex-1 py-1.5 text-xs bg-gray-800 hover:bg-gray-700 rounded text-white flex items-center justify-center gap-2">
-                                                    <BarChart3 size={14} /> Laporan
-                                                </button>
-                                                {session.is_open && (
-                                                    <button onClick={(e) => handleCloseSession(e, session.id)} className="flex-1 py-1.5 text-xs bg-red-900/30 hover:bg-red-900/50 text-red-400 rounded flex items-center justify-center gap-2">
-                                                        <Lock size={14} /> Tutup
-                                                    </button>
-                                                )}
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            );
-                        })
-                    )}
-                    {sessions.length === 0 && !loading && <div className="col-span-full text-center py-10 text-gray-500">Belum ada sesi absensi.</div>}
-                </div>
-            </div>
-
-            {isAdminOrSekretaris && (
-                <button
-                    onClick={() => setIsCreateModalOpen(true)}
-                    className="fixed bottom-6 right-6 z-40 md:hidden p-4 bg-yellow-400 text-black rounded-full shadow-lg hover:bg-yellow-300 transition-transform active:scale-95 flex items-center justify-center border-2 border-black"
-                    aria-label="Buat Sesi"
-                >
-                    <Plus size={28} />
-                </button>
-            )}
-
-            {viewStatsId && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
-                    <div className="w-full max-w-5xl bg-gray-900 border border-gray-700 rounded-lg flex flex-col h-[90vh]">
-                        <div className="p-6 border-b border-gray-800 flex justify-between items-center bg-gray-900">
-                            <div>
-                                <h2 className="text-xl font-bold text-white flex items-center gap-2"><BarChart3 /> Laporan</h2>
-                            </div>
-                            <button onClick={() => setViewStatsId(null)} className="text-gray-400 hover:text-white"><XCircle /></button>
-                        </div>
-
-                        <div className="flex-1 overflow-hidden flex flex-col p-6">
-                            <div className="bg-gray-800 p-4 rounded-lg mb-6 shrink-0">
-                                <div className="flex justify-between items-end mb-2">
-                                    <span className="text-white text-sm">Hadir + Izin</span>
-                                    <span className="text-yellow-400 font-bold text-xl">{presentPercentage > 100 ? 100 : presentPercentage}%</span>
-                                </div>
-                                <div className="w-full bg-gray-700 h-4 rounded-full overflow-hidden">
-                                    <div className="bg-green-500 h-full transition-all duration-500" style={{ width: `${presentPercentage > 100 ? 100 : presentPercentage}%` }} />
-                                </div>
-                            </div>
-
-                            <div className="flex flex-col sm:flex-row justify-between gap-4 mb-4 shrink-0">
-                                <div className="flex bg-gray-800 p-1 rounded-lg overflow-x-auto w-full sm:w-auto custom-scrollbar">
-                                    <button onClick={() => setActiveTab('hadir')} className={`flex-shrink-0 px-3 py-2 rounded-md text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'hadir' ? 'bg-green-600 text-white shadow' : 'text-gray-400 hover:text-white'}`}>
-                                        <div className="flex items-center gap-2"><UserCheck size={16} /> Hadir ({presentUsers.length})</div>
-                                    </button>
-                                    <button onClick={() => setActiveTab('izin')} className={`flex-shrink-0 px-3 py-2 rounded-md text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'izin' ? 'bg-blue-600 text-white shadow' : 'text-gray-400 hover:text-white'}`}>
-                                        <div className="flex items-center gap-2"><FileText size={16} /> Izin ({permissionUsers.length})</div>
-                                    </button>
-                                    <button onClick={() => setActiveTab('pending')} className={`flex-shrink-0 px-3 py-2 rounded-md text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'pending' ? 'bg-yellow-500 text-black shadow' : 'text-gray-400 hover:text-white'}`}>
-                                        <div className="flex items-center gap-2"><Clock size={16} /> Pending ({pendingUsers.length})</div>
-                                    </button>
-                                    <button onClick={() => setActiveTab('belum')} className={`flex-shrink-0 px-3 py-2 rounded-md text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'belum' ? 'bg-red-600 text-white shadow' : 'text-gray-400 hover:text-white'}`}>
-                                        <div className="flex items-center gap-2"><UserX size={16} /> Belum ({absentUsers.length})</div>
-                                    </button>
-                                </div>
-
-                                <div className="flex gap-2 w-full sm:w-auto">
-                                    <div className="relative flex-1 sm:w-64">
-                                        <input placeholder="Cari Nama / NIM..." className="w-full bg-black border border-gray-700 rounded pl-9 pr-3 py-2 text-sm text-white focus:border-yellow-400 outline-none" value={searchFilter} onChange={(e) => setSearchFilter(e.target.value)} />
-                                        <Search size={16} className="absolute left-3 top-2.5 text-gray-500" />
-                                    </div>
-
-                                    <a
-                                        href={GSHEET_URL}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        title="Buka Google Sheets"
-                                        className="transform hover:scale-110 transition-transform flex items-center justify-center shrink-0"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="40" height="40" viewBox="0 0 48 48">
-                                            <path fill="#43a047" d="M37,45H11c-1.657,0-3-1.343-3-3V6c0-1.657,1.343-3,3-3h19l10,10v29C40,43.657,38.657,45,37,45z"></path>
-                                            <path fill="#c8e6c9" d="M40,13h-7c-1.657,0-3-1.343-3-3V3L40,13z"></path>
-                                            <path fill="#2e7d32" d="M30,13h7l-7-7V13z"></path>
-                                            <path fill="#e8f5e9" d="M31.5,23h-15c-0.276,0-0.5-0.224-0.5-0.5s0.224-0.5,0.5-0.5h15c0.276,0,0.5,0.224,0.5,0.5S31.776,23,31.5,23z M31.5,19h-15c-0.276,0-0.5-0.224-0.5-0.5s0.224-0.5,0.5-0.5h15c0.276,0,0.5,0.224,0.5,0.5S31.776,19,31.5,19z M31.5,35h-15c-0.276,0-0.5-0.224-0.5-0.5s0.224-0.5,0.5-0.5h15c0.276,0,0.5,0.224,0.5,0.5S31.776,35,31.5,35z M31.5,27h-15c-0.276,0-0.5-0.224-0.5-0.5V26c0-0.276,0.224-0.5,0.5-0.5h15c0.276,0,0.5,0.224,0.5,0.5v0.5C32,26.776,31.776,27,31.5,27z M31.5,31h-15c-0.276,0-0.5-0.224-0.5-0.5s0.224-0.5,0.5-0.5h15c0.276,0,0.5,0.224,0.5,0.5S31.776,31,31.5,31z"></path>
-                                        </svg>
-                                    </a>
-                                </div>
-                            </div>
-
-                            <div className="flex-1 overflow-y-auto custom-scrollbar bg-black/30 rounded-lg border border-gray-800">
-                                <table className="w-full text-left text-sm">
-                                    <thead className="bg-gray-800 text-gray-200 uppercase text-xs sticky top-0 z-10">
-                                        <tr>
-                                            <th className="px-4 py-3 w-32">NIM</th>
-                                            <th className="px-4 py-3">Nama</th>
-                                            <th className="px-4 py-3 text-right">status </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-800">
-                                        {activeTab === 'hadir' && (
-                                            presentUsers.length > 0 ? presentUsers.map((rec, i) => (
-                                                <tr key={i} className="hover:bg-gray-800/40">
-                                                    <td className="px-4 py-3 font-mono text-yellow-400">{rec.user_nim}</td>
-                                                    <td className="px-4 py-3 text-gray-300">{rec.user_name}</td>
-                                                    <td className="px-4 py-3 text-right">
-                                                        <div className="flex items-center justify-end gap-2">
-                                                            <span className="text-xs bg-green-900/20 text-green-400 px-2 py-1 rounded border border-green-900">Hadir</span>
-                                                            {rec.photo_url && <button type="button" onClick={() => setPhotoPopupUrl(rec.photo_url)} className="text-blue-400 hover:underline text-xs">Bukti</button>}
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            )) : <tr><td colSpan={3} className="text-center py-8 text-gray-500">Kosong.</td></tr>
-                                        )}
-
-                                        {activeTab === 'izin' && (
-                                            permissionUsers.length > 0 ? permissionUsers.map((rec, i) => (
-                                                <tr key={i} className="hover:bg-gray-800/40">
-                                                    <td className="px-4 py-3 font-mono text-yellow-400">{rec.user_nim}</td>
-                                                    <td className="px-4 py-3 text-gray-300">
-                                                        <div>{rec.user_name}</div>
-                                                        {rec.reason && (
-                                                            <div className="text-xs text-gray-400 italic mt-0.5">
-                                                                {rec.reason.replace('[MENYUSUL]', '')}
-                                                            </div>
-                                                        )}
-                                                    </td>
-                                                    <td className="px-4 py-3 text-right">
-                                                        <div className="flex items-center justify-end gap-2">
-                                                            {rec.reason && rec.reason.includes('[MENYUSUL]') ? (
-                                                                <span className="text-xs bg-yellow-900/20 text-yellow-400 px-2 py-1 rounded border border-yellow-900">Menyusul</span>
                                                             ) : (
-                                                                <span className="text-xs bg-blue-900/20 text-blue-400 px-2 py-1 rounded border border-blue-900">Izin</span>
+                                                                <>
+                                                                    <button
+                                                                        onClick={() => setSelectedSession(session)}
+                                                                        className="flex-1 py-2 bg-yellow-400 text-black font-bold uppercase text-xs sm:text-sm hover:bg-yellow-300 transition-colors rounded flex items-center justify-center gap-1"
+                                                                    >
+                                                                        <CheckCircle size={16} /> Hadir
+                                                                    </button>
+
+                                                                    <button
+                                                                        onClick={() => setSelectedSessionPermission(session)}
+                                                                        className="flex-1 py-2 bg-blue-600 text-white font-bold uppercase text-xs sm:text-sm hover:bg-blue-500 transition-colors rounded flex items-center justify-center gap-1"
+                                                                    >
+                                                                        <FileText size={16} /> Izin
+                                                                    </button>
+                                                                </>
                                                             )}
-                                                            {rec.photo_url && <button type="button" onClick={() => setPhotoPopupUrl(rec.photo_url)} className="text-blue-400 hover:underline text-xs">Bukti</button>}
                                                         </div>
-                                                    </td>
-                                                </tr>
-                                            )) : <tr><td colSpan={3} className="text-center py-8 text-gray-500">Kosong.</td></tr>
-                                        )}
-
-                                        {activeTab === 'pending' && (
-                                            pendingUsers.length > 0 ? pendingUsers.map((rec, i) => (
-                                                <tr key={i} className="hover:bg-yellow-900/10 bg-yellow-900/5">
-                                                    <td className="px-4 py-3 font-mono text-yellow-400">{rec.user_nim}</td>
-                                                    <td className="px-4 py-3 text-white font-bold">{rec.user_name}</td>
-                                                    <td className="px-4 py-3 text-right flex items-center justify-end gap-2">
-                                                        {rec.photo_url ? (
-                                                            <button type="button" onClick={() => setPhotoPopupUrl(rec.photo_url)} className="text-blue-400 hover:text-blue-300 text-xs underline flex items-center gap-1 mr-2">
-                                                                <Camera size={14} /> Bukti
-                                                            </button>
-                                                        ) : <span className="text-xs text-red-400 italic mr-2">No Foto</span>}
-
-                                                        <button onClick={() => handleApproveUser(rec.id, rec.user_nim)} className="bg-green-600 hover:bg-green-500 text-white px-3 py-1 rounded text-xs font-bold flex items-center gap-1 shadow-lg">
-                                                            <CheckCircle size={14} /> ACC
+                                                    ) : (
+                                                        <button disabled className="w-full py-2 bg-gray-800/80 text-gray-500 font-bold uppercase text-sm rounded cursor-not-allowed border border-gray-700 flex items-center justify-center gap-2">
+                                                            <CheckCircle size={16} /> {userRecord?.status === 'Izin' ? 'Sudah Izin' : 'Sudah Hadir'}
                                                         </button>
-                                                    </td>
-                                                </tr>
-                                            )) : <tr><td colSpan={3} className="text-center py-8 text-gray-500">Kosong.</td></tr>
-                                        )}
+                                                    )}
+                                                </>
+                                            )}
 
-                                        {activeTab === 'belum' && (
-                                            absentUsers.length > 0 ? absentUsers.map((user, i) => (
-                                                <tr key={i} className="hover:bg-red-900/10 group">
-                                                    <td className="px-4 py-3 font-mono text-gray-500">{user.nim}</td>
-                                                    <td className="px-4 py-3 text-gray-300">{user.name}</td>
-                                                    <td className="px-4 py-3 text-right">
-                                                        <button onClick={() => handleChecklistUser(user)} className="opacity-60 group-hover:opacity-100 bg-gray-800 hover:bg-green-600 hover:text-white text-gray-400 border border-gray-600 px-3 py-1.5 rounded text-xs font-bold transition-all flex items-center gap-2 ml-auto">
-                                                            <CheckCircle size={14} /> Hadir
+                                            {isAdminOrSekretaris && (
+                                                <div className="flex gap-2 mt-3 pt-2 border-t border-gray-800">
+                                                    <button onClick={(e) => handleViewStats(e, session)} className="flex-1 py-1.5 text-xs bg-gray-800 hover:bg-gray-700 rounded text-white flex items-center justify-center gap-2">
+                                                        <BarChart3 size={14} /> Laporan
+                                                    </button>
+                                                    {session.is_open && (
+                                                        <button onClick={(e) => handleCloseSession(e, session.id)} className="flex-1 py-1.5 text-xs bg-red-900/30 hover:bg-red-900/50 text-red-400 rounded flex items-center justify-center gap-2">
+                                                            <Lock size={14} /> Tutup
                                                         </button>
-                                                    </td>
-                                                </tr>
-                                            )) : <tr><td colSpan={3} className="text-center py-8 text-gray-500">Kosong.</td></tr>
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                );
+                            })
+                        )}
+                        {sessions.length === 0 && !loading && <div className="col-span-full text-center py-10 text-gray-400 bg-black/40 backdrop-blur-sm rounded-lg border border-gray-800">Belum ada sesi absensi.</div>}
                     </div>
                 </div>
-            )}
 
-            {selectedSession && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
-                    <div className="w-full max-w-md bg-gray-900 border border-gray-700 rounded-lg p-6">
-                        <div className="flex items-center gap-2 mb-4 text-yellow-400">
-                            <CheckCircle className="shrink-0" />
-                            <h2 className="text-xl font-bold text-white truncate">{selectedSession.title}</h2>
-                        </div>
+                {isAdminOrSekretaris && (
+                    <button
+                        onClick={() => setIsCreateModalOpen(true)}
+                        className="fixed bottom-6 right-6 z-40 md:hidden p-4 bg-yellow-400 text-black rounded-full shadow-lg hover:bg-yellow-300 transition-transform active:scale-95 flex items-center justify-center border-2 border-black"
+                        aria-label="Buat Sesi"
+                    >
+                        <Plus size={28} />
+                    </button>
+                )}
 
-                        <form onSubmit={handleSubmitAttendance} className="space-y-4 text-left">
-                            <div><label className="block text-gray-400 text-sm mb-1">NIM</label><input disabled value={userNIM || ''} className="w-full bg-black border border-gray-700 rounded p-2 text-gray-500 cursor-not-allowed" /></div>
-
-                            {selectedSession.is_photo_required ? (
+                {viewStatsId && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
+                        <div className="w-full max-w-5xl bg-gray-900 border border-gray-700 rounded-lg flex flex-col h-[90vh] shadow-2xl">
+                            <div className="p-6 border-b border-gray-800 flex justify-between items-center bg-gray-900 rounded-t-lg">
                                 <div>
-                                    <label className="block text-yellow-400 text-sm mb-2 font-bold flex items-center gap-1"><Camera size={16} /> Foto Bukti (Wajib)</label>
+                                    <h2 className="text-xl font-bold text-white flex items-center gap-2"><BarChart3 /> Laporan</h2>
+                                </div>
+                                <button onClick={() => setViewStatsId(null)} className="text-gray-400 hover:text-white transition-colors"><XCircle /></button>
+                            </div>
 
-                                    {!previewUrl && (
-                                        <div className="flex gap-2 mb-3">
-                                            <label className="flex-1 py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-lg flex items-center justify-center gap-2 border border-gray-600 cursor-pointer transition-all">
-                                                <Camera size={20} /> Buka Kamera
-                                                <input type="file" accept="image/*" capture="environment" onChange={handleFileChange} className="hidden" />
-                                            </label>
-                                            <label className="flex-1 py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-lg flex items-center justify-center gap-2 border border-gray-600 cursor-pointer transition-all">
-                                                <ImageIcon size={20} /> Pilih File
-                                                <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
-                                            </label>
-                                        </div>
-                                    )}
+                            <div className="flex-1 overflow-hidden flex flex-col p-6">
+                                <div className="bg-gray-800 p-4 rounded-lg mb-6 shrink-0">
+                                    <div className="flex justify-between items-end mb-2">
+                                        <span className="text-white text-sm">Hadir + Izin</span>
+                                        <span className="text-yellow-400 font-bold text-xl">{presentPercentage > 100 ? 100 : presentPercentage}%</span>
+                                    </div>
+                                    <div className="w-full bg-gray-700 h-4 rounded-full overflow-hidden">
+                                        <div className="bg-green-500 h-full transition-all duration-500" style={{ width: `${presentPercentage > 100 ? 100 : presentPercentage}%` }} />
+                                    </div>
+                                </div>
 
-                                    <div className="border-2 border-dashed border-gray-700 rounded-lg p-4 text-center">
-                                        {isCompressing ? (
-                                            <div className="text-yellow-400 text-sm flex flex-col items-center">
-                                                <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-yellow-400 mb-2"></div>
-                                                Memproses gambar...
-                                            </div>
-                                        ) : previewUrl ? (
-                                            <div className="relative inline-block">
-                                                <img src={previewUrl} className="max-h-40 mx-auto rounded" alt="Preview" />
-                                                <button
-                                                    type="button"
-                                                    onClick={() => { setPhotoFile(null); setPreviewUrl(null); }}
-                                                    className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-400 text-white rounded-full p-1"
-                                                >
-                                                    <X size={14} />
-                                                </button>
-                                            </div>
-                                        ) : (
-                                            <div className="text-gray-500 text-sm flex flex-col items-center py-2">
-                                                <Upload size={24} className="mb-2" />
-                                                Pilih metode di atas
-                                            </div>
-                                        )}
+                                <div className="flex flex-col sm:flex-row justify-between gap-4 mb-4 shrink-0">
+                                    <div className="flex bg-gray-800 p-1 rounded-lg overflow-x-auto w-full sm:w-auto custom-scrollbar">
+                                        <button onClick={() => setActiveTab('hadir')} className={`flex-shrink-0 px-3 py-2 rounded-md text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'hadir' ? 'bg-green-600 text-white shadow' : 'text-gray-400 hover:text-white'}`}>
+                                            <div className="flex items-center gap-2"><UserCheck size={16} /> Hadir ({presentUsers.length})</div>
+                                        </button>
+                                        <button onClick={() => setActiveTab('izin')} className={`flex-shrink-0 px-3 py-2 rounded-md text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'izin' ? 'bg-blue-600 text-white shadow' : 'text-gray-400 hover:text-white'}`}>
+                                            <div className="flex items-center gap-2"><FileText size={16} /> Izin ({permissionUsers.length})</div>
+                                        </button>
+                                        <button onClick={() => setActiveTab('pending')} className={`flex-shrink-0 px-3 py-2 rounded-md text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'pending' ? 'bg-yellow-500 text-black shadow' : 'text-gray-400 hover:text-white'}`}>
+                                            <div className="flex items-center gap-2"><Clock size={16} /> Pending ({pendingUsers.length})</div>
+                                        </button>
+                                        <button onClick={() => setActiveTab('belum')} className={`flex-shrink-0 px-3 py-2 rounded-md text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'belum' ? 'bg-red-600 text-white shadow' : 'text-gray-400 hover:text-white'}`}>
+                                            <div className="flex items-center gap-2"><UserX size={16} /> Belum ({absentUsers.length})</div>
+                                        </button>
                                     </div>
 
-                                    <input
-                                        type="text"
-                                        required
-                                        value={photoFile ? 'has-photo' : ''}
-                                        onChange={() => { }}
-                                        className="opacity-0 h-0 w-0 absolute"
-                                        tabIndex={-1}
-                                    />
-                                </div>
-                            ) : (
-                                <div>
-                                    <label className="block text-gray-400 text-sm mb-2 flex items-center gap-1"><Camera size={16} /> Foto Bukti (Opsional)</label>
-
-                                    {!previewUrl && (
-                                        <div className="flex gap-2 mb-3">
-                                            <label className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg flex items-center justify-center gap-2 border border-gray-600 cursor-pointer text-sm transition-all">
-                                                <Camera size={16} /> Kamera
-                                                <input type="file" accept="image/*" capture="environment" onChange={handleFileChange} className="hidden" />
-                                            </label>
-                                            <label className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg flex items-center justify-center gap-2 border border-gray-600 cursor-pointer text-sm transition-all">
-                                                <ImageIcon size={16} /> File
-                                                <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
-                                            </label>
+                                    <div className="flex gap-2 w-full sm:w-auto">
+                                        <div className="relative flex-1 sm:w-64">
+                                            <input placeholder="Cari Nama / NIM..." className="w-full bg-black border border-gray-700 rounded pl-9 pr-3 py-2 text-sm text-white focus:border-yellow-400 outline-none transition-colors" value={searchFilter} onChange={(e) => setSearchFilter(e.target.value)} />
+                                            <Search size={16} className="absolute left-3 top-2.5 text-gray-500" />
                                         </div>
-                                    )}
 
-                                    {previewUrl && (
-                                        <div className="relative inline-block">
-                                            <img src={previewUrl} className="max-h-32 rounded border border-gray-700" alt="Preview" />
-                                            <button type="button" onClick={() => { setPhotoFile(null); setPreviewUrl(null); }} className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-400 text-white rounded-full p-1">
-                                                <X size={12} />
-                                            </button>
-                                        </div>
-                                    )}
-
-                                    {isCompressing && <div className="text-sm text-yellow-400 mt-2">Mengkompres gambar...</div>}
+                                        <a
+                                            href={GSHEET_URL}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            title="Buka Google Sheets"
+                                            className="transform hover:scale-110 transition-transform flex items-center justify-center shrink-0"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="40" height="40" viewBox="0 0 48 48">
+                                                <path fill="#43a047" d="M37,45H11c-1.657,0-3-1.343-3-3V6c0-1.657,1.343-3,3-3h19l10,10v29C40,43.657,38.657,45,37,45z"></path>
+                                                <path fill="#c8e6c9" d="M40,13h-7c-1.657,0-3-1.343-3-3V3L40,13z"></path>
+                                                <path fill="#2e7d32" d="M30,13h7l-7-7V13z"></path>
+                                                <path fill="#e8f5e9" d="M31.5,23h-15c-0.276,0-0.5-0.224-0.5-0.5s0.224-0.5,0.5-0.5h15c0.276,0,0.5,0.224,0.5,0.5S31.776,23,31.5,23z M31.5,19h-15c-0.276,0-0.5-0.224-0.5-0.5s0.224-0.5,0.5-0.5h15c0.276,0,0.5,0.224,0.5,0.5S31.776,19,31.5,19z M31.5,35h-15c-0.276,0-0.5-0.224-0.5-0.5s0.224-0.5,0.5-0.5h15c0.276,0,0.5,0.224,0.5,0.5S31.776,35,31.5,35z M31.5,27h-15c-0.276,0-0.5-0.224-0.5-0.5V26c0-0.276,0.224-0.5,0.5-0.5h15c0.276,0,0.5,0.224,0.5,0.5v0.5C32,26.776,31.776,27,31.5,27z M31.5,31h-15c-0.276,0-0.5-0.224-0.5-0.5s0.224-0.5,0.5-0.5h15c0.276,0,0.5,0.224,0.5,0.5S31.776,31,31.5,31z"></path>
+                                            </svg>
+                                        </a>
+                                    </div>
                                 </div>
-                            )}
 
-                            <div className="flex gap-2 pt-4">
-                                <button type="button" onClick={closeModals} className="flex-1 py-2 bg-gray-800 text-white rounded hover:bg-gray-700">Batal</button>
-                                <button
-                                    type="submit"
-                                    disabled={isSubmitting || isCompressing}
-                                    className="flex-1 py-2 bg-yellow-400 text-black font-bold rounded hover:bg-yellow-300 disabled:opacity-50"
-                                >
-                                    {isSubmitting ? 'Mengirim...' : isCompressing ? 'Memproses...' : 'Kirim Hadir'}
-                                </button>
+                                <div className="flex-1 overflow-y-auto custom-scrollbar bg-black/50 rounded-lg border border-gray-800">
+                                    <table className="w-full text-left text-sm">
+                                        <thead className="bg-gray-800 text-gray-200 uppercase text-xs sticky top-0 z-10">
+                                            <tr>
+                                                <th className="px-4 py-3 w-32">NIM</th>
+                                                <th className="px-4 py-3">Nama</th>
+                                                <th className="px-4 py-3 text-right">status </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-800">
+                                            {activeTab === 'hadir' && (
+                                                presentUsers.length > 0 ? presentUsers.map((rec, i) => (
+                                                    <tr key={i} className="hover:bg-gray-800/40 transition-colors">
+                                                        <td className="px-4 py-3 font-mono text-yellow-400">{rec.user_nim}</td>
+                                                        <td className="px-4 py-3 text-gray-300">{rec.user_name}</td>
+                                                        <td className="px-4 py-3 text-right">
+                                                            <div className="flex items-center justify-end gap-2">
+                                                                <span className="text-xs bg-green-900/20 text-green-400 px-2 py-1 rounded border border-green-900">Hadir</span>
+                                                                {rec.photo_url && <button type="button" onClick={() => setPhotoPopupUrl(rec.photo_url)} className="text-blue-400 hover:underline text-xs">Bukti</button>}
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                )) : <tr><td colSpan={3} className="text-center py-8 text-gray-500">Kosong.</td></tr>
+                                            )}
+
+                                            {activeTab === 'izin' && (
+                                                permissionUsers.length > 0 ? permissionUsers.map((rec, i) => (
+                                                    <tr key={i} className="hover:bg-gray-800/40 transition-colors">
+                                                        <td className="px-4 py-3 font-mono text-yellow-400">{rec.user_nim}</td>
+                                                        <td className="px-4 py-3 text-gray-300">
+                                                            <div>{rec.user_name}</div>
+                                                            {rec.reason && (
+                                                                <div className="text-xs text-gray-400 italic mt-0.5">
+                                                                    {rec.reason.replace('[MENYUSUL]', '')}
+                                                                </div>
+                                                            )}
+                                                        </td>
+                                                        <td className="px-4 py-3 text-right">
+                                                            <div className="flex items-center justify-end gap-2">
+                                                                {rec.reason && rec.reason.includes('[MENYUSUL]') ? (
+                                                                    <span className="text-xs bg-yellow-900/20 text-yellow-400 px-2 py-1 rounded border border-yellow-900">Menyusul</span>
+                                                                ) : (
+                                                                    <span className="text-xs bg-blue-900/20 text-blue-400 px-2 py-1 rounded border border-blue-900">Izin</span>
+                                                                )}
+                                                                {rec.photo_url && <button type="button" onClick={() => setPhotoPopupUrl(rec.photo_url)} className="text-blue-400 hover:underline text-xs">Bukti</button>}
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                )) : <tr><td colSpan={3} className="text-center py-8 text-gray-500">Kosong.</td></tr>
+                                            )}
+
+                                            {activeTab === 'pending' && (
+                                                pendingUsers.length > 0 ? pendingUsers.map((rec, i) => (
+                                                    <tr key={i} className="hover:bg-yellow-900/20 bg-yellow-900/10 transition-colors">
+                                                        <td className="px-4 py-3 font-mono text-yellow-400">{rec.user_nim}</td>
+                                                        <td className="px-4 py-3 text-white font-bold">{rec.user_name}</td>
+                                                        <td className="px-4 py-3 text-right flex items-center justify-end gap-2">
+                                                            {rec.photo_url ? (
+                                                                <button type="button" onClick={() => setPhotoPopupUrl(rec.photo_url)} className="text-blue-400 hover:text-blue-300 text-xs underline flex items-center gap-1 mr-2 transition-colors">
+                                                                    <Camera size={14} /> Bukti
+                                                                </button>
+                                                            ) : <span className="text-xs text-red-400 italic mr-2">No Foto</span>}
+
+                                                            <button onClick={() => handleApproveUser(rec.id, rec.user_nim)} className="bg-green-600 hover:bg-green-500 text-white px-3 py-1 rounded text-xs font-bold flex items-center gap-1 shadow-lg transition-colors">
+                                                                <CheckCircle size={14} /> ACC
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                )) : <tr><td colSpan={3} className="text-center py-8 text-gray-500">Kosong.</td></tr>
+                                            )}
+
+                                            {activeTab === 'belum' && (
+                                                absentUsers.length > 0 ? absentUsers.map((user, i) => (
+                                                    <tr key={i} className="hover:bg-red-900/20 group transition-colors">
+                                                        <td className="px-4 py-3 font-mono text-gray-500">{user.nim}</td>
+                                                        <td className="px-4 py-3 text-gray-300">{user.name}</td>
+                                                        <td className="px-4 py-3 text-right">
+                                                            <button onClick={() => handleChecklistUser(user)} className="opacity-60 group-hover:opacity-100 bg-gray-800 hover:bg-green-600 hover:text-white text-gray-400 border border-gray-600 px-3 py-1.5 rounded text-xs font-bold transition-all flex items-center gap-2 ml-auto">
+                                                                <CheckCircle size={14} /> Hadir
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                )) : <tr><td colSpan={3} className="text-center py-8 text-gray-500">Kosong.</td></tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
-                        </form>
-                    </div>
-                </div>
-            )}
-
-            {selectedSessionPermission && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
-                    <div className="w-full max-w-md bg-gray-900 border border-gray-700 rounded-lg p-6">
-                        <div className="flex items-center gap-2 mb-4 text-blue-400">
-                            <FileText className="shrink-0" />
-                            <h2 className="text-xl font-bold text-white truncate">{selectedSessionPermission.title}</h2>
                         </div>
+                    </div>
+                )}
 
-                        <form onSubmit={handleSubmitPermission} className="space-y-4 text-left">
-                            <div><label className="block text-gray-400 text-sm mb-1">NIM</label><input disabled value={userNIM || ''} className="w-full bg-black border border-gray-700 rounded p-2 text-gray-500 cursor-not-allowed" /></div>
-
-                            <div>
-                                <label className="block text-gray-400 text-sm mb-1">Alasan Izin (Wajib)</label>
-                                <textarea required value={permissionReason} onChange={e => setPermissionReason(e.target.value)} placeholder="Jelaskan sejelas-jelasnya" className="w-full bg-black border border-gray-700 rounded p-2 text-white focus:border-blue-500 outline-none" rows={3} />
+                {selectedSession && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
+                        <div className="w-full max-w-md bg-gray-900 border border-gray-700 rounded-lg p-6 shadow-2xl">
+                            <div className="flex items-center gap-2 mb-4 text-yellow-400">
+                                <CheckCircle className="shrink-0" />
+                                <h2 className="text-xl font-bold text-white truncate">{selectedSession.title}</h2>
                             </div>
 
-                            <div className="flex items-center gap-3 bg-gray-800 p-3 rounded border border-gray-700 hover:border-blue-500/50 transition-colors">
-                                <input
-                                    type="checkbox"
-                                    id="menyusul-check"
-                                    checked={isMenyusul}
-                                    onChange={(e) => setIsMenyusul(e.target.checked)}
-                                    className="w-5 h-5 rounded text-blue-600 focus:ring-blue-500 bg-gray-900 border-gray-600 cursor-pointer"
-                                />
-                                <label htmlFor="menyusul-check" className="text-sm text-gray-200 cursor-pointer select-none">
-                                    Saya akan <strong>menyusul</strong> nanti.
-                                    <p className="text-xs text-gray-400 mt-0.5">Centang jika anda berencana hadir terlambat.</p>
-                                </label>
-                            </div>
+                            <form onSubmit={handleSubmitAttendance} className="space-y-4 text-left">
+                                <div><label className="block text-gray-400 text-sm mb-1">NIM</label><input disabled value={userNIM || ''} className="w-full bg-black border border-gray-700 rounded p-2 text-gray-500 cursor-not-allowed" /></div>
 
-                            <div>
-                                <label className="block text-gray-400 text-sm mb-1 flex items-center gap-1"><Upload size={16} /> Bukti (Opsional)</label>
-                                <input type="file" accept="image/*" onChange={handleFileChange} className="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-500" />
-                                {isCompressing ? (
-                                    <div className="text-sm text-blue-400 mt-2">Mengkompres gambar...</div>
-                                ) : previewUrl && (
-                                    <img src={previewUrl} className="mt-2 max-h-32 rounded border border-gray-700" alt="Preview" />
+                                {selectedSession.is_photo_required ? (
+                                    <div>
+                                        <label className="block text-yellow-400 text-sm mb-2 font-bold flex items-center gap-1"><Camera size={16} /> Foto Bukti (Wajib)</label>
+
+                                        {!previewUrl && (
+                                            <div className="flex gap-2 mb-3">
+                                                <label className="flex-1 py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-lg flex items-center justify-center gap-2 border border-gray-600 cursor-pointer transition-all">
+                                                    <Camera size={20} /> Buka Kamera
+                                                    <input type="file" accept="image/*" capture="environment" onChange={handleFileChange} className="hidden" />
+                                                </label>
+                                                <label className="flex-1 py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-lg flex items-center justify-center gap-2 border border-gray-600 cursor-pointer transition-all">
+                                                    <ImageIcon size={20} /> Pilih File
+                                                    <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+                                                </label>
+                                            </div>
+                                        )}
+
+                                        <div className="border-2 border-dashed border-gray-700 rounded-lg p-4 text-center">
+                                            {isCompressing ? (
+                                                <div className="text-yellow-400 text-sm flex flex-col items-center">
+                                                    <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-yellow-400 mb-2"></div>
+                                                    Memproses gambar...
+                                                </div>
+                                            ) : previewUrl ? (
+                                                <div className="relative inline-block">
+                                                    <img src={previewUrl} className="max-h-40 mx-auto rounded" alt="Preview" />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => { setPhotoFile(null); setPreviewUrl(null); }}
+                                                        className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-400 text-white rounded-full p-1 transition-colors"
+                                                    >
+                                                        <X size={14} />
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <div className="text-gray-500 text-sm flex flex-col items-center py-2">
+                                                    <Upload size={24} className="mb-2" />
+                                                    Pilih metode di atas
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <input
+                                            type="text"
+                                            required
+                                            value={photoFile ? 'has-photo' : ''}
+                                            onChange={() => { }}
+                                            className="opacity-0 h-0 w-0 absolute"
+                                            tabIndex={-1}
+                                        />
+                                    </div>
+                                ) : (
+                                    <div>
+                                        <label className="block text-gray-400 text-sm mb-2 flex items-center gap-1"><Camera size={16} /> Foto Bukti (Opsional)</label>
+
+                                        {!previewUrl && (
+                                            <div className="flex gap-2 mb-3">
+                                                <label className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg flex items-center justify-center gap-2 border border-gray-600 cursor-pointer text-sm transition-all">
+                                                    <Camera size={16} /> Kamera
+                                                    <input type="file" accept="image/*" capture="environment" onChange={handleFileChange} className="hidden" />
+                                                </label>
+                                                <label className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg flex items-center justify-center gap-2 border border-gray-600 cursor-pointer text-sm transition-all">
+                                                    <ImageIcon size={16} /> File
+                                                    <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+                                                </label>
+                                            </div>
+                                        )}
+
+                                        {previewUrl && (
+                                            <div className="relative inline-block">
+                                                <img src={previewUrl} className="max-h-32 rounded border border-gray-700" alt="Preview" />
+                                                <button type="button" onClick={() => { setPhotoFile(null); setPreviewUrl(null); }} className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-400 text-white rounded-full p-1 transition-colors">
+                                                    <X size={12} />
+                                                </button>
+                                            </div>
+                                        )}
+
+                                        {isCompressing && <div className="text-sm text-yellow-400 mt-2">Mengkompres gambar...</div>}
+                                    </div>
                                 )}
+
+                                <div className="flex gap-2 pt-4">
+                                    <button type="button" onClick={closeModals} className="flex-1 py-2 bg-gray-800 text-white rounded hover:bg-gray-700 transition-colors">Batal</button>
+                                    <button
+                                        type="submit"
+                                        disabled={isSubmitting || isCompressing}
+                                        className="flex-1 py-2 bg-yellow-400 text-black font-bold rounded hover:bg-yellow-300 disabled:opacity-50 transition-colors"
+                                    >
+                                        {isSubmitting ? 'Mengirim...' : isCompressing ? 'Memproses...' : 'Kirim Hadir'}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                )}
+
+                {selectedSessionPermission && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
+                        <div className="w-full max-w-md bg-gray-900 border border-gray-700 rounded-lg p-6 shadow-2xl">
+                            <div className="flex items-center gap-2 mb-4 text-blue-400">
+                                <FileText className="shrink-0" />
+                                <h2 className="text-xl font-bold text-white truncate">{selectedSessionPermission.title}</h2>
                             </div>
 
-                            <div className="flex gap-2 pt-4">
-                                <button type="button" onClick={closeModals} className="flex-1 py-2 bg-gray-800 text-white rounded hover:bg-gray-700">Batal</button>
-                                <button type="submit" disabled={isSubmitting || isCompressing} className="flex-1 py-2 bg-blue-600 text-white font-bold rounded hover:bg-blue-500 disabled:opacity-50">{isSubmitting ? 'Mengirim...' : 'Kirim Izin'}</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
+                            <form onSubmit={handleSubmitPermission} className="space-y-4 text-left">
+                                <div><label className="block text-gray-400 text-sm mb-1">NIM</label><input disabled value={userNIM || ''} className="w-full bg-black border border-gray-700 rounded p-2 text-gray-500 cursor-not-allowed" /></div>
 
-            {isCreateModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
-                    <div className="w-full max-w-md bg-gray-900 border border-gray-700 rounded-lg p-6">
-                        <h2 className="text-xl font-bold text-white mb-4">Buat Sesi Absensi</h2>
-                        <form onSubmit={handleCreateSession} className="space-y-4 text-left">
-                            <div><label className="block text-gray-400 text-sm mb-1">Judul</label><input required value={newSessionData.title} onChange={e => setNewSessionData({ ...newSessionData, title: e.target.value })} className="w-full bg-black border border-gray-700 rounded p-2 text-white focus:border-yellow-400 outline-none" /></div>
-                            <div><label className="block text-gray-400 text-sm mb-1">Deskripsi</label><textarea value={newSessionData.description} onChange={e => setNewSessionData({ ...newSessionData, description: e.target.value })} className="w-full bg-black border border-gray-700 rounded p-2 text-white focus:border-yellow-400 outline-none" rows={3} /></div>
-                            <div className="flex items-center gap-2"><input type="checkbox" id="reqPhoto" checked={newSessionData.is_photo_required} onChange={e => setNewSessionData({ ...newSessionData, is_photo_required: e.target.checked })} className="w-4 h-4 rounded text-yellow-400 bg-gray-800" /><label htmlFor="reqPhoto" className="text-white text-sm cursor-pointer">Wajib Upload Foto?</label></div>
+                                <div>
+                                    <label className="block text-gray-400 text-sm mb-1">Alasan Izin (Wajib)</label>
+                                    <textarea required value={permissionReason} onChange={e => setPermissionReason(e.target.value)} placeholder="Jelaskan sejelas-jelasnya" className="w-full bg-black border border-gray-700 rounded p-2 text-white focus:border-blue-500 outline-none transition-colors" rows={3} />
+                                </div>
 
-                            <div className="flex gap-2 pt-4">
-                                <button type="button" onClick={() => setIsCreateModalOpen(false)} className="flex-1 py-2 bg-gray-800 text-white rounded hover:bg-gray-700">Batal</button>
-                                <button
-                                    type="submit"
-                                    disabled={isSubmitting}
-                                    className="flex-1 py-2 bg-yellow-400 text-black font-bold rounded hover:bg-yellow-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    {isSubmitting ? 'Memproses...' : 'Buat Sesi'}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
+                                <div className="flex items-center gap-3 bg-gray-800 p-3 rounded border border-gray-700 hover:border-blue-500/50 transition-colors">
+                                    <input
+                                        type="checkbox"
+                                        id="menyusul-check"
+                                        checked={isMenyusul}
+                                        onChange={(e) => setIsMenyusul(e.target.checked)}
+                                        className="w-5 h-5 rounded text-blue-600 focus:ring-blue-500 bg-gray-900 border-gray-600 cursor-pointer"
+                                    />
+                                    <label htmlFor="menyusul-check" className="text-sm text-gray-200 cursor-pointer select-none">
+                                        Saya akan <strong>menyusul</strong> nanti.
+                                        <p className="text-xs text-gray-400 mt-0.5">Centang jika anda berencana hadir terlambat.</p>
+                                    </label>
+                                </div>
 
-            {photoPopupUrl && (
-                <div
-                    className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/95 backdrop-blur-sm cursor-zoom-out"
-                    onClick={() => setPhotoPopupUrl(null)}
-                >
-                    <div className="relative max-w-4xl max-h-[90vh] w-full flex items-center justify-center">
-                        <button
-                            onClick={() => setPhotoPopupUrl(null)}
-                            className="absolute -top-10 right-0 text-white hover:text-yellow-400 transition-colors"
-                        >
-                            <X size={28} />
-                        </button>
-                        <img
-                            src={photoPopupUrl}
-                            alt="Bukti Absensi"
-                            className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl cursor-default"
-                            onClick={(e) => e.stopPropagation()}
-                        />
+                                <div>
+                                    <label className="block text-gray-400 text-sm mb-1 flex items-center gap-1"><Upload size={16} /> Bukti (Opsional)</label>
+                                    <input type="file" accept="image/*" onChange={handleFileChange} className="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-500 transition-colors" />
+                                    {isCompressing ? (
+                                        <div className="text-sm text-blue-400 mt-2">Mengkompres gambar...</div>
+                                    ) : previewUrl && (
+                                        <img src={previewUrl} className="mt-2 max-h-32 rounded border border-gray-700" alt="Preview" />
+                                    )}
+                                </div>
+
+                                <div className="flex gap-2 pt-4">
+                                    <button type="button" onClick={closeModals} className="flex-1 py-2 bg-gray-800 text-white rounded hover:bg-gray-700 transition-colors">Batal</button>
+                                    <button type="submit" disabled={isSubmitting || isCompressing} className="flex-1 py-2 bg-blue-600 text-white font-bold rounded hover:bg-blue-500 disabled:opacity-50 transition-colors">{isSubmitting ? 'Mengirim...' : 'Kirim Izin'}</button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
-                </div>
-            )}
+                )}
+
+                {isCreateModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
+                        <div className="w-full max-w-md bg-gray-900 border border-gray-700 rounded-lg p-6 shadow-2xl">
+                            <h2 className="text-xl font-bold text-white mb-4">Buat Sesi Absensi</h2>
+                            <form onSubmit={handleCreateSession} className="space-y-4 text-left">
+                                <div><label className="block text-gray-400 text-sm mb-1">Judul</label><input required value={newSessionData.title} onChange={e => setNewSessionData({ ...newSessionData, title: e.target.value })} className="w-full bg-black border border-gray-700 rounded p-2 text-white focus:border-yellow-400 outline-none transition-colors" /></div>
+                                <div><label className="block text-gray-400 text-sm mb-1">Deskripsi</label><textarea value={newSessionData.description} onChange={e => setNewSessionData({ ...newSessionData, description: e.target.value })} className="w-full bg-black border border-gray-700 rounded p-2 text-white focus:border-yellow-400 outline-none transition-colors" rows={3} /></div>
+                                <div className="flex items-center gap-2"><input type="checkbox" id="reqPhoto" checked={newSessionData.is_photo_required} onChange={e => setNewSessionData({ ...newSessionData, is_photo_required: e.target.checked })} className="w-4 h-4 rounded text-yellow-400 bg-gray-800 border-gray-600" /><label htmlFor="reqPhoto" className="text-white text-sm cursor-pointer">Wajib Upload Foto?</label></div>
+
+                                <div className="flex gap-2 pt-4">
+                                    <button type="button" onClick={() => setIsCreateModalOpen(false)} className="flex-1 py-2 bg-gray-800 text-white rounded hover:bg-gray-700 transition-colors">Batal</button>
+                                    <button
+                                        type="submit"
+                                        disabled={isSubmitting}
+                                        className="flex-1 py-2 bg-yellow-400 text-black font-bold rounded hover:bg-yellow-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                    >
+                                        {isSubmitting ? 'Memproses...' : 'Buat Sesi'}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                )}
+
+                {photoPopupUrl && (
+                    <div
+                        className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/95 backdrop-blur-sm cursor-zoom-out"
+                        onClick={() => setPhotoPopupUrl(null)}
+                    >
+                        <div className="relative max-w-4xl max-h-[90vh] w-full flex items-center justify-center">
+                            <button
+                                onClick={() => setPhotoPopupUrl(null)}
+                                className="absolute -top-10 right-0 text-white hover:text-yellow-400 transition-colors"
+                            >
+                                <X size={28} />
+                            </button>
+                            <img
+                                src={photoPopupUrl}
+                                alt="Bukti Absensi"
+                                className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl cursor-default border border-gray-800"
+                                onClick={(e) => e.stopPropagation()}
+                            />
+                        </div>
+                    </div>
+                )}
+            </div>
         </div>
     );
 };

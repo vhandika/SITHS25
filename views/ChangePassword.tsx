@@ -10,6 +10,93 @@ const getCookie = (name: string) => {
     }, '');
 };
 
+const ParticleBackground: React.FC = () => {
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        let animationFrameId: number;
+        let particles: any[] = [];
+
+        const resize = () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            initParticles();
+        };
+
+        const initParticles = () => {
+            particles = [];
+            const particleCount = Math.min(Math.floor(window.innerWidth / 12), 100);
+            for (let i = 0; i < particleCount; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    vx: (Math.random() - 0.5) * 0.8,
+                    vy: (Math.random() - 0.5) * 0.8,
+                    radius: Math.random() * 2 + 1
+                });
+            }
+        };
+
+        const draw = () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            for (let i = 0; i < particles.length; i++) {
+                let p = particles[i];
+
+                p.x += p.vx;
+                p.y += p.vy;
+
+                if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+                if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(250, 204, 21, 0.8)';
+                ctx.fill();
+
+                for (let j = i + 1; j < particles.length; j++) {
+                    let p2 = particles[j];
+                    let dx = p.x - p2.x;
+                    let dy = p.y - p2.y;
+                    let dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist < 140) {
+                        ctx.beginPath();
+                        const opacity = 0.35 - (dist / 140) * 0.35; 
+                        ctx.strokeStyle = `rgba(250, 204, 21, ${opacity})`;
+                        ctx.lineWidth = 1.2;
+                        ctx.moveTo(p.x, p.y);
+                        ctx.lineTo(p2.x, p2.y);
+                        ctx.stroke();
+                    }
+                }
+            }
+            animationFrameId = requestAnimationFrame(draw);
+        };
+
+        window.addEventListener('resize', resize);
+        resize();
+        draw();
+
+        return () => {
+            window.removeEventListener('resize', resize);
+            cancelAnimationFrame(animationFrameId);
+        };
+    }, []);
+
+    return (
+        <canvas
+            ref={canvasRef}
+            className="fixed inset-0 w-full h-full pointer-events-none z-0"
+        />
+    );
+};
+
 const ChangePassword: React.FC = () => {
     const [oldPassword, setOldPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
@@ -102,7 +189,10 @@ const ChangePassword: React.FC = () => {
     };
 
     return (
-        <div className="relative flex min-h-screen w-full items-center justify-center bg-black py-16 px-4 mt-16 lg:mt-0 selection:bg-yellow-400 selection:text-black">
+        <div className="relative flex min-h-screen w-full items-center justify-center py-16 px-4 mt-16 lg:mt-0 selection:bg-yellow-400 selection:text-black">
+            
+            <ParticleBackground />
+
             <div className="relative z-10 w-full max-w-md space-y-8 rounded-lg border border-gray-800 bg-black/80 p-8 shadow-2xl shadow-yellow-500/5 backdrop-blur-sm">
                 <div className="text-center">
                     <div className="flex justify-center items-center gap-4 mb-4">
@@ -114,14 +204,14 @@ const ChangePassword: React.FC = () => {
                 </div>
 
                 {error && (
-                    <div className="flex items-center gap-2 bg-red-900/40 border border-red-500 text-red-200 p-3 rounded text-sm">
+                    <div className="flex items-center gap-2 bg-red-900/40 border border-red-500 text-red-200 p-3 rounded text-sm backdrop-blur-sm">
                         <AlertCircle size={16} />
                         <span>{error}</span>
                     </div>
                 )}
 
                 {success && (
-                    <div className="flex items-center gap-2 bg-green-900/40 border border-green-500 text-green-200 p-3 rounded text-sm">
+                    <div className="flex items-center gap-2 bg-green-900/40 border border-green-500 text-green-200 p-3 rounded text-sm backdrop-blur-sm">
                         <Save size={16} />
                         <span>{success}</span>
                     </div>
@@ -137,14 +227,14 @@ const ChangePassword: React.FC = () => {
                                     value={oldPassword}
                                     onChange={(e) => setOldPassword(e.target.value)}
                                     onKeyDown={(e) => handleKeyDown(e, newPasswordRef)}
-                                    className="block w-full border-0 bg-white/5 py-3 px-4 pr-10 text-white ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-yellow-400 rounded"
+                                    className="block w-full border-0 bg-white/5 py-3 px-4 pr-10 text-white ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-yellow-400 rounded transition-colors"
                                     placeholder="Masukkan password lama"
                                     autoFocus
                                 />
                                 <button
                                     type="button"
                                     onClick={() => setShowOldPassword(!showOldPassword)}
-                                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-yellow-400 focus:outline-none"
+                                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-yellow-400 focus:outline-none transition-colors"
                                 >
                                     {showOldPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                                 </button>
@@ -159,13 +249,13 @@ const ChangePassword: React.FC = () => {
                                     value={newPassword}
                                     onChange={(e) => setNewPassword(e.target.value)}
                                     onKeyDown={(e) => handleKeyDown(e, confirmPasswordRef)}
-                                    className="block w-full border-0 bg-white/5 py-3 px-4 pr-10 text-white ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-yellow-400 rounded"
+                                    className="block w-full border-0 bg-white/5 py-3 px-4 pr-10 text-white ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-yellow-400 rounded transition-colors"
                                     placeholder="Min 8 karakter (Huruf Besar, Kecil, Angka)"
                                 />
                                 <button
                                     type="button"
                                     onClick={() => setShowNewPassword(!showNewPassword)}
-                                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-yellow-400 focus:outline-none"
+                                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-yellow-400 focus:outline-none transition-colors"
                                 >
                                     {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                                 </button>
@@ -180,13 +270,13 @@ const ChangePassword: React.FC = () => {
                                     value={confirmPassword}
                                     onChange={(e) => setConfirmPassword(e.target.value)}
                                     onKeyDown={(e) => handleKeyDown(e)}
-                                    className="block w-full border-0 bg-white/5 py-3 px-4 pr-10 text-white ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-yellow-400 rounded"
+                                    className="block w-full border-0 bg-white/5 py-3 px-4 pr-10 text-white ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-yellow-400 rounded transition-colors"
                                     placeholder="Ulangi password baru"
                                 />
                                 <button
                                     type="button"
                                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-yellow-400 focus:outline-none"
+                                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-yellow-400 focus:outline-none transition-colors"
                                 >
                                     {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                                 </button>

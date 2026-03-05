@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Library as LibraryIcon, ArrowUpRight, ChevronDown
 } from 'lucide-react';
@@ -798,6 +798,90 @@ const libraryData: LibraryItem[] = [
 
 ];
 
+const ParticleBackground: React.FC = () => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      let animationFrameId: number;
+      let particles: any[] = [];
+
+      const resize = () => {
+          canvas.width = window.innerWidth;
+          canvas.height = window.innerHeight;
+          initParticles();
+      };
+
+      const initParticles = () => {
+          particles = [];
+          const particleCount = Math.min(Math.floor(window.innerWidth / 12), 100);
+          for (let i = 0; i < particleCount; i++) {
+              particles.push({
+                  x: Math.random() * canvas.width,
+                  y: Math.random() * canvas.height,
+                  vx: (Math.random() - 0.5) * 0.8,
+                  vy: (Math.random() - 0.5) * 0.8,
+                  radius: Math.random() * 2 + 1
+              });
+          }
+      };
+
+      const draw = () => {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+          for (let i = 0; i < particles.length; i++) {
+              let p = particles[i];
+              p.x += p.vx;
+              p.y += p.vy;
+              if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+              if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+              ctx.beginPath();
+              ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+              ctx.fillStyle = 'rgba(250, 204, 21, 0.8)';
+              ctx.fill();
+
+              for (let j = i + 1; j < particles.length; j++) {
+                  let p2 = particles[j];
+                  let dx = p.x - p2.x;
+                  let dy = p.y - p2.y;
+                  let dist = Math.sqrt(dx * dx + dy * dy);
+
+                  if (dist < 140) {
+                      ctx.beginPath();
+                      const opacity = 0.35 - (dist / 140) * 0.35; 
+                      ctx.strokeStyle = `rgba(250, 204, 21, ${opacity})`;
+                      ctx.lineWidth = 1.2;
+                      ctx.moveTo(p.x, p.y);
+                      ctx.lineTo(p2.x, p2.y);
+                      ctx.stroke();
+                  }
+              }
+          }
+          animationFrameId = requestAnimationFrame(draw);
+      };
+
+      window.addEventListener('resize', resize);
+      resize();
+      draw();
+
+      return () => {
+          window.removeEventListener('resize', resize);
+          cancelAnimationFrame(animationFrameId);
+      };
+  }, []);
+
+  return (
+      <canvas
+          ref={canvasRef}
+          className="fixed inset-0 w-full h-full pointer-events-none z-0"
+      />
+  );
+};
+
 const Library: React.FC = () => {
   const [selectedSemester, setSelectedSemester] = useState<number>(1);
   const [selectedCategory, setSelectedCategory] = useState<'mikrobiologi' | 'biologi'>('mikrobiologi');
@@ -818,115 +902,119 @@ const Library: React.FC = () => {
   const semesters = [1, 2, 3, 4, 5, 6, 7];
 
   return (
-    <div className="relative min-h-screen w-full bg-black py-16 lg:py-24 px-4 sm:px-6 lg:px-8 mt-16 lg:mt-0 font-sans overflow-x-hidden selection:bg-yellow-400 selection:text-black">
+    <div className="relative min-h-screen w-full py-16 lg:py-24 px-4 sm:px-6 lg:px-8 mt-16 lg:mt-0 font-sans overflow-x-hidden selection:bg-yellow-400 selection:text-black">
+      
+      <ParticleBackground />
 
-      <div className="mx-auto max-w-7xl text-center transition-all duration-300">
-        <div className="text-center">
-          <div className="flex justify-center items-center gap-4 mb-4">
-            <div className="w-10 h-10 flex items-center justify-center bg-yellow-400 text-black transform -skew-x-12">
-              <span className="transform skew-x-12"><LibraryIcon size={32} /></span>
+      <div className="relative z-10">
+        <div className="mx-auto max-w-7xl text-center transition-all duration-300">
+          <div className="text-center">
+            <div className="flex justify-center items-center gap-4 mb-4">
+              <div className="w-10 h-10 flex items-center justify-center bg-yellow-400 text-black transform -skew-x-12">
+                <span className="transform skew-x-12"><LibraryIcon size={32} /></span>
+              </div>
+              <h1 className="text-4xl font-bold tracking-wider uppercase text-white sm:text-5xl">Library</h1>
             </div>
-            <h1 className="text-4xl font-bold tracking-wider uppercase text-white sm:text-5xl">Library</h1>
           </div>
-        </div>
 
-        <div className="w-40 h-1 bg-yellow-400 mx-auto mt-8"></div>
+          <div className="w-40 h-1 bg-yellow-400 mx-auto mt-8"></div>
 
-        <div className="flex flex-col sm:flex-row justify-center items-center gap-8 my-12">
-          <div className="relative w-48 z-20">
-            <button
-              onClick={() => setIsSemesterOpen(!isSemesterOpen)}
-              className={`w-full flex items-center justify-between px-6 py-3 bg-black border-2 transition-all duration-300 transform -skew-x-12 ${isSemesterOpen ? 'border-gray-700 text-yellow-400' : 'border-gray-800 text-white hover:border-gray-700'
-                }`}
-            >
-              <span className="transform skew-x-12 font-bold uppercase tracking-widest text-sm">
-                Semester {selectedSemester}
-              </span>
-              <ChevronDown className={`transform skew-x-12 transition-transform duration-300 ${isSemesterOpen ? 'rotate-180 text-yellow-400' : 'text-gray-500'}`} size={20} />
-            </button>
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-8 my-12">
+            <div className="relative w-48 z-20">
+              <button
+                onClick={() => setIsSemesterOpen(!isSemesterOpen)}
+                className={`w-full flex items-center justify-between px-6 py-3 bg-black border-2 transition-all duration-300 transform -skew-x-12 ${isSemesterOpen ? 'border-gray-700 text-yellow-400' : 'border-gray-800 text-white hover:border-gray-700'
+                  }`}
+              >
+                <span className="transform skew-x-12 font-bold uppercase tracking-widest text-sm">
+                  Semester {selectedSemester}
+                </span>
+                <ChevronDown className={`transform skew-x-12 transition-transform duration-300 ${isSemesterOpen ? 'rotate-180 text-yellow-400' : 'text-gray-500'}`} size={20} />
+              </button>
 
-            <div className={`absolute top-full left-0 right-0 mt-2 bg-black border-2 border-gray-800 transition-all duration-300 transform origin-top overflow-hidden ${isSemesterOpen ? 'scale-y-100 opacity-100' : 'scale-y-0 opacity-0 pointer-events-none'
-              }`}>
-              <div className="flex flex-col">
-                {semesters.map((s) => (
+              <div className={`absolute top-full left-0 right-0 mt-2 bg-black border-2 border-gray-800 transition-all duration-300 transform origin-top overflow-hidden ${isSemesterOpen ? 'scale-y-100 opacity-100' : 'scale-y-0 opacity-0 pointer-events-none'
+                }`}>
+                <div className="flex flex-col">
+                  {semesters.map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => {
+                        setSelectedSemester(s);
+                        setIsSemesterOpen(false);
+                      }}
+                      className={`px-6 py-2 text-sm font-bold uppercase tracking-widest transition-colors duration-200 text-left ${selectedSemester === s ? 'bg-yellow-400 text-black' : 'text-gray-400 hover:text-white hover:bg-gray-900'
+                        }`}
+                    >
+                      Semester {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4 bg-gray-900/50 p-1 rounded-full border border-gray-800 relative w-64 h-12">
+              <div
+                className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-yellow-400 rounded-full transition-all duration-500 ease-in-out z-0 ${selectedCategory === 'biologi' ? 'left-[calc(50%+2px)]' : 'left-1'
+                  }`}
+              />
+
+              <button
+                onClick={() => setSelectedCategory('mikrobiologi')}
+                className={`flex-1 flex items-center justify-center gap-2 z-10 transition-colors duration-300 ${selectedCategory === 'mikrobiologi' ? 'text-black' : 'text-gray-500 hover:text-gray-300'
+                  }`}
+              >
+                <span className="text-[10px] font-black uppercase tracking-tighter">Mikrobiologi</span>
+              </button>
+
+              <button
+                onClick={() => setSelectedCategory('biologi')}
+                className={`flex-1 flex items-center justify-center gap-2 z-10 transition-colors duration-300 ${selectedCategory === 'biologi' ? 'text-black' : 'text-gray-500 hover:text-gray-300'
+                  }`}
+              >
+                <span className="text-[10px] font-black uppercase tracking-tighter">Biologi</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="min-h-[50vh] w-full">
+            {filteredItems.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                {filteredItems.map((item) => (
                   <button
-                    key={s}
-                    onClick={() => {
-                      setSelectedSemester(s);
-                      setIsSemesterOpen(false);
-                    }}
-                    className={`px-6 py-2 text-sm font-bold uppercase tracking-widest transition-colors duration-200 text-left ${selectedSemester === s ? 'bg-yellow-400 text-black' : 'text-gray-400 hover:text-white hover:bg-gray-900'
-                      }`}
+                    key={item.id}
+                    onClick={() => handleOpenViewer(item)}
+                    className="group relative block w-full text-left bg-black rounded-xl overflow-hidden shadow-lg hover:shadow-yellow-500/40 transition-all duration-300 transform hover:-translate-y-2 border-2 border-transparent hover:border-yellow-400"
                   >
-                    Semester {s}
+                    <img src={item.image} alt={item.title} className="w-full h-56 object-cover transform group-hover:scale-110 transition-transform duration-500" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-transparent"></div>
+                    <div className="absolute bottom-0 left-0 right-0 p-5 text-left">
+                      <h3 className="text-xl font-bold text-white">{item.title}</h3>
+                      <p className="mt-1 text-gray-300 text-sm">{item.description}</p>
+                    </div>
+                    <ArrowUpRight className="absolute top-4 right-4 w-6 h-6 text-gray-400 group-hover:text-yellow-400 transition-colors duration-300 opacity-0 group-hover:opacity-100 transform scale-75 group-hover:scale-100" />
                   </button>
                 ))}
               </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4 bg-gray-900/50 p-1 rounded-full border border-gray-800 relative w-64 h-12">
-            <div
-              className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-yellow-400 rounded-full transition-all duration-500 ease-in-out z-0 ${selectedCategory === 'biologi' ? 'left-[calc(50%+2px)]' : 'left-1'
-                }`}
-            />
-
-            <button
-              onClick={() => setSelectedCategory('mikrobiologi')}
-              className={`flex-1 flex items-center justify-center gap-2 z-10 transition-colors duration-300 ${selectedCategory === 'mikrobiologi' ? 'text-black' : 'text-gray-500 hover:text-gray-300'
-                }`}
-            >
-              <span className="text-[10px] font-black uppercase tracking-tighter">Mikrobiologi</span>
-            </button>
-
-            <button
-              onClick={() => setSelectedCategory('biologi')}
-              className={`flex-1 flex items-center justify-center gap-2 z-10 transition-colors duration-300 ${selectedCategory === 'biologi' ? 'text-black' : 'text-gray-500 hover:text-gray-300'
-                }`}
-            >
-              <span className="text-[10px] font-black uppercase tracking-tighter">Biologi</span>
-            </button>
-          </div>
-        </div>
-
-        <div className="min-h-[50vh] w-full">
-          {filteredItems.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-              {filteredItems.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => handleOpenViewer(item)}
-                  className="group relative block w-full text-left bg-black rounded-xl overflow-hidden shadow-lg hover:shadow-yellow-500/40 transition-all duration-300 transform hover:-translate-y-2 border-2 border-transparent hover:border-yellow-400"
-                >
-                  <img src={item.image} alt={item.title} className="w-full h-56 object-cover transform group-hover:scale-110 transition-transform duration-500" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-transparent"></div>
-                  <div className="absolute bottom-0 left-0 right-0 p-5 text-left">
-                    <h3 className="text-xl font-bold text-white">{item.title}</h3>
-                    <p className="mt-1 text-gray-300 text-sm">{item.description}</p>
-                  </div>
-                  <ArrowUpRight className="absolute top-4 right-4 w-6 h-6 text-gray-400 group-hover:text-yellow-400 transition-colors duration-300 opacity-0 group-hover:opacity-100 transform scale-75 group-hover:scale-100" />
-                </button>
-              ))}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center h-64 text-gray-500 animate-pulse">
-              <div className="w-16 h-16 mb-4 border-2 border-gray-800 rounded-full flex items-center justify-center">
-                <LibraryIcon size={32} className="text-gray-700" />
+            ) : (
+              <div className="flex flex-col items-center justify-center h-64 text-gray-500 animate-pulse bg-black/40 backdrop-blur-sm rounded-2xl border border-gray-800 mx-4 md:mx-0">
+                <div className="w-16 h-16 mb-4 border-2 border-gray-800 rounded-full flex items-center justify-center">
+                  <LibraryIcon size={32} className="text-gray-700" />
+                </div>
+                <p className="font-bold uppercase tracking-widest text-sm text-center px-4">Belum ada data untuk semester {selectedSemester} - {selectedCategory}. </p>
+                <p className="font-bold uppercase tracking-widest text-sm mt-2 text-center">antara aku males atau akademiknya belum update drive :v</p>
               </div>
-              <p className="font-bold uppercase tracking-widest text-sm">Belum ada data untuk semester {selectedSemester} - {selectedCategory}. </p>
-              <p className="font-bold uppercase tracking-widest text-sm">antara aku males atau akademiknya belum update drive :v</p>
-            </div>
-          )}
+            )}
+          </div>
         </div>
-      </div>
 
-      <LibraryViewer
-        isOpen={isViewerOpen}
-        onClose={() => setIsViewerOpen(false)}
-        currentItem={selectedItem}
-        relatedItems={filteredItems}
-        onSelectItem={(item) => setSelectedItem(item)}
-      />
+        <LibraryViewer
+          isOpen={isViewerOpen}
+          onClose={() => setIsViewerOpen(false)}
+          currentItem={selectedItem}
+          relatedItems={filteredItems}
+          onSelectItem={(item) => setSelectedItem(item)}
+        />
+      </div>
     </div>
   );
 };
