@@ -18,6 +18,34 @@ const LinkifiedContent: React.FC<{ text: string }> = ({ text }) => {
     const urlRegex = /(https?:\/\/[^\s]+)/g;
     const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'];
 
+    // Fungsi untuk memformat Bold, Italic, dan Coret
+    const formatText = (textStr: string) => {
+        // Regex untuk menangkap **teks**, \\teks\\, \teks\, dan ~~teks~~
+        const regex = /(\*\*.*?\*\*|\\\\.*?\\\\|\\[^\\]+\\|~~.*?~~)/g;
+        const parts = textStr.split(regex);
+
+        return parts.map((part, index) => {
+            if (part.startsWith('**') && part.endsWith('**')) {
+                // Teks Bold (dibuat jadi warna putih agar lebih menonjol)
+                return <strong key={index} className="font-bold text-white">{part.slice(2, -2)}</strong>;
+            }
+            if (part.startsWith('\\\\') && part.endsWith('\\\\')) {
+                // Teks Italic untuk double backslash (\\teks\\)
+                return <em key={index} className="italic">{part.slice(2, -2)}</em>;
+            }
+            if (part.startsWith('\\') && part.endsWith('\\')) {
+                // Teks Italic untuk single backslash (\teks\)
+                return <em key={index} className="italic">{part.slice(1, -1)}</em>;
+            }
+            if (part.startsWith('~~') && part.endsWith('~~')) {
+                // Teks Coret (Strikethrough)
+                return <span key={index} className="line-through opacity-80">{part.slice(2, -2)}</span>;
+            }
+            // Kembalikan teks biasa jika tidak ada format
+            return part;
+        });
+    };
+
     return (
         <div className="space-y-4 text-gray-300 leading-relaxed text-base text-left">
             {text.split('\n').map((paragraph, index) => (
@@ -46,7 +74,9 @@ const LinkifiedContent: React.FC<{ text: string }> = ({ text }) => {
                                 </a>
                             );
                         }
-                        return part;
+                        
+                        // Melempar teks yang bukan URL ke fungsi formatText
+                        return <React.Fragment key={i}>{formatText(part)}</React.Fragment>;
                     })}
                 </p>
             ))}
@@ -440,6 +470,7 @@ const News: React.FC = () => {
                 </button>
             )}
 
+            {/* Modal Detail Berita */}
             {selectedArticle && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4 transition-all" onClick={handleCloseModal}>
                     <div className={`absolute inset-0 bg-black/95 backdrop-blur-sm ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`}></div>
