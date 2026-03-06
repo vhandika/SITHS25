@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, X, Wallet, TrendingDown, Users, ArrowUpCircle, ArrowDownCircle, Calendar, User, Search, CheckSquare, History } from 'lucide-react';
+import { Plus, X, Wallet, TrendingDown, Users, ArrowUpCircle, ArrowDownCircle, Calendar, User, Search, CheckSquare, History, QrCode } from 'lucide-react';
 import SkewedButton from '../components/SkewedButton';
 import { fetchWithAuth } from '../src/utils/api';
 import { useNavigate } from 'react-router-dom';
@@ -155,7 +155,10 @@ const Finance: React.FC = () => {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [summary, setSummary] = useState<Summary | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false); // Modal Pembayaran
+    
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [activeExpenseTab, setActiveExpenseTab] = useState<string>('bulan');
 
@@ -388,13 +391,16 @@ const Finance: React.FC = () => {
                         </div>
                     </div>
 
-                    {canAdd && (
-                        <div className="hidden md:block">
+                    <div className="hidden md:flex items-center gap-3">
+                        <SkewedButton onClick={() => setIsPaymentModalOpen(true)} icon={<QrCode size={18} />}>
+                            Bayar Kas
+                        </SkewedButton>
+                        {canAdd && (
                             <SkewedButton onClick={() => setIsModalOpen(true)} icon={<Plus size={18} />}>
                                 Tambah Transaksi
                             </SkewedButton>
-                        </div>
-                    )}
+                        )}
+                    </div>
                 </div>
 
                 {isLoading ? (
@@ -575,15 +581,67 @@ const Finance: React.FC = () => {
                 )}
             </div>
 
-            {canAdd && (
+            <div className="fixed bottom-6 right-6 z-40 md:hidden flex flex-col gap-3">
                 <button
-                    onClick={() => setIsModalOpen(true)}
-                    className="fixed bottom-6 right-6 z-40 md:hidden p-4 bg-yellow-400 text-black rounded-full shadow-lg hover:bg-yellow-300 transition-transform active:scale-95 flex items-center justify-center border-2 border-black"
-                    aria-label="Tambah Transaksi"
+                    onClick={() => setIsPaymentModalOpen(true)}
+                    className="p-4 bg-white text-black rounded-full shadow-lg hover:bg-gray-200 transition-transform active:scale-95 flex items-center justify-center border-2 border-black"
+                    aria-label="Bayar Kas"
                 >
-                    <Plus size={28} />
+                    <QrCode size={28} />
                 </button>
-            )}
+                {canAdd && (
+                    <button
+                        onClick={() => setIsModalOpen(true)}
+                        className="p-4 bg-yellow-400 text-black rounded-full shadow-lg hover:bg-yellow-300 transition-transform active:scale-95 flex items-center justify-center border-2 border-black"
+                        aria-label="Tambah Transaksi"
+                    >
+                        <Plus size={28} />
+                    </button>
+                )}
+            </div>
+
+            <div className="relative z-50">
+                {isPaymentModalOpen && (
+                    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4">
+                        <div className="w-full max-w-sm bg-gray-900 border border-gray-700 rounded-lg p-6 relative shadow-2xl flex flex-col items-center">
+                            <button
+                                onClick={() => setIsPaymentModalOpen(false)}
+                                className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+                            >
+                                <X size={24} />
+                            </button>
+
+                            <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                <QrCode className="text-yellow-400" /> Pembayaran Kas
+                            </h2>
+
+                            <div className="bg-white p-4 rounded-xl w-full flex items-center justify-center mb-6">
+                                <img 
+                                    src="https://aaepppezhlwngklhnxhh.supabase.co/storage/v1/object/sign/attendance-images/qriskas.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9kMWJjOGZkMS04ZjVmLTQ3YjQtOWIzNy0xOTJiNDU3ZTM2NDQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhdHRlbmRhbmNlLWltYWdlcy9xcmlza2FzLmpwZyIsImlhdCI6MTc3Mjc4NDM4NiwiZXhwIjoxODk4OTI4Mzg2fQ.dUknEZUpSnf_m_Aog9sfFeYkJI57QSuhcdX4bJ2W6nE" 
+                                    alt="QRIS Kas" 
+                                    className="w-full max-w-[250px] object-contain rounded-lg"
+                                />
+                            </div>
+
+                            <div className="w-full bg-gray-800/50 border border-gray-700 rounded-lg p-4 text-center">
+                                <p className="text-sm text-gray-300 mb-2">Setelah scan QRIS, harap konfirmasi ke akun Line:</p>
+                                <div className="flex justify-center gap-3 text-yellow-400 font-bold text-sm">
+                                    <a href="https://line.me/ti/p/~utee" target="_blank" rel="noreferrer" className="hover:underline">@line_id_1</a>
+                                    <span className="text-gray-600">atau</span>
+                                    <a href="https://line.me/ti/p/~line_id_2" target="_blank" rel="noreferrer" className="hover:underline">@line_id_2</a>
+                                </div>
+                            </div>
+
+                            <button 
+                                onClick={() => setIsPaymentModalOpen(false)} 
+                                className="w-full mt-6 py-2 bg-gray-800 text-white font-bold rounded hover:bg-gray-700 transition-colors"
+                            >
+                                Tutup
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </div>
 
             <div className="relative z-50">
                 {isModalOpen && (

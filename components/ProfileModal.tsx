@@ -314,7 +314,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, 
                                                 <div className="flex-1">
                                                     <input
                                                         className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:border-white outline-none transition-colors"
-                                                        placeholder="Paste link line kalian"
+                                                        placeholder="Username Line"
                                                         value={formData.line}
                                                         onChange={e => setFormData({ ...formData, line: e.target.value })}
                                                     />
@@ -344,7 +344,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, 
 
                                             <div className={`flex flex-col items-center gap-1 ${userData.line ? 'flex' : 'hidden'}`}>
                                                 <a
-                                                    href={`${userData.line}`}
+                                                    href={`https://line.me/ti/p/~${userData.line}`}
                                                     target='_blank'
                                                     rel="noreferrer"
                                                     className="w-10 h-10 rounded-full border border-gray-700 bg-gray-800 flex items-center justify-center text-white hover:border-white transition-colors group"
