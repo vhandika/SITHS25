@@ -93,6 +93,7 @@ const InputField: React.FC<InputFieldProps> = ({ label, field, value, onChange }
         <label className="text-sm font-medium text-gray-400">{label}</label>
         <input
             type="text"
+            inputMode="decimal"
             value={value}
             onChange={(e) => onChange(field, e.target.value)}
             placeholder="0 - 100"
