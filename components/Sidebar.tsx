@@ -3,7 +3,7 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
     Home, Library, Newspaper, Users, Mail, X, Menu,
     LogIn, LogOut, KeyRound, UserCircle, CameraIcon, Search,
-    CalendarCheck, FileText, Flag, Music, Monitor, Wallet
+    CalendarCheck, FileText, Flag, Music, Monitor, Wallet, CalculatorIcon
 } from 'lucide-react'
 import ProfileModal from '../components/ProfileModal';
 import ReportModal from '../components/ReportModal';
@@ -24,6 +24,7 @@ const deleteCookie = (name: string) => {
 const staticNavItems = [
     { path: '/', name: 'Home', icon: Home },
     { path: '/library', name: 'Library', icon: Library },
+    { path: '/Calc', name: 'Index Calculator', icon: CalculatorIcon },
     { path: '/news', name: 'News', icon: Newspaper },
     { path: '/about', name: 'About Us', icon: Users },
     { path: '/contact', name: 'Contact Us', icon: Mail },

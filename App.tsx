@@ -23,6 +23,7 @@ const PDFTools = lazy(() => import('./views/PDFTools'));
 const Music = lazy(() => import('./views/Music'));
 const DevDashboard = lazy(() => import('./views/DevDashboard'));
 const Finance = lazy(() => import('./views/Finance'));
+const Calc = lazy(() => import('./views/IndexCalculator'));
 const MusicPlayer = lazy(() => import('./components/MusicPlayer'));
 
 const API_BASE_URL = 'https://api.sith-s25.my.id/api';
@@ -91,6 +92,7 @@ const AppContent: React.FC = () => {
                         <Route path="/music" element={<Music />} />
                         <Route path="/dev" element={<DevDashboard />} />
                         <Route path="/finance" element={<Finance />} />
+                        <Route path="/Calc"element={<Calc />} />
                     </Routes>
                 </Suspense>
             </main>
