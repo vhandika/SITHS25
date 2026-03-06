@@ -268,8 +268,8 @@ const Finance: React.FC = () => {
                         type: 'pengeluaran',
                         amount,
                         description: formDescription,
-                        user_nim: '', // Dikosongkan sesuai permintaan
-                        user_name: '' // Dikosongkan sesuai permintaan
+                        user_nim: '',
+                        user_name: ''
                     })
                 });
                 
@@ -280,9 +280,8 @@ const Finance: React.FC = () => {
                     showToast(data.message || 'Gagal menambah transaksi', 'error');
                 }
             } else {
-                // Proses Pemasukan (Batch/Checklist)
                 if (selectedNims.length === 0) {
-                    showToast('Pilih minimal 1 orang mahasiswa!', 'error');
+                    showToast('Pilih minimal 1 orang mahasiswa', 'error');
                     setIsSubmitting(false);
                     return;
                 }
@@ -312,7 +311,6 @@ const Finance: React.FC = () => {
 
                 const responses = await Promise.all(promises);
                 
-                // Cek error secara strict
                 const failedResponse = responses.find(res => !res.ok);
                 if (failedResponse) {
                     const errorData = await failedResponse.json().catch(() => ({}));
@@ -380,15 +378,13 @@ const Finance: React.FC = () => {
             <ParticleBackground />
 
             <div className="relative z-10 mx-auto max-w-7xl">
-                {/* Header */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
                     <div className="flex items-center gap-4">
                         <div className="w-10 h-10 flex items-center justify-center bg-yellow-400 text-black transform -skew-x-12 shadow-lg">
                             <span className="transform skew-x-12"><Wallet size={32} /></span>
                         </div>
                         <div>
-                            <h1 className="text-4xl font-bold tracking-wider uppercase text-white sm:text-5xl drop-shadow-md">Keuangan</h1>
-                            <p className="text-gray-400 text-sm mt-1">Catatan Kas & Pengeluaran</p>
+                            <h1 className="text-4xl font-bold tracking-wider uppercase text-white sm:text-5xl drop-shadow-md">Finance</h1>
                         </div>
                     </div>
 
@@ -407,9 +403,7 @@ const Finance: React.FC = () => {
                     </div>
                 ) : (
                     <>
-                        {/* Summary Cards */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-                            {/* Total Kas */}
                             <div className="relative overflow-hidden bg-gray-900/60 backdrop-blur-md border border-gray-800 rounded-lg p-6 hover:border-yellow-400/50 transition-all duration-300 group">
                                 <div className="absolute top-0 right-0 w-20 h-20 bg-yellow-400/5 rounded-bl-full"></div>
                                 <div className="flex items-center gap-3 mb-3">
@@ -423,7 +417,6 @@ const Finance: React.FC = () => {
                                 </p>
                             </div>
 
-                            {/* Pengeluaran with Tabs */}
                             <div className="relative overflow-hidden bg-gray-900/60 backdrop-blur-md border border-gray-800 rounded-lg p-6 hover:border-red-400/30 transition-all duration-300 sm:col-span-1 lg:col-span-1">
                                 <div className="absolute top-0 right-0 w-20 h-20 bg-red-400/5 rounded-bl-full"></div>
                                 <div className="flex items-center gap-3 mb-3">
@@ -451,7 +444,6 @@ const Finance: React.FC = () => {
                                 </div>
                             </div>
 
-                            {/* Belum Bayar */}
                             <div className="relative overflow-hidden bg-gray-900/60 backdrop-blur-md border border-gray-800 rounded-lg p-6 hover:border-orange-400/30 transition-all duration-300 flex flex-col justify-between">
                                 <div className="absolute top-0 right-0 w-20 h-20 bg-orange-400/5 rounded-bl-full"></div>
                                 
@@ -481,18 +473,17 @@ const Finance: React.FC = () => {
                                     onClick={() => setShowUnpaid(!showUnpaid)}
                                     className="text-gray-500 text-xs mt-3 text-left hover:text-yellow-400 transition-colors w-fit underline decoration-gray-700 underline-offset-2"
                                 >
-                                    {showUnpaid ? 'Tutup daftar' : 'Lihat daftar belum lunas'}
+                                    {showUnpaid ? 'Tutup daftar' : 'Lihat daftar'}
                                 </button>
                             </div>
                         </div>
 
-                        {/* Unpaid Users List */}
                         {showUnpaid && (
                             <div className="mb-8 bg-gray-900/60 backdrop-blur-md border border-gray-800 rounded-lg overflow-hidden animate-fade-in-down">
                                 <div className="p-4 border-b border-gray-800 flex items-center justify-between">
                                     <h3 className="text-white font-bold flex items-center gap-2">
                                         <Users size={18} className="text-orange-400" />
-                                        Belum Lunas Kas — {availableMonths.find(m => m.value === dashboardMonth)?.label}
+                                        Yang Belum Lunas Kas Bulan {availableMonths.find(m => m.value === dashboardMonth)?.label}
                                     </h3>
                                     <div className="flex gap-3 text-xs">
                                         <span className="text-green-400">Lunas: {dashboardUnpaidStats.paid}</span>
@@ -501,8 +492,7 @@ const Finance: React.FC = () => {
                                 </div>
                                 {dashboardUnpaidUsers.length === 0 ? (
                                     <div className="p-6 text-center text-gray-400 flex flex-col items-center justify-center gap-2">
-                                        <span className="text-3xl">🎉</span>
-                                        <span>Mantap, semua sudah bayar kas lunas 20k! (Atau API error)</span>
+                                        <span>Tumben dah bayar semua XD</span>
                                     </div>
                                 ) : (
                                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-0 max-h-[400px] overflow-y-auto custom-scrollbar">
@@ -531,7 +521,6 @@ const Finance: React.FC = () => {
                             </div>
                         )}
 
-                        {/* Transaction History */}
                         <div className="bg-gray-900/60 backdrop-blur-md border border-gray-800 rounded-lg overflow-hidden">
                             <div className="p-4 border-b border-gray-800">
                                 <h3 className="text-white font-bold flex items-center gap-2">
@@ -586,7 +575,6 @@ const Finance: React.FC = () => {
                 )}
             </div>
 
-            {/* Mobile FAB */}
             {canAdd && (
                 <button
                     onClick={() => setIsModalOpen(true)}
@@ -597,7 +585,6 @@ const Finance: React.FC = () => {
                 </button>
             )}
 
-            {/* Add Transaction Modal */}
             <div className="relative z-50">
                 {isModalOpen && (
                     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4">
@@ -614,7 +601,6 @@ const Finance: React.FC = () => {
                             </h2>
 
                             <form onSubmit={handleSubmit} className="space-y-4 flex-1 overflow-y-auto pr-1 custom-scrollbar">
-                                {/* Type Toggle */}
                                 <div>
                                     <label className="block text-sm text-gray-400 mb-2">Jenis Transaksi</label>
                                     <div className="flex gap-2">
@@ -627,7 +613,7 @@ const Finance: React.FC = () => {
                                                 }`}
                                         >
                                             <ArrowUpCircle size={16} className="inline mr-1.5 -mt-0.5" />
-                                            Pemasukan Kas
+                                            Pemasukan
                                         </button>
                                         <button
                                             type="button"
@@ -643,7 +629,6 @@ const Finance: React.FC = () => {
                                     </div>
                                 </div>
 
-                                {/* KONDISI JIKA PEMASUKAN */}
                                 {formType === 'pemasukan' ? (
                                     <>
                                         <div className="grid grid-cols-2 gap-3">
@@ -712,8 +697,7 @@ const Finance: React.FC = () => {
                                                 <div className="max-h-48 overflow-y-auto custom-scrollbar p-2 space-y-1">
                                                     {filteredModalUsers.length === 0 ? (
                                                         <div className="text-gray-500 text-xs text-center py-4 flex flex-col items-center">
-                                                            <span>✨</span>
-                                                            <span className="mt-1">Tidak ada / Semua sudah lunas!</span>
+                                                            <span className="mt-1">Tidak ada / Semua orang sudah lunas</span>
                                                         </div>
                                                     ) : (
                                                         filteredModalUsers.map(user => (
@@ -738,7 +722,6 @@ const Finance: React.FC = () => {
                                         </div>
                                     </>
                                 ) : (
-                                    /* KONDISI JIKA PENGELUARAN */
                                     <>
                                         <div>
                                             <label className="block text-sm text-gray-400 mb-1">Jumlah (Rp)</label>
@@ -760,7 +743,7 @@ const Finance: React.FC = () => {
                                                 value={formDescription}
                                                 onChange={(e) => setFormDescription(e.target.value)}
                                                 className="w-full bg-black/50 border border-gray-700 rounded p-2 text-white focus:border-yellow-400 focus:outline-none transition-colors"
-                                                placeholder="Contoh: Beli konsumsi rapat"
+                                                placeholder=""
                                                 required
                                             />
                                         </div>

@@ -168,7 +168,6 @@ const Sidebar: React.FC = () => {
             items.push({ path: '/find-nim', name: 'Find', icon: Search });
             items.push({ path: '/attendance', name: 'Absensi', icon: CalendarCheck });
             items.push({ path: '/gallery', name: 'Gallery', icon: CameraIcon });
-            items.push({ path: '/finance', name: 'Keuangan', icon: Wallet });
             items.push({ path: '/change-password', name: 'Ganti Password', icon: KeyRound });
             if (userRole === 'dev') {
                 items.push({ path: '/dev', name: 'Dev Dashboard', icon: Monitor });
