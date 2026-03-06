@@ -3,7 +3,7 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
     Home, Library, Newspaper, Users, Mail, X, Menu,
     LogIn, LogOut, KeyRound, UserCircle, CameraIcon, Search,
-    CalendarCheck, FileText, Flag, Music, Monitor
+    CalendarCheck, FileText, Flag, Music, Monitor, Wallet
 } from 'lucide-react'
 import ProfileModal from '../components/ProfileModal';
 import ReportModal from '../components/ReportModal';
@@ -168,6 +168,7 @@ const Sidebar: React.FC = () => {
             items.push({ path: '/find-nim', name: 'Find', icon: Search });
             items.push({ path: '/attendance', name: 'Absensi', icon: CalendarCheck });
             items.push({ path: '/gallery', name: 'Gallery', icon: CameraIcon });
+            items.push({ path: '/finance', name: 'Keuangan', icon: Wallet });
             items.push({ path: '/change-password', name: 'Ganti Password', icon: KeyRound });
             if (userRole === 'dev') {
                 items.push({ path: '/dev', name: 'Dev Dashboard', icon: Monitor });
