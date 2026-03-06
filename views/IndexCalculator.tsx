@@ -151,7 +151,7 @@ const IndexCalculator: React.FC = () => {
             if (isUP) {
                 total = 0.3 * ((val('kuis1') + val('kuis2')) / 2) + 0.5 * val('up') + 0.1 * val('uts') + 0.1 * val('uas');
             } else {
-                total = 0.3 * ((val('kuis1') + val('kuis2')) / 2) + 0.35 * val('uas') + 0.5 * val('uts');
+                total = 0.3 * ((val('kuis1') + val('kuis2')) / 2) + 0.35 * val('uas') + 0.35 * val('uts');
             }
         }
 
