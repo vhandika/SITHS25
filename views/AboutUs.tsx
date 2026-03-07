@@ -373,10 +373,20 @@ const About: React.FC = () => {
                                 style={{ minWidth: `${Math.max(1000, activitiesData.length * 320)}px` }}
                             >
                                 <div className="absolute top-1/2 left-0 w-full h-1 bg-gray-800/80 -translate-y-1/2 rounded-full mx-12 backdrop-blur-sm" style={{ width: 'calc(100% - 6rem)' }}></div>
+                                
                                 <div
                                     className="absolute top-1/2 left-0 h-1 bg-yellow-400 -translate-y-1/2 rounded-full transition-all duration-[2000ms] ease-in-out mx-12 shadow-[0_0_10px_rgba(250,204,21,0.8)]"
                                     style={{ width: visibleSections['timeline'] ? 'calc(100% - 6rem)' : '0%' }}
                                 ></div>
+
+                                <div 
+                                    className={`absolute top-1/2 right-12 -translate-y-1/2 translate-x-[40%] z-20 transition-all duration-500 ${
+                                        visibleSections['timeline'] ? 'text-yellow-400 drop-shadow-[0_0_12px_rgba(250,204,21,1)] scale-100 opacity-100' : 'text-gray-700 scale-75 opacity-0'
+                                    }`}
+                                    style={{ transitionDelay: visibleSections['timeline'] ? '1800ms' : '0ms' }}
+                                >
+                                    <ChevronRight size={36} strokeWidth={4} />
+                                </div>
 
                                 <div className="absolute inset-0 flex items-center px-12">
                                     {activitiesData.map((activity, index) => {
@@ -395,11 +405,43 @@ const About: React.FC = () => {
                                                     className={`absolute flex flex-col items-center cursor-pointer group w-full ${isTop ? 'bottom-[50%] pb-8' : 'top-[50%] pt-8'}`}
                                                     onClick={() => handleActivityClick(activity)}
                                                 >
-                                                    <svg className={`absolute left-0 w-full pointer-events-none ${isTop ? 'bottom-0 h-8' : 'top-0 h-8'}`}>
+                                                    <svg className={`absolute left-0 w-full pointer-events-none z-10 ${isTop ? 'bottom-0 h-8' : 'top-0 h-8'}`}>
                                                         {isTop ? (
-                                                            <path d="M 160,0 L 160,12 L 160,32" fill="none" stroke={selectedActivity.id === activity.id ? "#FACC15" : "#4B5563"} strokeWidth="1.5" />
+                                                            <>
+                                                                <path 
+                                                                    d="M 160,32 L 160,3" 
+                                                                    fill="none" 
+                                                                    stroke={selectedActivity.id === activity.id ? "#FACC15" : "#4B5563"} 
+                                                                    strokeWidth={selectedActivity.id === activity.id ? "2" : "1.5"} 
+                                                                    strokeDasharray={selectedActivity.id === activity.id ? "none" : "4 4"}
+                                                                    className="transition-all duration-300 ease-in-out"
+                                                                />
+                                                                <circle 
+                                                                    cx="160" cy="3" r="3" 
+                                                                    fill={selectedActivity.id === activity.id ? "#FACC15" : "#1F2937"} 
+                                                                    stroke={selectedActivity.id === activity.id ? "#FACC15" : "#4B5563"}
+                                                                    strokeWidth="1.5"
+                                                                    className="transition-all duration-300 ease-in-out"
+                                                                />
+                                                            </>
                                                         ) : (
-                                                            <path d="M 160,32 L 160,20 L 160,0" fill="none" stroke={selectedActivity.id === activity.id ? "#FACC15" : "#4B5563"} strokeWidth="1.5" />
+                                                            <>
+                                                                <path 
+                                                                    d="M 160,0 L 160,29" 
+                                                                    fill="none" 
+                                                                    stroke={selectedActivity.id === activity.id ? "#FACC15" : "#4B5563"} 
+                                                                    strokeWidth={selectedActivity.id === activity.id ? "2" : "1.5"} 
+                                                                    strokeDasharray={selectedActivity.id === activity.id ? "none" : "4 4"}
+                                                                    className="transition-all duration-300 ease-in-out"
+                                                                />
+                                                                <circle 
+                                                                    cx="160" cy="29" r="3" 
+                                                                    fill={selectedActivity.id === activity.id ? "#FACC15" : "#1F2937"} 
+                                                                    stroke={selectedActivity.id === activity.id ? "#FACC15" : "#4B5563"}
+                                                                    strokeWidth="1.5"
+                                                                    className="transition-all duration-300 ease-in-out"
+                                                                />
+                                                            </>
                                                         )}
                                                     </svg>
 
