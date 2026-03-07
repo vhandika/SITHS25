@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Newspaper, Plus, X, Lock, Pencil, Trash2, ChevronLeft, ChevronRight, Loader, Instagram } from 'lucide-react';
+import { Newspaper, Plus, X, Lock, Pencil, Trash2, ChevronLeft, ChevronRight, Instagram } from 'lucide-react';
 import SkewedButton from '../components/SkewedButton';
 import { fetchWithAuth } from '../src/utils/api';
 import { useToast } from '../contexts/ToastContext';
@@ -564,10 +564,10 @@ const News: React.FC = () => {
                     </button>
 
                     <div
-                        className={`relative w-full max-w-4xl h-full md:max-h-[90vh] bg-gray-900 md:rounded-xl overflow-y-auto hide-scrollbar shadow-2xl flex flex-col border border-gray-800 ${isClosing ? 'animate-pop-out' : 'animate-pop-in'}`}
+                        className={`relative w-full max-w-md h-full md:max-h-[90vh] bg-gray-900 md:rounded-xl overflow-y-auto hide-scrollbar shadow-2xl flex flex-col border border-gray-800 ${isClosing ? 'animate-pop-out' : 'animate-pop-in'}`}
                         onClick={e => e.stopPropagation()}
                     >
-                        <div className="relative w-full min-h-[50vh] md:min-h-[60vh] flex-shrink-0">
+                        <div className="relative w-full h-[40vh] min-h-[300px] flex-shrink-0">
                             <img
                                 src={selectedArticle.image_url || 'https://via.placeholder.com/800x600'}
                                 className="absolute inset-0 w-full h-full object-cover"
@@ -575,14 +575,14 @@ const News: React.FC = () => {
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/60 to-transparent"></div>
 
-                            <div className="absolute bottom-0 left-0 w-full p-6 md:p-8 z-20 text-left">
+                            <div className="absolute bottom-0 left-0 w-full p-6 z-20 text-left">
                                 <div className="flex gap-3 mb-3">
                                     <span className="bg-yellow-400 px-3 py-1 text-xs font-bold text-black uppercase tracking-wider transform -skew-x-12 inline-block shadow-lg">
                                         <span className="inline-block transform skew-x-12">{selectedArticle.category}</span>
                                     </span>
                                 </div>
 
-                                <h2 className="text-3xl md:text-5xl font-bold text-white leading-tight drop-shadow-lg mb-2">
+                                <h2 className="text-2xl md:text-3xl font-bold text-white leading-tight drop-shadow-lg mb-2">
                                     {selectedArticle.title}
                                 </h2>
 
@@ -592,8 +592,8 @@ const News: React.FC = () => {
                             </div>
                         </div>
                         
-                        <div className="flex-1 bg-gray-900 p-6 md:p-10 text-left">
-                            <div className="max-w-3xl mx-auto">
+                        <div className="flex-1 bg-gray-900 p-6 text-left">
+                            <div className="w-full mx-auto">
                                 <LinkifiedContent text={selectedArticle.content} />
                             </div>
                         </div>
