@@ -550,120 +550,120 @@ const News: React.FC = () => {
                         <Plus size={28} />
                     </button>
                 )}
-
-                {selectedArticle && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4 transition-all" onClick={handleCloseModal}>
-                        <div className={`absolute inset-0 bg-black/95 backdrop-blur-sm ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`}></div>
-                        
-                        <button
-                            onClick={handleCloseModal}
-                            className="absolute top-4 right-4 md:top-6 md:right-6 bg-black/50 backdrop-blur-md p-2 rounded-full text-white hover:bg-yellow-400 hover:text-black transition-all z-[60]"
-                        >
-                            <X size={24} />
-                        </button>
-
-                        <div
-                            className={`relative w-full max-w-4xl h-full md:max-h-[90vh] bg-gray-900 md:rounded-xl overflow-y-auto hide-scrollbar shadow-2xl flex flex-col border border-gray-800 ${isClosing ? 'animate-pop-out' : 'animate-pop-in'}`}
-                            onClick={e => e.stopPropagation()}
-                        >
-                            <div className="relative w-full min-h-[50vh] md:min-h-[60vh] flex-shrink-0">
-                                <img
-                                    src={selectedArticle.image_url || 'https://via.placeholder.com/800x600'}
-                                    className="absolute inset-0 w-full h-full object-cover"
-                                    alt={selectedArticle.title}
-                                />
-                                <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/60 to-transparent"></div>
-
-                                <div className="absolute bottom-0 left-0 w-full p-6 md:p-8 z-20 text-left">
-                                    <div className="flex gap-3 mb-3">
-                                        <span className="bg-yellow-400 px-3 py-1 text-xs font-bold text-black uppercase tracking-wider transform -skew-x-12 inline-block shadow-lg">
-                                            <span className="inline-block transform skew-x-12">{selectedArticle.category}</span>
-                                        </span>
-                                    </div>
-
-                                    <h2 className="text-3xl md:text-5xl font-bold text-white leading-tight drop-shadow-lg mb-2">
-                                        {selectedArticle.title}
-                                    </h2>
-
-                                    <p className="text-gray-300 text-sm font-mono flex items-center gap-2">
-                                        {new Date(selectedArticle.created_at).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-                                    </p>
-                                </div>
-                            </div>
-                            
-                            <div className="flex-1 bg-gray-900 p-6 md:p-10 text-left">
-                                <div className="max-w-3xl mx-auto">
-                                    <LinkifiedContent text={selectedArticle.content} />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {isAddModalOpen && (
-                    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-                        <div
-                            className={`absolute inset-0 bg-black/90 backdrop-blur-sm ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`}
-                            onClick={() => !isUploading && handleCloseModal()}
-                        ></div>
-
-                        <div
-                            className={`relative w-full max-w-2xl bg-gray-900 rounded-lg border border-gray-700 shadow-2xl p-6 overflow-y-auto max-h-[90vh] text-left hide-scrollbar ${isClosing ? 'animate-pop-out' : 'animate-pop-in'}`}
-                        >
-                            <div className="flex justify-between items-center mb-6 border-b border-gray-800 pb-4">
-                                <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-                                    {isEditing ? <Pencil className="text-yellow-400" /> : <Plus className="text-yellow-400" />}
-                                    {isEditing ? 'Edit' : 'Add News'}
-                                </h2>
-                                <button onClick={() => !isUploading && handleCloseModal()} className="text-gray-400 hover:text-white"><X size={24} /></button>
-                            </div>
-                            <form onSubmit={handleSubmit} className="space-y-5">
-                                <div>
-                                    <label className="text-gray-400 text-sm block mb-1">Judul</label>
-                                    <input required type="text" className="w-full bg-black/50 border border-gray-700 rounded p-3 text-white focus:border-yellow-400 outline-none" value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} />
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="text-gray-400 text-sm block mb-1">Kategori</label>
-                                        <select className="w-full bg-black/50 border border-gray-700 rounded p-3 text-white focus:border-yellow-400 outline-none" value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })}>
-                                            <option>Website</option><option>Acara</option><option>Pengumuman</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="text-gray-400 text-sm block mb-1">Visibilitas</label>
-                                        <div className="flex gap-2 bg-black/50 p-1 rounded border border-gray-700">
-                                            <button type="button" onClick={() => setFormData({ ...formData, is_public: true })} className={`flex-1 py-2 rounded text-sm transition-colors ${formData.is_public ? 'bg-yellow-400 text-black' : 'text-gray-400'}`}>Publik</button>
-                                            <button type="button" onClick={() => setFormData({ ...formData, is_public: false })} className={`flex-1 py-2 rounded text-sm transition-colors ${!formData.is_public ? 'bg-yellow-400 text-black' : 'text-gray-400'}`}>Internal</button>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className="text-gray-400 text-sm block mb-2">Foto {isEditing && "(Biarkan kosong jika tidak diganti)"}</label>
-                                    <input type="file" accept="image/*" onChange={handleFileChange} className="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-yellow-400 file:text-black hover:file:bg-yellow-300 transition-colors" />
-                                    {previewUrl && <img src={previewUrl} className="mt-2 h-32 rounded object-cover border border-gray-700" alt="Preview" />}
-                                </div>
-                                <div>
-                                    <label className="text-gray-400 text-sm block mb-1">Isi</label>
-                                    <div className="mb-2">
-                                        <label className="inline-flex items-center px-4 py-2 bg-gray-800 text-gray-300 rounded text-sm cursor-pointer hover:bg-gray-700 transition-colors border border-gray-700">
-                                            <Plus size={16} className="mr-2" />
-                                            Upload Gambar
-                                            <input type="file" accept="image/*" onChange={handleContentImageUpload} className="hidden" disabled={isUploading} />
-                                        </label>
-                                    </div>
-                                    <textarea required rows={8} className="w-full bg-black/50 border border-gray-700 rounded p-3 text-white focus:border-yellow-400 outline-none font-mono text-sm" value={formData.content} onChange={e => setFormData({ ...formData, content: e.target.value })} />
-                                </div>
-                                <div className="pt-4 flex justify-end gap-3">
-                                    <button type="button" onClick={() => !isUploading && handleCloseModal()} className="px-4 py-2 text-gray-400 hover:text-white transition-colors" disabled={isUploading}>Batal</button>
-                                    <button type="submit" disabled={isUploading} className={`px-6 py-2 font-bold uppercase text-white transition-colors ${isEditing ? 'bg-yellow-600 hover:bg-yellow-500' : 'bg-yellow-400 text-black hover:bg-yellow-300'}`}>
-                                        {isUploading ? 'Proses...' : (isEditing ? 'Update' : 'Posting')}
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                )}
             </div>
+
+            {selectedArticle && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 md:p-4 transition-all" onClick={handleCloseModal}>
+                    <div className={`absolute inset-0 bg-black/95 backdrop-blur-sm ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`}></div>
+                    
+                    <button
+                        onClick={handleCloseModal}
+                        className="absolute top-4 right-4 md:top-6 md:right-6 bg-black/50 backdrop-blur-md p-2 rounded-full text-white hover:bg-yellow-400 hover:text-black transition-all z-[110]"
+                    >
+                        <X size={24} />
+                    </button>
+
+                    <div
+                        className={`relative w-full max-w-4xl h-full md:max-h-[90vh] bg-gray-900 md:rounded-xl overflow-y-auto hide-scrollbar shadow-2xl flex flex-col border border-gray-800 ${isClosing ? 'animate-pop-out' : 'animate-pop-in'}`}
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <div className="relative w-full min-h-[50vh] md:min-h-[60vh] flex-shrink-0">
+                            <img
+                                src={selectedArticle.image_url || 'https://via.placeholder.com/800x600'}
+                                className="absolute inset-0 w-full h-full object-cover"
+                                alt={selectedArticle.title}
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/60 to-transparent"></div>
+
+                            <div className="absolute bottom-0 left-0 w-full p-6 md:p-8 z-20 text-left">
+                                <div className="flex gap-3 mb-3">
+                                    <span className="bg-yellow-400 px-3 py-1 text-xs font-bold text-black uppercase tracking-wider transform -skew-x-12 inline-block shadow-lg">
+                                        <span className="inline-block transform skew-x-12">{selectedArticle.category}</span>
+                                    </span>
+                                </div>
+
+                                <h2 className="text-3xl md:text-5xl font-bold text-white leading-tight drop-shadow-lg mb-2">
+                                    {selectedArticle.title}
+                                </h2>
+
+                                <p className="text-gray-300 text-sm font-mono flex items-center gap-2">
+                                    {new Date(selectedArticle.created_at).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <div className="flex-1 bg-gray-900 p-6 md:p-10 text-left">
+                            <div className="max-w-3xl mx-auto">
+                                <LinkifiedContent text={selectedArticle.content} />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {isAddModalOpen && (
+                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+                    <div
+                        className={`absolute inset-0 bg-black/90 backdrop-blur-sm ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`}
+                        onClick={() => !isUploading && handleCloseModal()}
+                    ></div>
+
+                    <div
+                        className={`relative w-full max-w-2xl bg-gray-900 rounded-lg border border-gray-700 shadow-2xl p-6 overflow-y-auto max-h-[90vh] text-left hide-scrollbar ${isClosing ? 'animate-pop-out' : 'animate-pop-in'}`}
+                    >
+                        <div className="flex justify-between items-center mb-6 border-b border-gray-800 pb-4">
+                            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                                {isEditing ? <Pencil className="text-yellow-400" /> : <Plus className="text-yellow-400" />}
+                                {isEditing ? 'Edit' : 'Add News'}
+                            </h2>
+                            <button onClick={() => !isUploading && handleCloseModal()} className="text-gray-400 hover:text-white z-[120] relative"><X size={24} /></button>
+                        </div>
+                        <form onSubmit={handleSubmit} className="space-y-5 relative z-[115]">
+                            <div>
+                                <label className="text-gray-400 text-sm block mb-1">Judul</label>
+                                <input required type="text" className="w-full bg-black/50 border border-gray-700 rounded p-3 text-white focus:border-yellow-400 outline-none" value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-gray-400 text-sm block mb-1">Kategori</label>
+                                    <select className="w-full bg-black/50 border border-gray-700 rounded p-3 text-white focus:border-yellow-400 outline-none" value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })}>
+                                        <option>Website</option><option>Acara</option><option>Pengumuman</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="text-gray-400 text-sm block mb-1">Visibilitas</label>
+                                    <div className="flex gap-2 bg-black/50 p-1 rounded border border-gray-700">
+                                        <button type="button" onClick={() => setFormData({ ...formData, is_public: true })} className={`flex-1 py-2 rounded text-sm transition-colors ${formData.is_public ? 'bg-yellow-400 text-black' : 'text-gray-400'}`}>Publik</button>
+                                        <button type="button" onClick={() => setFormData({ ...formData, is_public: false })} className={`flex-1 py-2 rounded text-sm transition-colors ${!formData.is_public ? 'bg-yellow-400 text-black' : 'text-gray-400'}`}>Internal</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <label className="text-gray-400 text-sm block mb-2">Foto {isEditing && "(Biarkan kosong jika tidak diganti)"}</label>
+                                <input type="file" accept="image/*" onChange={handleFileChange} className="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-yellow-400 file:text-black hover:file:bg-yellow-300 transition-colors" />
+                                {previewUrl && <img src={previewUrl} className="mt-2 h-32 rounded object-cover border border-gray-700" alt="Preview" />}
+                            </div>
+                            <div>
+                                <label className="text-gray-400 text-sm block mb-1">Isi</label>
+                                <div className="mb-2">
+                                    <label className="inline-flex items-center px-4 py-2 bg-gray-800 text-gray-300 rounded text-sm cursor-pointer hover:bg-gray-700 transition-colors border border-gray-700">
+                                        <Plus size={16} className="mr-2" />
+                                        Upload Gambar
+                                        <input type="file" accept="image/*" onChange={handleContentImageUpload} className="hidden" disabled={isUploading} />
+                                    </label>
+                                </div>
+                                <textarea required rows={8} className="w-full bg-black/50 border border-gray-700 rounded p-3 text-white focus:border-yellow-400 outline-none font-mono text-sm" value={formData.content} onChange={e => setFormData({ ...formData, content: e.target.value })} />
+                            </div>
+                            <div className="pt-4 flex justify-end gap-3">
+                                <button type="button" onClick={() => !isUploading && handleCloseModal()} className="px-4 py-2 text-gray-400 hover:text-white transition-colors" disabled={isUploading}>Batal</button>
+                                <button type="submit" disabled={isUploading} className={`px-6 py-2 font-bold uppercase text-white transition-colors ${isEditing ? 'bg-yellow-600 hover:bg-yellow-500' : 'bg-yellow-400 text-black hover:bg-yellow-300'}`}>
+                                    {isUploading ? 'Proses...' : (isEditing ? 'Update' : 'Posting')}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

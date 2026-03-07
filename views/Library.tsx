@@ -1006,15 +1006,15 @@ const Library: React.FC = () => {
             )}
           </div>
         </div>
-
-        <LibraryViewer
-          isOpen={isViewerOpen}
-          onClose={() => setIsViewerOpen(false)}
-          currentItem={selectedItem}
-          relatedItems={filteredItems}
-          onSelectItem={(item) => setSelectedItem(item)}
-        />
       </div>
+
+      <LibraryViewer
+        isOpen={isViewerOpen}
+        onClose={() => setIsViewerOpen(false)}
+        currentItem={selectedItem}
+        relatedItems={filteredItems}
+        onSelectItem={(item) => setSelectedItem(item)}
+      />
     </div>
   );
 };
