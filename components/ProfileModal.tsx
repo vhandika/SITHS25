@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Camera, Globe, Loader, AlertCircle, Save, Edit2, Palette, Trash2 } from 'lucide-react';
+import { X, Camera, Globe, Loader, AlertCircle, Save, Edit2, Palette, Trash2, Image as ImageIcon } from 'lucide-react';
 import { useToast } from '../contexts/ToastContext';
 
 const API_BASE_URL = 'https://api.sith-s25.my.id/api';
@@ -17,31 +17,38 @@ interface ProfileModalProps {
     onClose: () => void;
 }
 
-const SOLID_COLORS = [
-    '#1f2937', '#000000', '#1e3a8a', '#be123c', '#065f46', '#b45309', '#7c2d12', '#4c1d95',
-];
-
 const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, onClose }) => {
     const { showToast } = useToast();
     const [userData, setUserData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
     const [isEditing, setIsEditing] = useState(false);
-
+    const [activeMenu, setActiveMenu] = useState<'avatar' | 'banner' | null>(null);
+    const [isMenuAnimating, setIsMenuAnimating] = useState(false);
+    
+    // PERBAIKAN: Kembalikan 'jurusan' ke dalam formData agar ikut terkirim saat save
     const [formData, setFormData] = useState({
         bio: '', instagram: '', whatsapp: '', line: '', jurusan: '', other_links: ''
     });
-
+    
     const [avatarFile, setAvatarFile] = useState<File | null>(null);
     const [bannerFile, setBannerFile] = useState<File | null>(null);
     const [previewAvatar, setPreviewAvatar] = useState<string | null>(null);
     const [previewBanner, setPreviewBanner] = useState<string | null>(null);
     const [deleteAvatar, setDeleteAvatar] = useState(false);
     const [deleteBanner, setDeleteBanner] = useState(false);
-
     const [isSaving, setIsSaving] = useState(false);
-
     const isOwnProfile = targetNim === currentUserNim;
+
+    const openMenu = (type: 'avatar' | 'banner') => {
+        setActiveMenu(type);
+        setTimeout(() => setIsMenuAnimating(true), 15);
+    };
+
+    const closeMenu = () => {
+        setIsMenuAnimating(false);
+        setTimeout(() => setActiveMenu(null), 300);
+    };
 
     useEffect(() => {
         if (targetNim) {
@@ -61,12 +68,13 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, 
 
             if (res.ok && json.data) {
                 setUserData(json.data);
+                // PERBAIKAN: Pastikan jurusan ikut di-set ke formData
                 setFormData({
                     bio: json.data.bio || '',
                     instagram: json.data.instagram || '',
                     whatsapp: json.data.whatsapp || '',
                     line: json.data.line || '',
-                    jurusan: json.data.jurusan || '',
+                    jurusan: json.data.jurusan || '', 
                     other_links: json.data.other_links || ''
                 });
             } else {
@@ -85,6 +93,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, 
         const token = getCookie('userToken');
         const data = new FormData();
 
+        // Di sini formData akan me-looping 'jurusan' dan mengirim nilai aslinya ke API
         Object.keys(formData).forEach(key => data.append(key, (formData as any)[key]));
 
         if (avatarFile) data.append('avatar', avatarFile);
@@ -194,7 +203,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, 
                 {!loading && !errorMsg && userData && (
                     <div className="flex flex-col h-full overflow-hidden">
                         <div className="flex-1 overflow-y-auto custom-scrollbar relative">
-                            <div className="h-32 bg-gray-800 relative group w-full shrink-0">
+                            <div className="h-32 bg-gray-800 relative w-full shrink-0">
                                 {currentBannerUrl ? (
                                     <img
                                         src={currentBannerUrl}
@@ -207,91 +216,50 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, 
                                 )}
 
                                 {isEditing && (
-                                    <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <div className="flex items-center gap-3 mb-3">
-                                            <label className="cursor-pointer flex flex-col items-center text-white hover:text-yellow-400 transition-colors">
-                                                <div className="bg-white/10 p-2 rounded-full mb-1">
-                                                    <Camera size={20} />
-                                                </div>
-                                                <span className="text-[10px] font-bold">Upload</span>
-                                                <input type="file" hidden accept="image/*" onChange={(e) => handleFileChange(e, 'banner')} />
-                                            </label>
-
-                                            {currentBannerUrl && (
-                                                <button
-                                                    onClick={() => handleDeleteImage('banner')}
-                                                    className="flex flex-col items-center text-white hover:text-red-400 transition-colors"
-                                                >
-                                                    <div className="bg-white/10 p-2 rounded-full mb-1">
-                                                        <Trash2 size={20} />
-                                                    </div>
-                                                    <span className="text-[10px] font-bold">Hapus</span>
-                                                </button>
-                                            )}
-                                        </div>
-
-                                        <div className="flex gap-2 bg-black/50 p-2 rounded-full backdrop-blur-sm">
-                                            {SOLID_COLORS.map((color) => (
-                                                <button
-                                                    key={color}
-                                                    type="button"
-                                                    onClick={() => handleColorSelect(color)}
-                                                    className="w-5 h-5 rounded-full border border-white/30 hover:scale-110 transition-transform shadow-sm"
-                                                    style={{ backgroundColor: color }}
-                                                    title={color}
-                                                />
-                                            ))}
-                                        </div>
-                                    </div>
+                                    <button 
+                                        onClick={() => openMenu('banner')}
+                                        className="absolute bottom-2 right-2 bg-gray-900 border border-gray-700 text-white p-2 rounded-full hover:bg-gray-800 active:scale-95 shadow-lg transition-all z-10"
+                                    >
+                                        <Edit2 size={16} />
+                                    </button>
                                 )}
-                                <button onClick={onClose} className="absolute top-2 right-2 bg-black/40 text-white p-1.5 rounded-full hover:bg-red-500 transition-colors z-20 backdrop-blur-sm">
-                                    <X size={20} />
-                                </button>
+                                
+                                {!isEditing && (
+                                    <button onClick={onClose} className="absolute top-2 right-2 bg-black/40 text-white p-1.5 rounded-full hover:bg-red-500 transition-colors z-20 backdrop-blur-sm">
+                                        <X size={20} />
+                                    </button>
+                                )}
                             </div>
 
                             <div className="px-6 pb-6 bg-gray-900 min-h-[300px]">
-                                <div className="relative -mt-12 mb-3 w-24 h-24 mx-auto sm:mx-0 z-10">
-                                    <div className="w-24 h-24 rounded-full border-4 border-gray-900 overflow-hidden bg-gray-800 shadow-xl relative group">
+                                <div className="relative -mt-12 mb-3 w-24 h-24 mx-auto sm:mx-0 z-20">
+                                    <div className="w-24 h-24 rounded-full border-4 border-gray-900 overflow-hidden bg-gray-800 shadow-xl relative">
                                         <img
                                             src={currentAvatarUrl || `https://ui-avatars.com/api/?name=${userData.name}&background=random`}
                                             className="w-full h-full object-cover"
                                             alt="Profile"
                                             onError={(e) => { (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${userData.name}`; }}
                                         />
-                                        {isEditing && (
-                                            <div className="absolute inset-0 bg-black/60 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <label className="cursor-pointer text-white hover:text-yellow-400">
-                                                    <Camera size={20} />
-                                                    <input type="file" hidden accept="image/*" onChange={(e) => handleFileChange(e, 'avatar')} />
-                                                </label>
-                                                {currentAvatarUrl && (
-                                                    <button
-                                                        onClick={() => handleDeleteImage('avatar')}
-                                                        className="text-white hover:text-red-400"
-                                                    >
-                                                        <Trash2 size={20} />
-                                                    </button>
-                                                )}
-                                            </div>
-                                        )}
                                     </div>
+                                    
+                                    {isEditing && (
+                                        <button 
+                                            onClick={() => openMenu('avatar')}
+                                            className="absolute bottom-0 right-0 bg-gray-900 border border-gray-700 text-white p-2 rounded-full hover:bg-gray-800 active:scale-95 shadow-lg transition-all z-30"
+                                        >
+                                            <Edit2 size={14} />
+                                        </button>
+                                    )}
                                 </div>
 
                                 <div className="text-center sm:text-left mb-6">
                                     <h2 className="text-2xl font-bold text-white leading-tight">{userData.name}</h2>
                                     <p className="text-gray-500 text-sm font-mono mb-2">{userData.nim}</p>
-
-                                    {isEditing ? (
-                                        <input
-                                            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:border-yellow-400 outline-none"
-                                            placeholder="Jurusan"
-                                            value={formData.jurusan}
-                                            onChange={e => setFormData({ ...formData, jurusan: e.target.value })}
-                                        />
-                                    ) : (
-                                        <p className="text-yellow-400 font-semibold text-sm">{userData.jurusan || 'NULL'}</p>
-                                    )}
+                                    
+                                    {/* Jurusan statis, tapi datanya tetap aman di background state */}
+                                    <p className="text-yellow-400 font-semibold text-sm">{userData.jurusan || 'NULL'}</p>
                                 </div>
+
                                 <div className="mb-6">
                                     {isEditing ? (
                                         <div className="space-y-4">
@@ -332,9 +300,10 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, 
                                                     />
                                                 </div>
                                             </div>
+
                                         </div>
                                     ) : (
-                                        <div className="flex justify-center sm:justify-start gap-4">
+                                        <div className="flex justify-center sm:justify-start flex-wrap gap-4">
                                             <div className={`flex flex-col items-center gap-1 ${userData.whatsapp ? 'flex' : 'hidden'}`}>
                                                 <a href={`https://wa.me/+62${userData.whatsapp}`} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full border border-gray-700 bg-gray-800 flex items-center justify-center text-green-500 hover:border-green-500 transition-colors group">
                                                     <i className="fa-brands fa-whatsapp text-xl"></i>
@@ -343,24 +312,14 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, 
                                             </div>
 
                                             <div className={`flex flex-col items-center gap-1 ${userData.line ? 'flex' : 'hidden'}`}>
-                                                <a
-                                                    href={`https://line.me/ti/p/~${userData.line}`}
-                                                    target='_blank'
-                                                    rel="noreferrer"
-                                                    className="w-10 h-10 rounded-full border border-gray-700 bg-gray-800 flex items-center justify-center text-white hover:border-white transition-colors group"
-                                                >
+                                                <a href={`https://line.me/ti/p/~${userData.line}`} target='_blank' rel="noreferrer" className="w-10 h-10 rounded-full border border-gray-700 bg-gray-800 flex items-center justify-center text-white hover:border-white transition-colors group">
                                                     <i className="fa-brands fa-line text-xl"></i>
                                                 </a>
                                                 <span className="text-[10px] text-gray-500">Line</span>
                                             </div>
 
                                             <div className={`flex flex-col items-center gap-1 ${userData.instagram ? 'flex' : 'hidden'}`}>
-                                                <a
-                                                    href={`https://instagram.com/${userData.instagram}`}
-                                                    target='_blank'
-                                                    rel="noreferrer"
-                                                    className="w-10 h-10 rounded-full border border-gray-700 bg-gray-800 flex items-center justify-center text-pink-500 hover:border-pink-500 transition-colors group"
-                                                >
+                                                <a href={`https://instagram.com/${userData.instagram}`} target='_blank' rel="noreferrer" className="w-10 h-10 rounded-full border border-gray-700 bg-gray-800 flex items-center justify-center text-pink-500 hover:border-pink-500 transition-colors group">
                                                     <i className="fa-brands fa-instagram text-xl"></i>
                                                 </a>
                                                 <span className="text-[10px] text-gray-500">Instagram</span>
@@ -434,6 +393,8 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, 
                                         <button
                                             onClick={() => {
                                                 setIsEditing(false);
+                                                closeMenu();
+                                                // PERBAIKAN: Pastikan jurusan ikut di-reset kembali
                                                 setFormData({
                                                     bio: userData.bio || '',
                                                     instagram: userData.instagram || '',
@@ -450,14 +411,14 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, 
                                                 setDeleteBanner(false);
                                             }}
                                             disabled={isSaving}
-                                            className="flex-1 py-3 bg-gray-800 border border-gray-700 text-gray-300 rounded-lg text-sm font-bold hover:bg-gray-700 transition-colors"
+                                            className="flex-1 py-3 bg-gray-800 border border-gray-700 text-gray-300 rounded-lg text-sm font-bold hover:bg-gray-700 active:bg-gray-700 transition-colors"
                                         >
                                             Batal
                                         </button>
                                         <button
                                             onClick={handleSave}
                                             disabled={isSaving}
-                                            className="flex-1 py-3 bg-yellow-400 text-black rounded-lg text-sm font-bold hover:bg-yellow-300 flex items-center justify-center gap-2 shadow-lg shadow-yellow-400/20 disabled:opacity-50 transition-colors"
+                                            className="flex-1 py-3 bg-yellow-400 text-black rounded-lg text-sm font-bold hover:bg-yellow-300 active:bg-yellow-300 flex items-center justify-center gap-2 shadow-lg shadow-yellow-400/20 disabled:opacity-50 transition-colors"
                                         >
                                             {isSaving ? <Loader size={18} className="animate-spin" /> : <Save size={18} />} Simpan
                                         </button>
@@ -465,7 +426,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, 
                                 ) : (
                                     <button
                                         onClick={() => setIsEditing(true)}
-                                        className="w-full py-3 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2"
+                                        className="w-full py-3 bg-gray-800 hover:bg-gray-700 active:bg-gray-700 border border-gray-700 text-white rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2"
                                     >
                                         <Edit2 size={16} /> Edit Profile
                                     </button>
@@ -475,6 +436,81 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, 
                     </div>
                 )}
             </div>
+
+            {activeMenu && (
+                <div 
+                    className={`fixed inset-0 z-[110] flex items-end justify-center transition-all duration-300 ease-out ${
+                        isMenuAnimating ? 'bg-black/60 backdrop-blur-sm opacity-100' : 'bg-transparent backdrop-blur-none opacity-0'
+                    }`}
+                    onClick={closeMenu}
+                >
+                    <div 
+                        className={`bg-gray-900 w-full max-w-md p-5 pb-8 rounded-t-3xl border-t border-gray-700 shadow-[0_-20px_40px_rgba(0,0,0,0.5)] transform transition-transform duration-300 ease-out ${
+                            isMenuAnimating ? 'translate-y-0' : 'translate-y-full'
+                        }`}
+                        onClick={(e) => e.stopPropagation()} 
+                    >
+                        <div className="w-12 h-1.5 bg-gray-700 rounded-full mx-auto mb-5"></div>
+
+                        <div className="flex justify-between items-center mb-5 pb-3 border-b border-gray-800">
+                            <h3 className="text-white font-bold text-lg">
+                                Ubah {activeMenu === 'avatar' ? 'Foto Profil' : 'Banner'}
+                            </h3>
+                            <button onClick={closeMenu} className="text-gray-400 hover:text-white bg-gray-800 p-1.5 rounded-full transition-colors">
+                                <X size={18} />
+                            </button>
+                        </div>
+
+                        <div className="flex flex-col gap-3">
+                            <label className="flex items-center gap-3 p-4 bg-gray-800 hover:bg-gray-700 active:bg-gray-700 rounded-xl cursor-pointer transition-colors text-white">
+                                <div className="bg-blue-500/20 p-2 rounded-full">
+                                    <ImageIcon size={20} className="text-blue-400"/>
+                                </div>
+                                <span className="font-semibold text-sm flex-1">Unggah dari Galeri</span>
+                                <input 
+                                    type="file" 
+                                    hidden 
+                                    accept="image/*" 
+                                    onChange={(e) => { 
+                                        handleFileChange(e, activeMenu); 
+                                        closeMenu(); 
+                                    }} 
+                                />
+                            </label>
+
+                            {activeMenu === 'banner' && (
+                                <div className="relative flex items-center gap-3 p-4 bg-gray-800 hover:bg-gray-700 active:bg-gray-700 rounded-xl cursor-pointer transition-colors text-white overflow-hidden">
+                                    <div className="bg-blue-500/20 p-2 rounded-full">
+                                        <Palette size={20} className="text-blue-400"/>
+                                    </div>
+                                    <span className="font-semibold text-sm flex-1">Pilih Warna</span>
+                                    
+                                    <input 
+                                        type="color" 
+                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                        onChange={(e) => { 
+                                            handleColorSelect(e.target.value); 
+                                        }}
+                                    />
+                                </div>
+                            )}
+
+                            <button 
+                                onClick={() => { 
+                                    handleDeleteImage(activeMenu); 
+                                    closeMenu(); 
+                                }}
+                                className="flex items-center gap-3 p-4 bg-red-900/20 hover:bg-red-900/40 active:bg-red-900/40 border border-red-900/50 rounded-xl cursor-pointer transition-colors text-white"
+                            >
+                                <div className="bg-red-500/20 p-2 rounded-full">
+                                    <Trash2 size={20} className="text-red-500"/>
+                                </div>
+                                <span className="font-semibold text-sm flex-1 text-left text-red-500">Hapus Gambar</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

@@ -1,13 +1,26 @@
 import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { Analytics } from "@vercel/analytics/react";
-import { SpeedInsights } from "@vercel/speed-insights/react"
+import { SpeedInsights } from "@vercel/speed-insights/react";
 import { MusicProvider } from './contexts/MusicContext';
 import { ToastProvider } from './contexts/ToastContext';
 import Sidebar from './components/Sidebar';
 import ActivityTracker from './components/ActivityTracker';
 import ToastContainer from './components/Toast';
 import NimPopup from './components/NimPopup';
+import axios from 'axios';
+axios.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response && error.response.status === 401) {
+            document.cookie = "userNIM=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            if (window.location.pathname !== '/login') {
+                window.location.href = '/login';
+            }
+        }
+        return Promise.reject(error);
+    }
+);
 
 const Home = lazy(() => import('./views/Home'));
 const Library = lazy(() => import('./views/Library'));
@@ -24,6 +37,7 @@ const Music = lazy(() => import('./views/Music'));
 const DevDashboard = lazy(() => import('./views/DevDashboard'));
 const Finance = lazy(() => import('./views/Finance'));
 const Calc = lazy(() => import('./views/IndexCalculator'));
+const QnABoard = lazy(() => import('./views/QnABoard'));
 const MusicPlayer = lazy(() => import('./components/MusicPlayer'));
 
 const API_BASE_URL = 'https://api.sith-s25.my.id/api';
@@ -58,6 +72,7 @@ const AppContent: React.FC = () => {
                     headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 });
                 const data = await response.json();
+                
                 if (response.ok) {
                     if (data.user?.needsNimUpdate) {
                         setShowNimPopup(true);
@@ -65,6 +80,12 @@ const AppContent: React.FC = () => {
                         setShowNimPopup(false);
                     }
                     setHasChecked(true);
+                } 
+                else if (response.status === 401) {
+                    document.cookie = "userNIM=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                    if (window.location.pathname !== '/login') {
+                        window.location.href = '/login';
+                    }
                 }
             } catch (e) { }
         };
@@ -92,7 +113,8 @@ const AppContent: React.FC = () => {
                         <Route path="/music" element={<Music />} />
                         <Route path="/dev" element={<DevDashboard />} />
                         <Route path="/finance" element={<Finance />} />
-                        <Route path="/Calc"element={<Calc />} />
+                        <Route path="/Calc" element={<Calc />} />
+                        <Route path="/qna" element={<QnABoard />} />
                     </Routes>
                 </Suspense>
             </main>
