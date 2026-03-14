@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import SkewedButton from '../components/SkewedButton';
-import { KeyRound, LogIn, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { KeyRound, LogIn, AlertCircle, Eye, EyeOff, X, Mail } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../contexts/ToastContext';
 
@@ -77,7 +77,7 @@ const ParticleBackground: React.FC = () => {
 
                     if (dist < 140) {
                         ctx.beginPath();
-                        const opacity = 0.35 - (dist / 140) * 0.35; 
+                        const opacity = 0.35 - (dist / 140) * 0.35;
                         ctx.strokeStyle = `rgba(250, 204, 21, ${opacity})`;
                         ctx.lineWidth = 1.2;
                         ctx.moveTo(p.x, p.y);
@@ -115,13 +115,18 @@ const Login: React.FC = () => {
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
+    // Forgot password modal state
+    const [showForgotModal, setShowForgotModal] = useState(false);
+    const [forgotNim, setForgotNim] = useState('');
+    const [forgotLoading, setForgotLoading] = useState(false);
+    const [forgotSent, setForgotSent] = useState(false);
+    const [forgotError, setForgotError] = useState('');
+
     const navigate = useNavigate();
     const { showToast } = useToast();
 
     const API_BASE_URL = 'https://api.sith-s25.my.id/api';
     const API_URL = `${API_BASE_URL}/login`;
-
-
 
     useEffect(() => {
         deleteCookie('userToken');
@@ -155,7 +160,6 @@ const Login: React.FC = () => {
             const data = await response.json();
 
             if (response.ok) {
-
                 if (rememberMe) {
                     setCookie('rememberedNIM', nim, 30);
                 } else {
@@ -178,7 +182,43 @@ const Login: React.FC = () => {
 
     const handleForgotPassword = (e: React.MouseEvent) => {
         e.preventDefault();
-        showToast('Untuk reset password, silakan hubungi Vhandika', 'info');
+        setShowForgotModal(true);
+        setForgotNim('');
+        setForgotSent(false);
+        setForgotError('');
+    };
+
+    const handleForgotSubmit = async () => {
+        if (!forgotNim.trim() || !/^[0-9]{5,20}$/.test(forgotNim)) {
+            setForgotError('Masukkan NIM yang valid (angka saja)');
+            return;
+        }
+
+        setForgotLoading(true);
+        setForgotError('');
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/forgot-password`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ nim: forgotNim })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                setForgotSent(true);
+            } else {
+                setForgotError(data.message || 'Terjadi kesalahan. Coba lagi nanti.');
+            }
+        } catch (err) {
+            setForgotError('Gagal menghubungi server.');
+        } finally {
+            setForgotLoading(false);
+        }
     };
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -189,7 +229,7 @@ const Login: React.FC = () => {
 
     return (
         <div className="relative flex min-h-screen w-full items-center justify-center py-16 px-4 mt-16 lg:mt-0 selection:bg-yellow-400 selection:text-black">
-            
+
             <ParticleBackground />
 
             <div className="relative z-10 w-full max-w-md space-y-8 rounded-lg border border-gray-800 bg-black/80 p-8 shadow-2xl shadow-yellow-500/5 backdrop-blur-md">
@@ -283,6 +323,69 @@ const Login: React.FC = () => {
                     </div>
                 </div>
             </div>
+
+            {showForgotModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4">
+                    <div className="relative w-full max-w-sm rounded-lg border border-gray-800 bg-gray-950/95 p-6 shadow-2xl shadow-yellow-500/10 backdrop-blur-md">
+                        <button
+                            onClick={() => setShowForgotModal(false)}
+                            className="absolute top-3 right-3 text-gray-500 hover:text-white transition-colors"
+                        >
+                            <X size={20} />
+                        </button>
+
+                        {!forgotSent ? (
+                            <>
+                                <p className="text-gray-400 text-sm mb-4">
+                                    Masukkan NIM kamu. Link reset password akan dikirim ke email <span className="text-yellow-400 font-medium">NIM@mahasiswa.itb.ac.id</span>
+                                </p>
+
+                                {forgotError && (
+                                    <div className="flex items-center gap-2 bg-red-900/40 border border-red-500 text-red-200 p-2.5 rounded text-xs mb-3">
+                                        <AlertCircle size={14} />
+                                        <span>{forgotError}</span>
+                                    </div>
+                                )}
+
+                                <input
+                                    type="text"
+                                    value={forgotNim}
+                                    onChange={(e) => setForgotNim(e.target.value)}
+                                    onKeyDown={(e) => { if (e.key === 'Enter') handleForgotSubmit(); }}
+                                    className="block w-full border-0 bg-white/5 py-3 px-4 text-white ring-1 ring-inset ring-white/10 placeholder:text-gray-500 focus:ring-2 focus:ring-inset focus:ring-yellow-400 sm:text-sm transition-colors rounded mb-4"
+                                    placeholder="Masukkan NIM"
+                                    autoFocus
+                                />
+
+                                <SkewedButton
+                                    className="w-full shadow-lg"
+                                    icon={!forgotLoading ? <Mail size={16} /> : undefined}
+                                    onClick={handleForgotSubmit}
+                                    disabled={forgotLoading}
+                                >
+                                    {forgotLoading ? 'Mengirim...' : 'Kirim Link Reset'}
+                                </SkewedButton>
+                            </>
+                        ) : (
+                            <div className="text-center py-4">
+                                <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-yellow-400/10 flex items-center justify-center">
+                                    <Mail size={28} className="text-yellow-400" />
+                                </div>
+                                <p className="text-white font-semibold mb-2">Email Terkirim!</p>
+                                <p className="text-gray-400 text-sm mb-1">
+                                    Link reset password telah dikirim ke:
+                                </p>
+                                <p className="text-yellow-400 font-medium text-sm mb-4">
+                                    {forgotNim}@mahasiswa.itb.ac.id
+                                </p>
+                                <p className="text-gray-500 text-xs">
+                                    Link berlaku selama 15 menit. Cek juga folder Spam/Junk.
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

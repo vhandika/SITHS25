@@ -37,8 +37,8 @@ const Music = lazy(() => import('./views/Music'));
 const DevDashboard = lazy(() => import('./views/DevDashboard'));
 const Finance = lazy(() => import('./views/Finance'));
 const Calc = lazy(() => import('./views/IndexCalculator'));
-const QnABoard = lazy(() => import('./views/QnABoard'));
 const MusicPlayer = lazy(() => import('./components/MusicPlayer'));
+const ResetPassword = lazy(() => import('./views/ResetPassword'));
 
 const API_BASE_URL = 'https://api.sith-s25.my.id/api';
 
@@ -72,7 +72,7 @@ const AppContent: React.FC = () => {
                     headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 });
                 const data = await response.json();
-                
+
                 if (response.ok) {
                     if (data.user?.needsNimUpdate) {
                         setShowNimPopup(true);
@@ -80,7 +80,7 @@ const AppContent: React.FC = () => {
                         setShowNimPopup(false);
                     }
                     setHasChecked(true);
-                } 
+                }
                 else if (response.status === 401) {
                     document.cookie = "userNIM=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
                     if (window.location.pathname !== '/login') {
@@ -114,7 +114,7 @@ const AppContent: React.FC = () => {
                         <Route path="/dev" element={<DevDashboard />} />
                         <Route path="/finance" element={<Finance />} />
                         <Route path="/Calc" element={<Calc />} />
-                        <Route path="/qna" element={<QnABoard />} />
+                        <Route path="/reset-password" element={<ResetPassword />} />
                     </Routes>
                 </Suspense>
             </main>
