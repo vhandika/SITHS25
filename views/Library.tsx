@@ -970,13 +970,10 @@ const Library: React.FC = () => {
       
       <ParticleBackground />
 
-{/* COMPONENT POPUP INFORMASI */}
       {showPopup && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/70 backdrop-blur-sm transition-opacity">
-          {/* Hapus outline kuning, ganti dengan border-gray-800 biar lebih nyatu sama tema */}
           <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 md:p-8 max-w-md w-full shadow-[0_0_30px_rgba(250,204,21,0.15)] relative animate-in fade-in zoom-in duration-300">
             
-            {/* Header Popup */}
             <div className="flex justify-between items-start mb-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-yellow-400/10 flex items-center justify-center">
@@ -992,7 +989,6 @@ const Library: React.FC = () => {
               </button>
             </div>
 
-            {/* Isi Popup */}
             <div className="mb-6">
               <p className="text-gray-300 leading-relaxed text-sm">
                 Halo! File yang ditampilkan di library web ini mungkin belum sepenuhnya lengkap. 
