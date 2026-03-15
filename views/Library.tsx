@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
-  Library as LibraryIcon, ArrowUpRight, ChevronDown
+  Library as LibraryIcon, ArrowUpRight, ChevronDown, Instagram, Info, X
 } from 'lucide-react';
 import LibraryViewer from '../components/LibraryViewer';
 
 export interface LibraryItem {
-  id: number;
+  id: string;
   title: string;
   description: string;
   image: string;
@@ -18,7 +18,7 @@ export interface LibraryItem {
 
 const libraryData: LibraryItem[] = [
   {
-    id: 1,
+    id: 'mikro-1-matematika',
     title: 'Matematika I',
     description: '',
     image: 'https://rencanamu.id/assets/file_uploaded/blog/1572532392-shuttersto.jpg',
@@ -28,7 +28,7 @@ const libraryData: LibraryItem[] = [
     type: 'folder',
     children: [
       {
-        id: 101,
+        id: 'mikro-1-mat-uts',
         title: 'Soal UTS',
         description: '',
         image: '',
@@ -37,70 +37,70 @@ const libraryData: LibraryItem[] = [
         category: 'mikrobiologi',
         type: 'folder',
         children: [
-         {
-        id: 1,
-        title: 'Soal UTS 2024',
-        description: '',
-        image: '',
-        driveLink: 'https://drive.google.com/file/d/1rAPOmC2LH3-3CtOc7wGDQ1Gj7uHDGRBc/view?usp=drive_link',
-        semester: 1,
-        category: 'mikrobiologi',
-        type: 'file'
-      },
-      {
-        id: 2,
-        title: 'Soal UTS 2023',
-        description: '',
-        image: '',
-        driveLink: 'https://drive.google.com/file/d/1jG2K-rCRf_iAAb-v96NSxLNqDqkYRIm1/view?usp=drive_link',
-        semester: 1,
-        category: 'mikrobiologi',
-        type: 'file'
-      },
-      {
-        id: 3,
-        title: 'Soal UTS 2022',
-        description: '',
-        image: '',
-        driveLink: 'https://drive.google.com/file/d/1miTF-Q9JD1_biuudjFQRu5ddOpCP_Ja3/view?usp=drive_link',
-        semester: 1,
-        category: 'mikrobiologi',
-        type: 'file'
-      },
-      {
-        id: 4,
-        title: 'Soal UTS 2021',
-        description: '',
-        image: '',
-        driveLink: 'https://drive.google.com/file/d/1X5Nvbkab1UsGZufXtd05HJM2swYhMFaC/view?usp=drive_link',
-        semester: 1,
-        category: 'mikrobiologi',
-        type: 'file'
-      },
-      {
-        id: 5,
-        title: 'Soal UTS 2019',
-        description: '',
-        image: '',
-        driveLink: 'https://drive.google.com/file/d/1npHqDYZj3qURmuIDMM_Igw23f06-qZVo/view?usp=drive_link',
-        semester: 1,
-        category: 'mikrobiologi',
-        type: 'file'
-      },
-      {
-        id: 6,
-        title: 'Latihan UTS',
-        description: '',
-        image: '',
-        driveLink: 'https://drive.google.com/file/d/1Xk3D4BkchcIbIkyQRaccx9fXDhILpq6G/view?usp=drive_link',
-        semester: 1,
-        category: 'mikrobiologi',
-        type: 'file'
-      }
+          {
+            id: 'mikro-1-mat-uts-2024',
+            title: 'Soal UTS 2024',
+            description: '',
+            image: '',
+            driveLink: 'https://drive.google.com/file/d/1rAPOmC2LH3-3CtOc7wGDQ1Gj7uHDGRBc/view?usp=drive_link',
+            semester: 1,
+            category: 'mikrobiologi',
+            type: 'file'
+          },
+          {
+            id: 'mikro-1-mat-uts-2023',
+            title: 'Soal UTS 2023',
+            description: '',
+            image: '',
+            driveLink: 'https://drive.google.com/file/d/1jG2K-rCRf_iAAb-v96NSxLNqDqkYRIm1/view?usp=drive_link',
+            semester: 1,
+            category: 'mikrobiologi',
+            type: 'file'
+          },
+          {
+            id: 'mikro-1-mat-uts-2022',
+            title: 'Soal UTS 2022',
+            description: '',
+            image: '',
+            driveLink: 'https://drive.google.com/file/d/1miTF-Q9JD1_biuudjFQRu5ddOpCP_Ja3/view?usp=drive_link',
+            semester: 1,
+            category: 'mikrobiologi',
+            type: 'file'
+          },
+          {
+            id: 'mikro-1-mat-uts-2021',
+            title: 'Soal UTS 2021',
+            description: '',
+            image: '',
+            driveLink: 'https://drive.google.com/file/d/1X5Nvbkab1UsGZufXtd05HJM2swYhMFaC/view?usp=drive_link',
+            semester: 1,
+            category: 'mikrobiologi',
+            type: 'file'
+          },
+          {
+            id: 'mikro-1-mat-uts-2019',
+            title: 'Soal UTS 2019',
+            description: '',
+            image: '',
+            driveLink: 'https://drive.google.com/file/d/1npHqDYZj3qURmuIDMM_Igw23f06-qZVo/view?usp=drive_link',
+            semester: 1,
+            category: 'mikrobiologi',
+            type: 'file'
+          },
+          {
+            id: 'mikro-1-mat-uts-latihan',
+            title: 'Latihan UTS',
+            description: '',
+            image: '',
+            driveLink: 'https://drive.google.com/file/d/1Xk3D4BkchcIbIkyQRaccx9fXDhILpq6G/view?usp=drive_link',
+            semester: 1,
+            category: 'mikrobiologi',
+            type: 'file'
+          }
         ]
       },
       {
-        id: 102,
+        id: 'mikro-1-mat-uas',
         title: 'Soal UAS',
         description: '',
         image: '',
@@ -108,12 +108,42 @@ const libraryData: LibraryItem[] = [
         semester: 1,
         category: 'mikrobiologi',
         type: 'folder',
+        children: []
+      },
+      {
+        id: 'mikro-1-mat-tutor',
+        title: 'Soal Tutorial',
+        description: '',
+        image: '',
+        driveLink: 'https://drive.google.com/drive/folders/1GnT6-kEzIqFpXXsiPagcUVC5Ob-HxgE6?usp=drive_link',
+        semester: 1,
+        category: 'mikrobiologi',
+        type: 'folder',
         children: [
-        
+          {
+            id: 'mikro-1-mat-tutor-0',
+            title: 'Soal Tutorial Bab 0',
+            description: '',
+            image: '',
+            driveLink: 'https://drive.google.com/file/d/1tPNZTYd3TGw43fVHu9QKnG4Wy9WuUh2b/view?usp=drive_link',
+            semester: 1,
+            category: 'mikrobiologi',
+            type: 'file'
+          },
+          {
+            id: 'mikro-1-mat-tutor-1',
+            title: 'Soal Tutorial Bab 1',
+            description: '',
+            image: '',
+            driveLink: 'https://drive.google.com/file/d/1XFd2xnxfs29CndP9TJyNolO-kfhFvCwB/view?usp=drive_link',
+            semester: 1,
+            category: 'mikrobiologi',
+            type: 'file'
+          }
         ]
       },
       {
-        id: 103,
+        id: 'mikro-1-mat-silabus',
         title: 'Silabus MA1101 Matematika I.pdf',
         description: 'File Silabus resmi.',
         image: '',
@@ -125,7 +155,7 @@ const libraryData: LibraryItem[] = [
     ]
   },
   {
-    id: 2,
+    id: 'mikro-1-fisika',
     title: 'Fisika Dasar I',
     description: '',
     image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS5U20lOxpY0zZ_gktSIAwHKpXNc36Vc2pdLg&s',
@@ -135,7 +165,7 @@ const libraryData: LibraryItem[] = [
     type: 'folder',
     children: [
       {
-        id: 104,
+        id: 'mikro-1-fis-uts',
         title: 'Soal UTS',
         description: '',
         image: '',
@@ -145,7 +175,7 @@ const libraryData: LibraryItem[] = [
         type: 'folder',
         children: [
           {
-            id: 1,
+            id: 'mikro-1-fis-uts-1',
             title: 'Solusi UTS sesi 1 2025',
             description: '',
             image: '',
@@ -155,7 +185,7 @@ const libraryData: LibraryItem[] = [
             type: 'file'
           },
           {
-            id: 2,
+            id: 'mikro-1-fis-uts-2',
             title: 'Solusi UTS sesi 2 2025',
             description: '',
             image: '',
@@ -165,7 +195,7 @@ const libraryData: LibraryItem[] = [
             type: 'file'
           },
           {
-            id: 3,
+            id: 'mikro-1-fis-uts-3',
             title: 'Solusi UTS sesi 3 2025',
             description: '',
             image: '',
@@ -177,7 +207,7 @@ const libraryData: LibraryItem[] = [
         ]
       },
       {
-        id: 205,
+        id: 'mikro-1-fis-uas',
         title: 'Soal UAS',
         description: '',
         image: '',
@@ -187,7 +217,7 @@ const libraryData: LibraryItem[] = [
         type: 'folder',
         children: [
           {
-            id: 1,
+            id: 'mikro-1-fis-uas-1',
             title: 'Solusi UAS sesi 1 2025',
             description: '',
             image: '',
@@ -197,7 +227,7 @@ const libraryData: LibraryItem[] = [
             type: 'file'
           },
           {
-            id: 2,
+            id: 'mikro-1-fis-uas-2',
             title: 'Solusi UAS sesi 2 2025',
             description: '',
             image: '',
@@ -209,7 +239,7 @@ const libraryData: LibraryItem[] = [
         ]
       },
       {
-        id: 206,
+        id: 'mikro-1-fis-up',
         title: 'Soal UP',
         description: '',
         image: '',
@@ -219,7 +249,7 @@ const libraryData: LibraryItem[] = [
         type: 'folder',
         children: [
           {
-            id: 1,
+            id: 'mikro-1-fis-up-1',
             title: 'Solusi UP 2025',
             description: '',
             image: '',
@@ -231,7 +261,7 @@ const libraryData: LibraryItem[] = [
         ]
       },
       {
-        id: 207,
+        id: 'mikro-1-fis-ltm',
         title: 'Soal LTM',
         description: '',
         image: '',
@@ -241,7 +271,7 @@ const libraryData: LibraryItem[] = [
         type: 'folder',
         children: [
           {
-            id: 1,
+            id: 'mikro-1-fis-ltm-1',
             title: 'Soal LTM 1 2025',
             description: '',
             image: '',
@@ -251,7 +281,7 @@ const libraryData: LibraryItem[] = [
             type: 'file'
           },
           {
-            id: 2,
+            id: 'mikro-1-fis-ltm-2',
             title: 'Soal LTM 2 2025',
             description: '',
             image: '',
@@ -261,7 +291,7 @@ const libraryData: LibraryItem[] = [
             type: 'file'
           },
           {
-            id: 3,
+            id: 'mikro-1-fis-ltm-3',
             title: 'Soal LTM 3 2025',
             description: '',
             image: '',
@@ -271,7 +301,7 @@ const libraryData: LibraryItem[] = [
             type: 'file'
           },
           {
-            id: 4,
+            id: 'mikro-1-fis-ltm-4',
             title: 'Soal LTM 4 2025',
             description: '',
             image: '',
@@ -281,7 +311,7 @@ const libraryData: LibraryItem[] = [
             type: 'file'
           },
           {
-            id: 5,
+            id: 'mikro-1-fis-ltm-5',
             title: 'Solusi LTM 5 2025',
             description: '',
             image: '',
@@ -291,7 +321,7 @@ const libraryData: LibraryItem[] = [
             type: 'file'
           },
           {
-            id: 6,
+            id: 'mikro-1-fis-ltm-6',
             title: 'Solusi LTM 6 2025',
             description: '',
             image: '',
@@ -301,7 +331,7 @@ const libraryData: LibraryItem[] = [
             type: 'file'
           },
           {
-            id: 7,
+            id: 'mikro-1-fis-ltm-7',
             title: 'Solusi LTM 7 2025',
             description: '',
             image: '',
@@ -313,7 +343,7 @@ const libraryData: LibraryItem[] = [
         ]
       },
       {
-        id: 208,
+        id: 'mikro-1-fis-silabus',
         title: 'Silabus Perkuliahan',
         description: '',
         image: '',
@@ -323,7 +353,7 @@ const libraryData: LibraryItem[] = [
         type: 'folder',
         children: [
           {
-            id: 1,
+            id: 'mikro-1-fis-silabus-sap',
             title: 'Satuan Acara Perkuliahan Fisika Dasar I 2025/2026',
             description: '',
             image: '',
@@ -333,7 +363,7 @@ const libraryData: LibraryItem[] = [
             type: 'file'
           },
           {
-            id: 2,
+            id: 'mikro-1-fis-silabus-peraturan',
             title: 'Peraturan Perkuliahan Fisika Dasar I 2025/2026',
             description: '',
             image: '',
@@ -347,7 +377,7 @@ const libraryData: LibraryItem[] = [
     ]
   },
   {
-    id: 3,
+    id: 'mikro-1-kimia',
     title: 'Kimia Dasar I',
     description: '',
     image: 'https://www.meritstore.in/wp-content/uploads/2016/12/10-reasons-to-love-Chemistry.png',
@@ -357,7 +387,7 @@ const libraryData: LibraryItem[] = [
     type: 'folder'
   },
   {
-    id: 4,
+    id: 'mikro-1-komputasional',
     title: 'Berpikir Komputasional',
     description: '',
     image: 'https://bebras.uc.ac.id/wp-content/uploads/2023/03/4555e65ca6dc17e33db2bdc37b4bf285.jpg',
@@ -367,7 +397,7 @@ const libraryData: LibraryItem[] = [
     type: 'folder'
   },
   {
-    id: 5,
+    id: 'mikro-1-bahasa',
     title: 'Bahasa Indonesia',
     description: '',
     image: 'https://img.tempo.co/indonesiana/images/all/2022/04/27/f202204271847093.jpg',
@@ -377,7 +407,7 @@ const libraryData: LibraryItem[] = [
     type: 'folder'
   },
   {
-    id: 6,
+    id: 'mikro-1-prinsip',
     title: 'Pengantar Prinsip Keberlanjutan',
     description: '',
     image: 'https://www.shutterstock.com/shutterstock/videos/3524171411/thumb/12.jpg?ip=x480',
@@ -387,7 +417,7 @@ const libraryData: LibraryItem[] = [
     type: 'folder'
   },
   {
-    id: 7,
+    id: 'mikro-1-labfis',
     title: 'Laboratorium Fisika Dasar',
     description: '',
     image: 'https://physics.ipb.ac.id/wp-content/uploads/2022/11/IMG20221101093144-scaled.jpg',
@@ -397,7 +427,7 @@ const libraryData: LibraryItem[] = [
     type: 'folder'
   },
   {
-    id: 8,
+    id: 'mikro-1-labkim',
     title: 'Laboratorium Kimia Dasar',
     description: '',
     image: 'https://www.acrossinternational.com.au/web/image/28268-29c10fb8/Chemistry%20Lab%20Equipment%20.jpg',
@@ -407,7 +437,7 @@ const libraryData: LibraryItem[] = [
     type: 'folder'
   },
   {
-    id: 1,
+    id: 'bio-1-matematika',
     title: 'Matematika I',
     description: '',
     image: 'https://rencanamu.id/assets/file_uploaded/blog/1572532392-shuttersto.jpg',
@@ -417,7 +447,7 @@ const libraryData: LibraryItem[] = [
     type: 'folder',
     children: [
       {
-        id: 101,
+        id: 'bio-1-mat-uts',
         title: 'Soal UTS',
         description: '',
         image: '',
@@ -426,70 +456,70 @@ const libraryData: LibraryItem[] = [
         category: 'biologi',
         type: 'folder',
         children: [
-         {
-        id: 1,
-        title: 'Soal UTS 2024',
-        description: '',
-        image: '',
-        driveLink: 'https://drive.google.com/file/d/1rAPOmC2LH3-3CtOc7wGDQ1Gj7uHDGRBc/view?usp=drive_link',
-        semester: 1,
-        category: 'biologi',
-        type: 'file'
-      },
-      {
-        id: 2,
-        title: 'Soal UTS 2023',
-        description: '',
-        image: '',
-        driveLink: 'https://drive.google.com/file/d/1jG2K-rCRf_iAAb-v96NSxLNqDqkYRIm1/view?usp=drive_link',
-        semester: 1,
-        category: 'biologi',
-        type: 'file'
-      },
-      {
-        id: 3,
-        title: 'Soal UTS 2022',
-        description: '',
-        image: '',
-        driveLink: 'https://drive.google.com/file/d/1miTF-Q9JD1_biuudjFQRu5ddOpCP_Ja3/view?usp=drive_link',
-        semester: 1,
-        category: 'biologi',
-        type: 'file'
-      },
-      {
-        id: 4,
-        title: 'Soal UTS 2021',
-        description: '',
-        image: '',
-        driveLink: 'https://drive.google.com/file/d/1X5Nvbkab1UsGZufXtd05HJM2swYhMFaC/view?usp=drive_link',
-        semester: 1,
-        category: 'biologi',
-        type: 'file'
-      },
-      {
-        id: 5,
-        title: 'Soal UTS 2019',
-        description: '',
-        image: '',
-        driveLink: 'https://drive.google.com/file/d/1npHqDYZj3qURmuIDMM_Igw23f06-qZVo/view?usp=drive_link',
-        semester: 1,
-        category: 'biologi',
-        type: 'file'
-      },
-      {
-        id: 6,
-        title: 'Latihan UTS',
-        description: '',
-        image: '',
-        driveLink: 'https://drive.google.com/file/d/1Xk3D4BkchcIbIkyQRaccx9fXDhILpq6G/view?usp=drive_link',
-        semester: 1,
-        category: 'biologi',
-        type: 'file'
-      }
+          {
+            id: 'bio-1-mat-uts-2024',
+            title: 'Soal UTS 2024',
+            description: '',
+            image: '',
+            driveLink: 'https://drive.google.com/file/d/1rAPOmC2LH3-3CtOc7wGDQ1Gj7uHDGRBc/view?usp=drive_link',
+            semester: 1,
+            category: 'biologi',
+            type: 'file'
+          },
+          {
+            id: 'bio-1-mat-uts-2023',
+            title: 'Soal UTS 2023',
+            description: '',
+            image: '',
+            driveLink: 'https://drive.google.com/file/d/1jG2K-rCRf_iAAb-v96NSxLNqDqkYRIm1/view?usp=drive_link',
+            semester: 1,
+            category: 'biologi',
+            type: 'file'
+          },
+          {
+            id: 'bio-1-mat-uts-2022',
+            title: 'Soal UTS 2022',
+            description: '',
+            image: '',
+            driveLink: 'https://drive.google.com/file/d/1miTF-Q9JD1_biuudjFQRu5ddOpCP_Ja3/view?usp=drive_link',
+            semester: 1,
+            category: 'biologi',
+            type: 'file'
+          },
+          {
+            id: 'bio-1-mat-uts-2021',
+            title: 'Soal UTS 2021',
+            description: '',
+            image: '',
+            driveLink: 'https://drive.google.com/file/d/1X5Nvbkab1UsGZufXtd05HJM2swYhMFaC/view?usp=drive_link',
+            semester: 1,
+            category: 'biologi',
+            type: 'file'
+          },
+          {
+            id: 'bio-1-mat-uts-2019',
+            title: 'Soal UTS 2019',
+            description: '',
+            image: '',
+            driveLink: 'https://drive.google.com/file/d/1npHqDYZj3qURmuIDMM_Igw23f06-qZVo/view?usp=drive_link',
+            semester: 1,
+            category: 'biologi',
+            type: 'file'
+          },
+          {
+            id: 'bio-1-mat-uts-latihan',
+            title: 'Latihan UTS',
+            description: '',
+            image: '',
+            driveLink: 'https://drive.google.com/file/d/1Xk3D4BkchcIbIkyQRaccx9fXDhILpq6G/view?usp=drive_link',
+            semester: 1,
+            category: 'biologi',
+            type: 'file'
+          }
         ]
       },
       {
-        id: 102,
+        id: 'bio-1-mat-uas',
         title: 'Soal UAS',
         description: '',
         image: '',
@@ -497,12 +527,42 @@ const libraryData: LibraryItem[] = [
         semester: 1,
         category: 'biologi',
         type: 'folder',
+        children: []
+      },
+      {
+        id: 'bio-1-mat-tutor',
+        title: 'Soal Tutorial',
+        description: '',
+        image: '',
+        driveLink: 'https://drive.google.com/drive/folders/1GnT6-kEzIqFpXXsiPagcUVC5Ob-HxgE6?usp=drive_link',
+        semester: 1,
+        category: 'mikrobiologi',
+        type: 'folder',
         children: [
-        
+          {
+            id: 'bio-1-mat-tutor-0',
+            title: 'Soal Tutorial Bab 0',
+            description: '',
+            image: '',
+            driveLink: 'https://drive.google.com/file/d/1tPNZTYd3TGw43fVHu9QKnG4Wy9WuUh2b/view?usp=drive_link',
+            semester: 1,
+            category: 'mikrobiologi',
+            type: 'file'
+          },
+          {
+            id: 'bio-1-mat-tutor-1',
+            title: 'Soal Tutorial Bab 1',
+            description: '',
+            image: '',
+            driveLink: 'https://drive.google.com/file/d/1XFd2xnxfs29CndP9TJyNolO-kfhFvCwB/view?usp=drive_link',
+            semester: 1,
+            category: 'mikrobiologi',
+            type: 'file'
+          }
         ]
       },
       {
-        id: 103,
+        id: 'bio-1-mat-silabus',
         title: 'Silabus MA1101 Matematika I.pdf',
         description: 'File Silabus resmi.',
         image: '',
@@ -514,7 +574,7 @@ const libraryData: LibraryItem[] = [
     ]
   },
   {
-    id: 2,
+    id: 'bio-1-fisika',
     title: 'Fisika Dasar I',
     description: '',
     image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS5U20lOxpY0zZ_gktSIAwHKpXNc36Vc2pdLg&s',
@@ -524,7 +584,7 @@ const libraryData: LibraryItem[] = [
     type: 'folder',
     children: [
       {
-        id: 104,
+        id: 'bio-1-fis-uts',
         title: 'Soal UTS',
         description: '',
         image: '',
@@ -534,7 +594,7 @@ const libraryData: LibraryItem[] = [
         type: 'folder',
         children: [
           {
-            id: 1,
+            id: 'bio-1-fis-uts-1',
             title: 'Solusi UTS sesi 1 2025',
             description: '',
             image: '',
@@ -544,7 +604,7 @@ const libraryData: LibraryItem[] = [
             type: 'file'
           },
           {
-            id: 2,
+            id: 'bio-1-fis-uts-2',
             title: 'Solusi UTS sesi 2 2025',
             description: '',
             image: '',
@@ -554,7 +614,7 @@ const libraryData: LibraryItem[] = [
             type: 'file'
           },
           {
-            id: 3,
+            id: 'bio-1-fis-uts-3',
             title: 'Solusi UTS sesi 3 2025',
             description: '',
             image: '',
@@ -566,7 +626,7 @@ const libraryData: LibraryItem[] = [
         ]
       },
       {
-        id: 205,
+        id: 'bio-1-fis-uas',
         title: 'Soal UAS',
         description: '',
         image: '',
@@ -576,7 +636,7 @@ const libraryData: LibraryItem[] = [
         type: 'folder',
         children: [
           {
-            id: 1,
+            id: 'bio-1-fis-uas-1',
             title: 'Solusi UAS sesi 1 2025',
             description: '',
             image: '',
@@ -586,7 +646,7 @@ const libraryData: LibraryItem[] = [
             type: 'file'
           },
           {
-            id: 2,
+            id: 'bio-1-fis-uas-2',
             title: 'Solusi UAS sesi 2 2025',
             description: '',
             image: '',
@@ -598,7 +658,7 @@ const libraryData: LibraryItem[] = [
         ]
       },
       {
-        id: 206,
+        id: 'bio-1-fis-up',
         title: 'Soal UP',
         description: '',
         image: '',
@@ -608,7 +668,7 @@ const libraryData: LibraryItem[] = [
         type: 'folder',
         children: [
           {
-            id: 1,
+            id: 'bio-1-fis-up-1',
             title: 'Solusi UP 2025',
             description: '',
             image: '',
@@ -620,7 +680,7 @@ const libraryData: LibraryItem[] = [
         ]
       },
       {
-        id: 207,
+        id: 'bio-1-fis-ltm',
         title: 'Soal LTM',
         description: '',
         image: '',
@@ -630,7 +690,7 @@ const libraryData: LibraryItem[] = [
         type: 'folder',
         children: [
           {
-            id: 1,
+            id: 'bio-1-fis-ltm-1',
             title: 'Soal LTM 1 2025',
             description: '',
             image: '',
@@ -640,7 +700,7 @@ const libraryData: LibraryItem[] = [
             type: 'file'
           },
           {
-            id: 2,
+            id: 'bio-1-fis-ltm-2',
             title: 'Soal LTM 2 2025',
             description: '',
             image: '',
@@ -650,7 +710,7 @@ const libraryData: LibraryItem[] = [
             type: 'file'
           },
           {
-            id: 3,
+            id: 'bio-1-fis-ltm-3',
             title: 'Soal LTM 3 2025',
             description: '',
             image: '',
@@ -660,7 +720,7 @@ const libraryData: LibraryItem[] = [
             type: 'file'
           },
           {
-            id: 4,
+            id: 'bio-1-fis-ltm-4',
             title: 'Soal LTM 4 2025',
             description: '',
             image: '',
@@ -670,7 +730,7 @@ const libraryData: LibraryItem[] = [
             type: 'file'
           },
           {
-            id: 5,
+            id: 'bio-1-fis-ltm-5',
             title: 'Solusi LTM 5 2025',
             description: '',
             image: '',
@@ -680,7 +740,7 @@ const libraryData: LibraryItem[] = [
             type: 'file'
           },
           {
-            id: 6,
+            id: 'bio-1-fis-ltm-6',
             title: 'Solusi LTM 6 2025',
             description: '',
             image: '',
@@ -690,7 +750,7 @@ const libraryData: LibraryItem[] = [
             type: 'file'
           },
           {
-            id: 7,
+            id: 'bio-1-fis-ltm-7',
             title: 'Solusi LTM 7 2025',
             description: '',
             image: '',
@@ -702,7 +762,7 @@ const libraryData: LibraryItem[] = [
         ]
       },
       {
-        id: 208,
+        id: 'bio-1-fis-silabus',
         title: 'Silabus Perkuliahan',
         description: '',
         image: '',
@@ -712,7 +772,7 @@ const libraryData: LibraryItem[] = [
         type: 'folder',
         children: [
           {
-            id: 1,
+            id: 'bio-1-fis-silabus-sap',
             title: 'Satuan Acara Perkuliahan Fisika Dasar I 2025/2026',
             description: '',
             image: '',
@@ -722,7 +782,7 @@ const libraryData: LibraryItem[] = [
             type: 'file'
           },
           {
-            id: 2,
+            id: 'bio-1-fis-silabus-peraturan',
             title: 'Peraturan Perkuliahan Fisika Dasar I 2025/2026',
             description: '',
             image: '',
@@ -736,7 +796,7 @@ const libraryData: LibraryItem[] = [
     ]
   },
   {
-    id: 11,
+    id: 'bio-1-kimia',
     title: 'Kimia Dasar I',
     description: '',
     image: 'https://www.meritstore.in/wp-content/uploads/2016/12/10-reasons-to-love-Chemistry.png',
@@ -746,7 +806,7 @@ const libraryData: LibraryItem[] = [
     type: 'folder'
   },
   {
-    id: 12,
+    id: 'bio-1-komputasional',
     title: 'Berpikir Komputasional',
     description: '',
     image: 'https://bebras.uc.ac.id/wp-content/uploads/2023/03/4555e65ca6dc17e33db2bdc37b4bf285.jpg',
@@ -756,7 +816,7 @@ const libraryData: LibraryItem[] = [
     type: 'folder'
   },
   {
-    id: 13,
+    id: 'bio-1-bahasa',
     title: 'Bahasa Indonesia',
     description: '',
     image: 'https://img.tempo.co/indonesiana/images/all/2022/04/27/f202204271847093.jpg',
@@ -766,7 +826,7 @@ const libraryData: LibraryItem[] = [
     type: 'folder'
   },
   {
-    id: 14,
+    id: 'bio-1-prinsip',
     title: 'Pengantar Prinsip Keberlanjutan',
     description: '',
     image: 'https://www.shutterstock.com/shutterstock/videos/3524171411/thumb/12.jpg?ip=x480',
@@ -776,7 +836,7 @@ const libraryData: LibraryItem[] = [
     type: 'folder'
   },
   {
-    id: 15,
+    id: 'bio-1-labfis',
     title: 'Laboratorium Fisika Dasar',
     description: '',
     image: 'https://physics.ipb.ac.id/wp-content/uploads/2022/11/IMG20221101093144-scaled.jpg',
@@ -786,7 +846,7 @@ const libraryData: LibraryItem[] = [
     type: 'folder'
   },
   {
-    id: 16,
+    id: 'bio-1-labkim',
     title: 'Laboratorium Kimia Dasar',
     description: '',
     image: 'https://www.acrossinternational.com.au/web/image/28268-29c10fb8/Chemistry%20Lab%20Equipment%20.jpg',
@@ -795,7 +855,6 @@ const libraryData: LibraryItem[] = [
     category: 'biologi',
     type: 'folder'
   },
-
 ];
 
 const ParticleBackground: React.FC = () => {
@@ -889,15 +948,20 @@ const Library: React.FC = () => {
 
   const [isViewerOpen, setIsViewerOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<LibraryItem | null>(null);
+  
+  // STATE UNTUK POPUP INFORMASI
+  const [showPopup, setShowPopup] = useState(true);
 
   const handleOpenViewer = (item: LibraryItem) => {
     setSelectedItem(item);
     setIsViewerOpen(true);
   };
 
-  const filteredItems = libraryData.filter(item =>
-    item.semester === selectedSemester && item.category === selectedCategory
-  );
+  const filteredItems = useMemo(() => {
+    return libraryData.filter(item =>
+      item.semester === selectedSemester && item.category === selectedCategory
+    );
+  }, [selectedSemester, selectedCategory]);
 
   const semesters = [1, 2, 3, 4, 5, 6, 7];
 
@@ -905,6 +969,47 @@ const Library: React.FC = () => {
     <div className="relative min-h-screen w-full py-16 lg:py-24 px-4 sm:px-6 lg:px-8 mt-16 lg:mt-0 font-sans overflow-x-hidden selection:bg-yellow-400 selection:text-black">
       
       <ParticleBackground />
+
+{/* COMPONENT POPUP INFORMASI */}
+      {showPopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/70 backdrop-blur-sm transition-opacity">
+          {/* Hapus outline kuning, ganti dengan border-gray-800 biar lebih nyatu sama tema */}
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 md:p-8 max-w-md w-full shadow-[0_0_30px_rgba(250,204,21,0.15)] relative animate-in fade-in zoom-in duration-300">
+            
+            {/* Header Popup */}
+            <div className="flex justify-between items-start mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-yellow-400/10 flex items-center justify-center">
+                  <Info className="text-yellow-400" size={24} />
+                </div>
+                <h3 className="text-xl font-bold text-white tracking-wider">Pemberitahuan</h3>
+              </div>
+              <button 
+                onClick={() => setShowPopup(false)}
+                className="text-gray-500 hover:text-white transition-colors p-1"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            {/* Isi Popup */}
+            <div className="mb-6">
+              <p className="text-gray-300 leading-relaxed text-sm">
+                Halo! File yang ditampilkan di library web ini mungkin belum sepenuhnya lengkap. 
+                <br /><br />
+                Untuk melihat materi, tugas, atau <i>resource</i> yang lebih lengkap, sangat disarankan untuk langsung membuka <strong>link Google Drive</strong> pada masing-masing mata kuliah ya...
+              </p>
+            </div>
+
+            <button
+              onClick={() => setShowPopup(false)}
+              className="w-full py-3 bg-yellow-400 hover:bg-yellow-500 text-black font-bold uppercase tracking-widest text-sm rounded-xl transition-colors duration-300"
+            >
+              Oke, Mengerti!
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="relative z-10">
         <div className="mx-auto max-w-7xl text-center transition-all duration-300">
@@ -1007,6 +1112,22 @@ const Library: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <footer className="mt-12 border-t border-gray-800 pt-12 pb-8 text-center text-gray-500 bg-black/60 backdrop-blur-md">
+        <span className="text-4xl font-bold tracking-[.2em] text-gray-700 block mb-4">SITH-S 25</span>
+        <p className="text-xs mb-6">Copyright © SITES Angkatan 2025.</p>
+        <div className="flex justify-center">
+          <a
+            href="https://www.instagram.com/sithsitb25?igsh=Mmg2Nm43aW4zYW91"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-gray-500 transition-colors duration-300 hover:text-white"
+            title="Visit our Instagram"
+          >
+            <Instagram size={20} />
+          </a>
+        </div>
+      </footer>
 
       <LibraryViewer
         isOpen={isViewerOpen}
