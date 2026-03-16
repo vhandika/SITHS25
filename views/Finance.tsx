@@ -634,7 +634,7 @@ const Finance: React.FC = () => {
 
                             <div className="bg-white p-4 rounded-xl w-full flex items-center justify-center mb-6">
                                 <img
-                                    src="https://aaepppezhlwngklhnxhh.supabase.co/storage/v1/object/sign/attendance-images/qriskas.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9kMWJjOGZkMS04ZjVmLTQ3YjQtOWIzNy0xOTJiNDU3ZTM2NDQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhdHRlbmRhbmNlLWltYWdlcy9xcmlza2FzLmpwZyIsImlhdCI6MTc3Mjc4NDM4NiwiZXhwIjoxODk4OTI4Mzg2fQ.dUknEZUpSnf_m_Aog9sfFeYkJI57QSuhcdX4bJ2W6nE"
+                                    src="https://aaepppezhlwngklhnxhh.supabase.co/storage/v1/object/sign/finance-receipts/qriskas.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9kMWJjOGZkMS04ZjVmLTQ3YjQtOWIzNy0xOTJiNDU3ZTM2NDQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJmaW5hbmNlLXJlY2VpcHRzL3FyaXNrYXMuanBnIiwiaWF0IjoxNzczNjQ1MzE4LCJleHAiOjE4OTk3ODkzMTh9.fOBxOSWARl3-PQKMHoRUSmPgBfmCrVKyD7SL44gmUEQ"
                                     alt="QRIS Kas"
                                     className="w-full max-w-[250px] object-contain rounded-lg"
                                 />
