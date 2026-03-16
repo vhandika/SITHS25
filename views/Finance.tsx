@@ -14,6 +14,7 @@ interface Transaction {
     user_name: string | null;
     recorded_by: string;
     recorded_by_name: string;
+    receipt_url: string | null;
     created_at: string;
 }
 
@@ -155,10 +156,11 @@ const Finance: React.FC = () => {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [summary, setSummary] = useState<Summary | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    
+
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false); // Modal Pembayaran
-    
+    const [selectedReceipt, setSelectedReceipt] = useState<string | null>(null);
+
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [activeExpenseTab, setActiveExpenseTab] = useState<string>('bulan');
 
@@ -170,6 +172,7 @@ const Finance: React.FC = () => {
     const [formType, setFormType] = useState<'pemasukan' | 'pengeluaran'>('pemasukan');
     const [formAmount, setFormAmount] = useState('');
     const [formDescription, setFormDescription] = useState('');
+    const [formReceipt, setFormReceipt] = useState<File | null>(null);
 
     const [formTargetMonth, setFormTargetMonth] = useState(availableMonths[0].value);
     const [modalUnpaidUsers, setModalUnpaidUsers] = useState<UnpaidUser[]>([]);
@@ -210,7 +213,7 @@ const Finance: React.FC = () => {
             } else {
                 showToast(`Server: ${json.message || 'Gagal memuat list kas'}`, 'error');
             }
-        } catch (error) { 
+        } catch (error) {
             showToast('Koneksi terputus saat memuat list kas', 'error');
         }
     };
@@ -243,7 +246,7 @@ const Finance: React.FC = () => {
     useEffect(() => {
         if (canAdd && isModalOpen && formType === 'pemasukan') {
             fetchModalUnpaid(formTargetMonth);
-            setSelectedNims([]); 
+            setSelectedNims([]);
         }
     }, [formTargetMonth, isModalOpen, formType, canAdd]);
 
@@ -264,18 +267,23 @@ const Finance: React.FC = () => {
                     setIsSubmitting(false);
                     return;
                 }
+                if (!formReceipt) {
+                    showToast('Bukti transaksi (foto) harus dilampirkan', 'error');
+                    setIsSubmitting(false);
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('type', 'pengeluaran');
+                formData.append('amount', amount.toString());
+                formData.append('description', formDescription);
+                formData.append('receipt', formReceipt);
 
                 const res = await fetchWithAuth(`${API_BASE_URL}/finance`, {
                     method: 'POST',
-                    body: JSON.stringify({
-                        type: 'pengeluaran',
-                        amount,
-                        description: formDescription,
-                        user_nim: '',
-                        user_name: ''
-                    })
+                    body: formData,
                 });
-                
+
                 const data = await res.json();
                 if (res.ok) {
                     handleSuccessSubmit();
@@ -299,7 +307,7 @@ const Finance: React.FC = () => {
                 const promises = selectedNims.map(nim => {
                     const user = modalUnpaidUsers.find(u => u.nim === nim);
                     const payAmount = Math.min(finalAmount, user?.remaining || 20000);
-                    
+
                     return fetchWithAuth(`${API_BASE_URL}/finance`, {
                         method: 'POST',
                         body: JSON.stringify({
@@ -313,7 +321,7 @@ const Finance: React.FC = () => {
                 });
 
                 const responses = await Promise.all(promises);
-                
+
                 const failedResponse = responses.find(res => !res.ok);
                 if (failedResponse) {
                     const errorData = await failedResponse.json().catch(() => ({}));
@@ -334,6 +342,7 @@ const Finance: React.FC = () => {
     const handleSuccessSubmit = () => {
         setFormAmount('');
         setFormDescription('');
+        setFormReceipt(null);
         setSelectedNims([]);
         setSearchUser('');
         setIsModalOpen(false);
@@ -370,8 +379,8 @@ const Finance: React.FC = () => {
         { key: '1tahun', label: '1 Tahun' },
     ];
 
-    const filteredModalUsers = modalUnpaidUsers.filter(user => 
-        user.name.toLowerCase().includes(searchUser.toLowerCase()) || 
+    const filteredModalUsers = modalUnpaidUsers.filter(user =>
+        user.name.toLowerCase().includes(searchUser.toLowerCase()) ||
         user.nim.includes(searchUser)
     );
 
@@ -452,7 +461,7 @@ const Finance: React.FC = () => {
 
                             <div className="relative overflow-hidden bg-gray-900/60 backdrop-blur-md border border-gray-800 rounded-lg p-6 hover:border-orange-400/30 transition-all duration-300 flex flex-col justify-between">
                                 <div className="absolute top-0 right-0 w-20 h-20 bg-orange-400/5 rounded-bl-full"></div>
-                                
+
                                 <div className="flex items-center justify-between mb-3 z-10">
                                     <div className="flex items-center gap-3">
                                         <div className="p-2 bg-orange-400/10 rounded-lg">
@@ -460,7 +469,7 @@ const Finance: React.FC = () => {
                                         </div>
                                         <span className="text-gray-400 text-sm font-medium uppercase tracking-wider">Status Kas</span>
                                     </div>
-                                    <select 
+                                    <select
                                         value={dashboardMonth}
                                         onChange={(e) => setDashboardMonth(e.target.value)}
                                         className="bg-black/40 text-xs text-yellow-400 border border-gray-700 rounded-md p-1 focus:outline-none focus:border-yellow-400 cursor-pointer"
@@ -475,7 +484,7 @@ const Finance: React.FC = () => {
                                     <p className="text-3xl font-bold text-orange-400">{dashboardUnpaidStats.unpaid}</p>
                                     <p className="text-gray-500 text-sm mb-1">/ {dashboardUnpaidStats.total} org blm lunas</p>
                                 </div>
-                                <button 
+                                <button
                                     onClick={() => setShowUnpaid(!showUnpaid)}
                                     className="text-gray-500 text-xs mt-3 text-left hover:text-yellow-400 transition-colors w-fit underline decoration-gray-700 underline-offset-2"
                                 >
@@ -563,8 +572,16 @@ const Finance: React.FC = () => {
                                                                 oleh {tx.recorded_by_name}
                                                             </span>
                                                             <span className="text-gray-600 text-xs flex items-center gap-1">
-                                                                <Calendar size={10}/> {formatDate(tx.created_at)}
+                                                                <Calendar size={10} /> {formatDate(tx.created_at)}
                                                             </span>
+                                                            {tx.receipt_url && (
+                                                                <button
+                                                                    onClick={() => setSelectedReceipt(tx.receipt_url)}
+                                                                    className="text-yellow-400/80 hover:text-yellow-300 text-xs flex items-center gap-1 hover:underline ml-2"
+                                                                >
+                                                                    Lihat Bukti
+                                                                </button>
+                                                            )}
                                                         </div>
                                                     </div>
                                                     <p className={`font-bold text-sm flex-shrink-0 ${tx.type === 'pemasukan' ? 'text-green-400' : 'text-red-400'}`}>
@@ -616,9 +633,9 @@ const Finance: React.FC = () => {
                             </h2>
 
                             <div className="bg-white p-4 rounded-xl w-full flex items-center justify-center mb-6">
-                                <img 
-                                    src="https://aaepppezhlwngklhnxhh.supabase.co/storage/v1/object/sign/attendance-images/qriskas.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9kMWJjOGZkMS04ZjVmLTQ3YjQtOWIzNy0xOTJiNDU3ZTM2NDQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhdHRlbmRhbmNlLWltYWdlcy9xcmlza2FzLmpwZyIsImlhdCI6MTc3Mjc4NDM4NiwiZXhwIjoxODk4OTI4Mzg2fQ.dUknEZUpSnf_m_Aog9sfFeYkJI57QSuhcdX4bJ2W6nE" 
-                                    alt="QRIS Kas" 
+                                <img
+                                    src="https://aaepppezhlwngklhnxhh.supabase.co/storage/v1/object/sign/attendance-images/qriskas.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9kMWJjOGZkMS04ZjVmLTQ3YjQtOWIzNy0xOTJiNDU3ZTM2NDQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhdHRlbmRhbmNlLWltYWdlcy9xcmlza2FzLmpwZyIsImlhdCI6MTc3Mjc4NDM4NiwiZXhwIjoxODk4OTI4Mzg2fQ.dUknEZUpSnf_m_Aog9sfFeYkJI57QSuhcdX4bJ2W6nE"
+                                    alt="QRIS Kas"
                                     className="w-full max-w-[250px] object-contain rounded-lg"
                                 />
                             </div>
@@ -632,8 +649,8 @@ const Finance: React.FC = () => {
                                 </div>
                             </div>
 
-                            <button 
-                                onClick={() => setIsPaymentModalOpen(false)} 
+                            <button
+                                onClick={() => setIsPaymentModalOpen(false)}
                                 className="w-full mt-6 py-2 bg-gray-800 text-white font-bold rounded hover:bg-gray-700 transition-colors"
                             >
                                 Tutup
@@ -692,7 +709,7 @@ const Finance: React.FC = () => {
                                         <div className="grid grid-cols-2 gap-3">
                                             <div>
                                                 <label className="block text-sm text-gray-400 mb-1">Kas Untuk Bulan</label>
-                                                <select 
+                                                <select
                                                     value={formTargetMonth}
                                                     onChange={(e) => setFormTargetMonth(e.target.value)}
                                                     className="w-full bg-black/50 border border-gray-700 rounded p-2 text-white text-sm focus:border-yellow-400 focus:outline-none transition-colors"
@@ -704,7 +721,7 @@ const Finance: React.FC = () => {
                                             </div>
                                             <div>
                                                 <label className="block text-sm text-gray-400 mb-1">Nominal Bayar</label>
-                                                <select 
+                                                <select
                                                     value={amountPreset}
                                                     onChange={(e) => setAmountPreset(e.target.value)}
                                                     className="w-full bg-black/50 border border-gray-700 rounded p-2 text-white text-sm focus:border-yellow-400 focus:outline-none transition-colors"
@@ -739,11 +756,11 @@ const Finance: React.FC = () => {
                                                     Pilih Mahasiswa ({selectedNims.length} dipilih)
                                                 </label>
                                             </div>
-                                            
+
                                             <div className="relative mb-2">
-                                                <input 
+                                                <input
                                                     type="text"
-                                                    placeholder="Cari Nama / NIM yg blm lunas..." 
+                                                    placeholder="Cari Nama / NIM yg blm lunas..."
                                                     value={searchUser}
                                                     onChange={(e) => setSearchUser(e.target.value)}
                                                     className="w-full bg-black/50 border border-gray-700 rounded p-2 pl-9 text-sm text-white focus:border-yellow-400 focus:outline-none transition-colors"
@@ -760,8 +777,8 @@ const Finance: React.FC = () => {
                                                     ) : (
                                                         filteredModalUsers.map(user => (
                                                             <label key={user.nim} className="flex items-center gap-3 p-2 hover:bg-gray-800/50 rounded cursor-pointer transition-colors border border-transparent hover:border-gray-700">
-                                                                <input 
-                                                                    type="checkbox" 
+                                                                <input
+                                                                    type="checkbox"
                                                                     checked={selectedNims.includes(user.nim)}
                                                                     onChange={() => toggleUserSelection(user.nim)}
                                                                     className="w-4 h-4 rounded text-yellow-400 bg-gray-900 border-gray-600 focus:ring-yellow-500 cursor-pointer"
@@ -805,6 +822,17 @@ const Finance: React.FC = () => {
                                                 required
                                             />
                                         </div>
+
+                                        <div>
+                                            <label className="block text-sm text-gray-400 mb-1">Bukti Transaksi</label>
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={(e) => setFormReceipt(e.target.files ? e.target.files[0] : null)}
+                                                className="w-full bg-black/50 border border-gray-700 rounded p-2 text-white focus:border-yellow-400 focus:outline-none transition-colors text-sm file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-yellow-400 file:text-black hover:file:bg-yellow-300 cursor-pointer"
+                                                required
+                                            />
+                                        </div>
                                     </>
                                 )}
 
@@ -822,6 +850,26 @@ const Finance: React.FC = () => {
                                     </button>
                                 </div>
                             </form>
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            <div className="relative z-50">
+                {selectedReceipt && (
+                    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4" onClick={() => setSelectedReceipt(null)}>
+                        <div className="relative max-w-4xl max-h-[90vh] w-full flex items-center justify-center" onClick={e => e.stopPropagation()}>
+                            <button
+                                onClick={() => setSelectedReceipt(null)}
+                                className="absolute -top-10 right-0 text-white hover:text-yellow-400 transition-colors bg-black/50 rounded-full p-2"
+                            >
+                                <X size={24} />
+                            </button>
+                            <img
+                                src={selectedReceipt}
+                                alt="Bukti Transaksi"
+                                className="max-w-full max-h-[85vh] object-contain rounded-lg border border-gray-700 shadow-2xl"
+                            />
                         </div>
                     </div>
                 )}
