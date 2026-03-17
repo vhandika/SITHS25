@@ -36,7 +36,7 @@ const ScrollingTitle: React.FC<{ title: string }> = ({ title }) => {
                 if (textWidth > parentWidth) {
                     setIsOverflowing(true);
                     
-                    const speed = 10; 
+                    const speed = 15; 
                     setDuration((textWidth + 32) / speed); 
                 } else {
                     setIsOverflowing(false);
