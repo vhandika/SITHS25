@@ -44,9 +44,10 @@ const DesktopNavLinks: React.FC<NavLinksProps> = ({ isExpanded, isLoggedIn, user
 
     if (isLoggedIn) {
         navItems.push({ path: '/find-nim', name: 'Find', icon: Search });
-        navItems.push({ path: '/attendance', name: 'Absensi', icon: CalendarCheck });
+        navItems.push({ path: '/attendance', name: 'Attendance', icon: CalendarCheck });
         navItems.push({ path: '/gallery', name: 'Gallery', icon: CameraIcon });
-        navItems.push({ path: '/change-password', name: 'Ganti Password', icon: KeyRound });
+        navItems.push({ path: '/finance', name: 'Finance', icon: Wallet });
+        navItems.push({ path: '/change-password', name: 'Change Password', icon: KeyRound });
         if (userRole === 'dev') {
             navItems.push({ path: '/dev', name: 'Dev Dashboard', icon: Monitor });
         }
@@ -167,9 +168,10 @@ const Sidebar: React.FC = () => {
         const items = [...staticNavItems];
         if (isLoggedIn) {
             items.push({ path: '/find-nim', name: 'Find', icon: Search });
-            items.push({ path: '/attendance', name: 'Absensi', icon: CalendarCheck });
+            items.push({ path: '/attendance', name: 'Attendance', icon: CalendarCheck });
             items.push({ path: '/gallery', name: 'Gallery', icon: CameraIcon });
-            items.push({ path: '/change-password', name: 'Ganti Password', icon: KeyRound });
+            items.push({ path: '/finance', name: 'Finance', icon: Wallet });
+            items.push({ path: '/change-password', name: 'Change Password', icon: KeyRound });
             if (userRole === 'dev') {
                 items.push({ path: '/dev', name: 'Dev Dashboard', icon: Monitor });
             }

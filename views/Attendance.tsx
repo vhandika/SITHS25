@@ -549,7 +549,7 @@ const Attendance: React.FC = () => {
                             <div className="w-10 h-10 flex items-center justify-center bg-yellow-400 text-black transform -skew-x-12">
                                 <span className="transform skew-x-12"><CalendarCheck size={32} /></span>
                             </div>
-                            <h1 className="text-4xl font-bold tracking-wider uppercase text-white sm:text-5xl">Absensi</h1>
+                            <h1 className="text-4xl font-bold tracking-wider uppercase text-white sm:text-5xl">Attendance</h1>
                         </div>
 
                         {isAdminOrSekretaris && (

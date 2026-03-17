@@ -199,7 +199,7 @@ const ChangePassword: React.FC = () => {
                         <div className="w-10 h-10 flex items-center justify-center bg-yellow-400 text-black transform -skew-x-12">
                             <span className="transform skew-x-12"><KeyRound size={28} /></span>
                         </div>
-                        <h1 className="text-3xl font-bold tracking-wider uppercase text-white">Ganti Password</h1>
+                        <h1 className="text-3xl font-bold tracking-wider uppercase text-white">Change Password</h1>
                     </div>
                 </div>
 
