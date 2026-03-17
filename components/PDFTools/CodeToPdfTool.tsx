@@ -172,7 +172,6 @@ const CodeToPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         localStorage.setItem('pdf_code_stdin', pythonStdin);
     }, [code, fileName, fontSize, language, pageSize, bgTheme, isColored, pythonStdin]);
 
-    // Cleanup and termination when language changes
     useEffect(() => {
         if (workerRef.current) {
             workerRef.current.terminate();
@@ -359,7 +358,6 @@ const CodeToPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     };
 
     const runCode = async () => {
-        // Terminate existing worker if it's already running OR if switching languages
         if (workerRef.current && (isRunning || currentLangRef.current !== language)) {
             workerRef.current.terminate();
             workerRef.current = null;

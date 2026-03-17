@@ -158,7 +158,7 @@ const Finance: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
 
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false); // Modal Pembayaran
+    const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
     const [selectedReceipt, setSelectedReceipt] = useState<string | null>(null);
 
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -475,7 +475,7 @@ const Finance: React.FC = () => {
                                         className="bg-black/40 text-xs text-yellow-400 border border-gray-700 rounded-md p-1 focus:outline-none focus:border-yellow-400 cursor-pointer"
                                     >
                                         {availableMonths.map(m => (
-                                            <option key={m.value} value={m.value}>{m.label}</option>
+                                            <option key={m.value} value={m.value} className="bg-gray-900 text-white">{m.label}</option>
                                         ))}
                                     </select>
                                 </div>
@@ -715,7 +715,7 @@ const Finance: React.FC = () => {
                                                     className="w-full bg-black/50 border border-gray-700 rounded p-2 text-white text-sm focus:border-yellow-400 focus:outline-none transition-colors"
                                                 >
                                                     {availableMonths.map(m => (
-                                                        <option key={m.value} value={m.value}>{m.label}</option>
+                                                        <option key={m.value} value={m.value} className="bg-gray-900 text-white">{m.label}</option>
                                                     ))}
                                                 </select>
                                             </div>
@@ -726,11 +726,11 @@ const Finance: React.FC = () => {
                                                     onChange={(e) => setAmountPreset(e.target.value)}
                                                     className="w-full bg-black/50 border border-gray-700 rounded p-2 text-white text-sm focus:border-yellow-400 focus:outline-none transition-colors"
                                                 >
-                                                    <option value="5000">Rp 5.000 (1 Mg)</option>
-                                                    <option value="10000">Rp 10.000 (2 Mg)</option>
-                                                    <option value="15000">Rp 15.000 (3 Mg)</option>
-                                                    <option value="20000">Rp 20.000 (Lunas)</option>
-                                                    <option value="custom">Nominal Lain...</option>
+                                                    <option value="5000" className="bg-gray-900 text-white">Rp 5.000 (1 Mg)</option>
+                                                    <option value="10000" className="bg-gray-900 text-white">Rp 10.000 (2 Mg)</option>
+                                                    <option value="15000" className="bg-gray-900 text-white">Rp 15.000 (3 Mg)</option>
+                                                    <option value="20000" className="bg-gray-900 text-white">Rp 20.000 (Lunas)</option>
+                                                    <option value="custom" className="bg-gray-900 text-white">Nominal Lain...</option>
                                                 </select>
                                             </div>
                                         </div>

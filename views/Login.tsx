@@ -115,7 +115,6 @@ const Login: React.FC = () => {
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
-    // Forgot password modal state
     const [showForgotModal, setShowForgotModal] = useState(false);
     const [forgotNim, setForgotNim] = useState('');
     const [forgotLoading, setForgotLoading] = useState(false);

@@ -949,7 +949,6 @@ const Library: React.FC = () => {
   const [isViewerOpen, setIsViewerOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<LibraryItem | null>(null);
   
-  // STATE UNTUK POPUP INFORMASI
   const [showPopup, setShowPopup] = useState(true);
 
   const handleOpenViewer = (item: LibraryItem) => {

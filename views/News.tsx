@@ -65,7 +65,6 @@ const LinkifiedContent: React.FC<{ text: string }> = ({ text }) => {
                             );
                         }
                         
-                        // Melempar teks yang bukan URL ke fungsi formatText
                         return <React.Fragment key={i}>{formatText(part)}</React.Fragment>;
                     })}
                 </p>
