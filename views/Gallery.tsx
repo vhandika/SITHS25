@@ -21,6 +21,57 @@ const getCookie = (name: string) => {
     }, '');
 };
 
+const ScrollingTitle: React.FC<{ title: string }> = ({ title }) => {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const textRef = useRef<HTMLSpanElement>(null);
+    const [isOverflowing, setIsOverflowing] = useState(false);
+    const [duration, setDuration] = useState(0);
+
+    useEffect(() => {
+        const checkOverflow = () => {
+            if (containerRef.current && textRef.current) {
+                const parentWidth = containerRef.current.clientWidth;
+                const textWidth = textRef.current.scrollWidth;
+
+                if (textWidth > parentWidth) {
+                    setIsOverflowing(true);
+                    
+                    const speed = 10; 
+                    setDuration((textWidth + 32) / speed); 
+                } else {
+                    setIsOverflowing(false);
+                }
+            }
+        };
+
+        setTimeout(checkOverflow, 100);
+        
+        window.addEventListener('resize', checkOverflow);
+        return () => window.removeEventListener('resize', checkOverflow);
+    }, [title]);
+
+    return (
+        <div ref={containerRef} className={`w-full overflow-hidden flex ${isOverflowing ? 'justify-start' : 'justify-center'}`}>
+            <div 
+                className={`flex whitespace-nowrap text-white text-lg font-bold leading-snug transition-colors group-hover:text-yellow-400 ${
+                    isOverflowing ? 'animate-marquee-continuous' : ''
+                }`}
+                style={isOverflowing ? { animationDuration: `${duration}s` } : {}}
+            >
+                <span ref={textRef} className={isOverflowing ? "pr-8" : ""}>
+                    {title}
+                </span>
+                
+                {isOverflowing && (
+                    <span className="pr-8">
+                        {title}
+                    </span>
+                )}
+            </div>
+        </div>
+    );
+};
+
 const ParticleBackground: React.FC = () => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -200,6 +251,16 @@ const Gallery: React.FC = () => {
     return (
         <div className="relative min-h-screen w-full py-16 lg:py-24 px-4 sm:px-6 lg:px-8 mt-16 lg:mt-0 font-sans overflow-x-hidden selection:bg-yellow-400 selection:text-black">
             
+            <style>{`
+                @keyframes marqueeContinuous {
+                    0% { transform: translateX(0); }
+                    100% { transform: translateX(-50%); }
+                }
+                .animate-marquee-continuous {
+                    animation: marqueeContinuous linear infinite;
+                }
+            `}</style>
+
             <ParticleBackground />
 
             <div className="relative z-10 mx-auto max-w-7xl">
@@ -242,7 +303,8 @@ const Gallery: React.FC = () => {
                                     {currentUserNIM === item.user_nim && (
                                         <button
                                             onClick={(e) => handleDelete(e, item.id)}
-                                            className="absolute top-2 right-2 z-20 p-2 text-gray-500 hover:text-red-500 hover:bg-red-500/10 rounded-full transition-all opacity-0 group-hover:opacity-100"
+                                            // Ubah class agar tombol selalu muncul di mobile (opacity-100) dan abu-abu (text-gray-400)
+                                            className="absolute top-2 right-2 z-20 p-2 text-gray-400 md:text-gray-500 hover:text-red-500 hover:bg-red-500/10 rounded-full transition-all opacity-100 md:opacity-0 md:group-hover:opacity-100"
                                             title="Hapus Folder"
                                         >
                                             <Trash2 size={16} />
@@ -257,12 +319,8 @@ const Gallery: React.FC = () => {
                                     </div>
 
                                     <div className="w-full space-y-2 overflow-hidden">
-                                        <h3
-                                            className="text-white text-lg font-bold leading-snug group-hover:text-yellow-400 transition-colors w-full overflow-x-auto whitespace-nowrap [&::-webkit-scrollbar]:hidden"
-                                            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-                                        >
-                                            {item.title}
-                                        </h3>
+                                        {/* Implementasi ScrollingTitle jika judul kepanjangan */}
+                                        <ScrollingTitle title={item.title} />
 
                                         <div className="flex items-center justify-center gap-1.5 text-[10px] text-gray-400 uppercase tracking-widest border-t border-gray-800/80 pt-2 mt-2 w-full">
                                             <User size={10} className="shrink-0 text-yellow-500" />
