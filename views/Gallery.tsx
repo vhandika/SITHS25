@@ -303,7 +303,6 @@ const Gallery: React.FC = () => {
                                     {currentUserNIM === item.user_nim && (
                                         <button
                                             onClick={(e) => handleDelete(e, item.id)}
-                                            // Ubah class agar tombol selalu muncul di mobile (opacity-100) dan abu-abu (text-gray-400)
                                             className="absolute top-2 right-2 z-20 p-2 text-gray-400 md:text-gray-500 hover:text-red-500 hover:bg-red-500/10 rounded-full transition-all opacity-100 md:opacity-0 md:group-hover:opacity-100"
                                             title="Hapus Folder"
                                         >
@@ -319,7 +318,6 @@ const Gallery: React.FC = () => {
                                     </div>
 
                                     <div className="w-full space-y-2 overflow-hidden">
-                                        {/* Implementasi ScrollingTitle jika judul kepanjangan */}
                                         <ScrollingTitle title={item.title} />
 
                                         <div className="flex items-center justify-center gap-1.5 text-[10px] text-gray-400 uppercase tracking-widest border-t border-gray-800/80 pt-2 mt-2 w-full">

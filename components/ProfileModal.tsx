@@ -256,7 +256,6 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, 
                                     <h2 className="text-2xl font-bold text-white leading-tight">{userData.name}</h2>
                                     <p className="text-gray-500 text-sm font-mono mb-2">{userData.nim}</p>
                                     
-                                    {/* Jurusan statis, tapi datanya tetap aman di background state */}
                                     <p className="text-yellow-400 font-semibold text-sm">{userData.jurusan || 'NULL'}</p>
                                 </div>
 

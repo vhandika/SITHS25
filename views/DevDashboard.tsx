@@ -302,7 +302,6 @@ const DevDashboard: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Security Logs Panel */}
                 <div className="mt-8 bg-gray-900 border border-gray-800 rounded-xl overflow-hidden shadow-2xl">
                     <div className="p-6">
                         <div className="flex justify-between items-center mb-6">

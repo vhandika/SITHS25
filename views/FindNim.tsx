@@ -254,7 +254,6 @@ const FindNim: React.FC = () => {
 
             </div>
 
-            {/* Profile Modal */}
             <div className="relative z-50">
                 {selectedNimProfile && (
                     <ProfileModal
