@@ -520,9 +520,6 @@ const IndexCalculator: React.FC = () => {
                                 <h3 className="text-white font-bold flex items-center gap-2">
                                     Masukkan Nilai
                                 </h3>
-                                {isCustomCourse && (isUP && hasUpConfig) && (
-                                    <span className="text-xs bg-yellow-400/20 text-yellow-400 px-2 py-1 rounded">Skema UP Aktif</span>
-                                )}
                             </div>
 
                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
