@@ -26,7 +26,6 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, 
     const [activeMenu, setActiveMenu] = useState<'avatar' | 'banner' | null>(null);
     const [isMenuAnimating, setIsMenuAnimating] = useState(false);
     
-    // PERBAIKAN: Kembalikan 'jurusan' ke dalam formData agar ikut terkirim saat save
     const [formData, setFormData] = useState({
         bio: '', instagram: '', whatsapp: '', line: '', jurusan: '', other_links: ''
     });
@@ -68,7 +67,6 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, 
 
             if (res.ok && json.data) {
                 setUserData(json.data);
-                // PERBAIKAN: Pastikan jurusan ikut di-set ke formData
                 setFormData({
                     bio: json.data.bio || '',
                     instagram: json.data.instagram || '',
@@ -93,7 +91,6 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, 
         const token = getCookie('userToken');
         const data = new FormData();
 
-        // Di sini formData akan me-looping 'jurusan' dan mengirim nilai aslinya ke API
         Object.keys(formData).forEach(key => data.append(key, (formData as any)[key]));
 
         if (avatarFile) data.append('avatar', avatarFile);
@@ -393,7 +390,6 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, 
                                             onClick={() => {
                                                 setIsEditing(false);
                                                 closeMenu();
-                                                // PERBAIKAN: Pastikan jurusan ikut di-reset kembali
                                                 setFormData({
                                                     bio: userData.bio || '',
                                                     instagram: userData.instagram || '',
