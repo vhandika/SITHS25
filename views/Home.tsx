@@ -133,7 +133,7 @@ const Home: React.FC = () => {
             <div className="relative z-10 flex flex-col items-center p-4 text-center">
                 <div className="mb-8 flex flex-col items-center relative group">
                     <img
-                        src="/logo.png"
+                        src="/logo.webp"
                         alt="SITH-S 25 Logo"
                         className="h-64 w-64 object-contain md:h-80 md:w-80 lg:h-[480px] lg:w-[480px] transition-all duration-1000 hover:scale-[1.02] active:scale-95 cursor-default"
                     />

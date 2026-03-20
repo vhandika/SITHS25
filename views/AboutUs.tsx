@@ -20,14 +20,14 @@ const activitiesData: Activity[] = [
         title: "Ecosites",
         date: "03 Oktober 2025",
         description: "Ecology Social Initiative and Technology (ECOSITES) merupakan proyek aksi angkatan SITH-S/C’25 yang berfokus pada pengembangan pola pikir kritis terhadap isu lingkungan, khususnya dalam pengelolaan sampah organik di kawasan Jatinangor. Melalui inisiatif ini, kami menekankan pentingnya validasi data lapangan dan penelusuran sumber primer guna menghindari misinformasi dari artikel daring yang kerap tidak akurat. ECOSITES menjadi wadah bagi mahasiswa untuk mengintegrasikan pendekatan teknologi dengan tanggung jawab sosial, guna menciptakan solusi lingkungan yang kontekstual, tepat sasaran, dan berbasis pada fakta ilmiah yang kredibel.",
-        imageUrl: "Aca1.jpeg"
+        imageUrl: "Aca1.webp"
     },
     {
         id: 2,
         title: "Kutukan",
         date: "23 November 2025",
         description: "KUTUKAN (Kunci Teror Pembuktian) – UNITI VINCIAMO merupakan simpul persaudaraan dan manifestasi gelora semangat dari massa SITH-R dan SITH-S yang bersatu dalam satu komando tribun. Mengusung semboyan 'Uniti Vinciamo' yang berarti 'Bersatu Kita Menang', aliansi ini bukan sekadar kelompok supporter, melainkan representasi resiliensi dan loyalitas tanpa batas bagi identitas hijau di setiap kompetisi. Dengan atmosfer yang mengintimidasi namun tetap suportif, KUTUKAN hadir sebagai energi tambahan bagi para atlet di lapangan sekaligus bukti nyata bahwa di bawah naungan Sekolah Ilmu dan Teknologi Hayati, perbedaan program studi melebur menjadi satu kekuatan yang solid, vokal, dan tak tergoyahkan.",
-        imageUrl: "Aca2.jpeg"
+        imageUrl: "Aca2.webp"
     }
 ];
 
@@ -150,7 +150,7 @@ const About: React.FC = () => {
 
                     <div className="flex flex-col items-center mb-8">
                         <img
-                            src="/logo.png"
+                            src="/logo.webp"
                             alt="Logo SITH-S 2025"
                             className="w-64 h-64 md:w-80 md:h-80 lg:w-[450px] lg:h-[450px] object-contain drop-shadow-[0_0_25px_rgba(250,204,21,0.6)] hover:scale-105 transition-transform duration-500"
                         />
