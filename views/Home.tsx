@@ -236,7 +236,7 @@ const Home: React.FC = () => {
                             <h2 className="text-3xl font-bold text-white uppercase tracking-wider mb-2 mt-2">Happy Birthday!</h2>
                             <p className="text-gray-400 mb-8 text-sm">Selamat ulang tahun yaa buat:</p>
 
-                            <div className="flex flex-col gap-4 max-h-[300px] overflow-y-auto custom-scrollbar px-2">
+                            <div className="flex flex-col gap-4 max-h-[300px] overflow-y-auto px-2">
                                 {birthdayUsers.map((user, index) => (
                                     <div key={index} className="bg-white/5 p-4 rounded-lg">
                                         <h3 className="text-xl font-bold text-white tracking-wide">{user.name}</h3>
@@ -257,9 +257,7 @@ const Home: React.FC = () => {
                 .animate-pop-in { animation: popUp 0.3s ease-out forwards; }
                 .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
                 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-                .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-                .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-                .custom-scrollbar::-webkit-scrollbar-thumb { background: #555; border-radius: 10px; }
+                /* ...existing code... */
             `}</style>
         </div >
     );

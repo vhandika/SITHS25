@@ -184,13 +184,7 @@ const Sidebar: React.FC = () => {
     return (
         <>
             <style>{`
-                .no-scrollbar::-webkit-scrollbar {
-                    display: none;
-                }
-                .no-scrollbar {
-                    -ms-overflow-style: none;
-                    scrollbar-width: none;
-                }
+                /* ...existing code... */
             `}</style>
 
             <aside
@@ -199,7 +193,7 @@ const Sidebar: React.FC = () => {
                 onMouseEnter={() => setIsExpanded(true)}
                 onMouseLeave={() => setIsExpanded(false)}
             >
-                <div className="flex w-full flex-1 flex-col items-center gap-8 overflow-y-auto no-scrollbar pb-4">
+                <div className="flex w-full flex-1 flex-col items-center gap-8 overflow-y-auto pb-4">
                     <DesktopNavLinks
                         isExpanded={isExpanded}
                         isLoggedIn={isLoggedIn}
@@ -259,7 +253,7 @@ const Sidebar: React.FC = () => {
                     }`}
             >
                 <div className="flex h-full flex-col justify-between">
-                    <nav className="flex flex-col gap-2 flex-1 overflow-y-auto no-scrollbar pb-4">
+                    <nav className="flex flex-col gap-2 flex-1 overflow-y-auto pb-4">
                         {getMobileNavItems().map((item) => (
                             <NavLink
                                 key={item.path}

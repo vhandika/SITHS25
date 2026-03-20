@@ -417,13 +417,6 @@ const IndexCalculator: React.FC = () => {
     return (
         <div className="relative min-h-screen w-full py-16 lg:py-24 px-4 sm:px-6 lg:px-8 mt-16 lg:mt-0 font-sans selection:bg-yellow-400 selection:text-black">
             <style>{`
-                .no-scrollbar::-webkit-scrollbar {
-                    display: none;
-                }
-                .no-scrollbar {
-                    -ms-overflow-style: none;
-                    scrollbar-width: none;
-                }
                 @keyframes bounceIn {
                     0% { opacity: 0; transform: scale(0.9); }
                     50% { opacity: 1; transform: scale(1.03); }
@@ -446,7 +439,7 @@ const IndexCalculator: React.FC = () => {
 
             {isModalOpen && (
                 <div className={`fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-sm transition-opacity duration-300 ${isClosing ? 'opacity-0' : 'opacity-100'}`}>
-                    <div className={`bg-gray-900 border border-gray-700 rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto no-scrollbar p-4 sm:p-6 shadow-2xl ${isClosing ? 'animate-bounce-out' : 'animate-bounce-in'}`}>
+                    <div className={`bg-gray-900 border border-gray-700 rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6 shadow-2xl ${isClosing ? 'animate-bounce-out' : 'animate-bounce-in'}`}>
                         <div className="flex justify-between items-center mb-6">
                             <h2 className="text-xl font-bold text-white">Buat Mata Kuliah Custom</h2>
                             <button onClick={closeModal} className="text-gray-400 hover:text-white transition-colors"><X size={24} /></button>
@@ -550,7 +543,7 @@ const IndexCalculator: React.FC = () => {
                                             </button>
                                             
                                             {isDropdownOpen && (
-                                                <div className="absolute z-50 w-full mt-2 bg-gray-900 border border-gray-700 rounded-lg shadow-[0_10px_40px_-10px_rgba(0,0,0,0.5)] overflow-y-auto max-h-60 no-scrollbar">
+                                                <div className="absolute z-50 w-full mt-2 bg-gray-900 border border-gray-700 rounded-lg shadow-[0_10px_40px_-10px_rgba(0,0,0,0.5)] overflow-y-auto max-h-60">
                                                     <div className="p-2 space-y-1">
                                                         <div className="text-xs font-bold text-gray-500 uppercase px-3 py-2">Mafiki</div>
                                                         <button onClick={() => { setCourse('fisika'); setIsDropdownOpen(false); }} className={`w-full text-left px-3 py-2 rounded-md hover:bg-gray-800 transition-colors ${course === 'fisika' ? 'text-yellow-400 bg-gray-800/50 font-medium' : 'text-gray-300'}`}>Fisika Dasar I</button>

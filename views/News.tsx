@@ -442,14 +442,7 @@ const News: React.FC = () => {
                     .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
                     .animate-fade-out { animation: fadeOut 0.3s ease-in forwards; }
 
-                    /* CSS untuk menghilangkan scrollbar bawaan di modal */
-                    .hide-scrollbar::-webkit-scrollbar {
-                        display: none;
-                    }
-                    .hide-scrollbar {
-                        -ms-overflow-style: none;
-                        scrollbar-width: none;
-                    }
+                    /* ...existing code... */
                 `}</style>
 
                 <div className="mx-auto max-w-7xl">
@@ -563,7 +556,7 @@ const News: React.FC = () => {
                     </button>
 
                     <div
-                        className={`relative w-full max-w-md h-full md:max-h-[90vh] bg-gray-900 md:rounded-xl overflow-y-auto hide-scrollbar shadow-2xl flex flex-col border border-gray-800 ${isClosing ? 'animate-pop-out' : 'animate-pop-in'}`}
+                        className={`relative w-full max-w-md h-full md:max-h-[90vh] bg-gray-900 md:rounded-xl overflow-y-auto shadow-2xl flex flex-col border border-gray-800 ${isClosing ? 'animate-pop-out' : 'animate-pop-in'}`}
                         onClick={e => e.stopPropagation()}
                     >
                         <div className="relative w-full h-[40vh] min-h-[300px] flex-shrink-0">
@@ -608,7 +601,7 @@ const News: React.FC = () => {
                     ></div>
 
                     <div
-                        className={`relative w-full max-w-2xl bg-gray-900 rounded-lg border border-gray-700 shadow-2xl p-6 overflow-y-auto max-h-[90vh] text-left hide-scrollbar ${isClosing ? 'animate-pop-out' : 'animate-pop-in'}`}
+                        className={`relative w-full max-w-2xl bg-gray-900 rounded-lg border border-gray-700 shadow-2xl p-6 overflow-y-auto max-h-[90vh] text-left ${isClosing ? 'animate-pop-out' : 'animate-pop-in'}`}
                     >
                         <div className="flex justify-between items-center mb-6 border-b border-gray-800 pb-4">
                             <h2 className="text-2xl font-bold text-white flex items-center gap-2">

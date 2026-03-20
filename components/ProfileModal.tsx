@@ -199,7 +199,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, 
 
                 {!loading && !errorMsg && userData && (
                     <div className="flex flex-col h-full overflow-hidden">
-                        <div className="flex-1 overflow-y-auto custom-scrollbar relative">
+                        <div className="flex-1 overflow-y-auto relative">
                             <div className="h-32 bg-gray-800 relative w-full shrink-0">
                                 {currentBannerUrl ? (
                                     <img

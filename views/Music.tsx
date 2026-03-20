@@ -803,7 +803,7 @@ const Music: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-2 sm:p-4 overflow-x-hidden no-scrollbar">
+                    <div className="flex-1 overflow-y-auto p-2 sm:p-4 overflow-x-hidden">
                         {searchResults.length > 0 ? (
                             <div>
                                 <h3 className="text-xl font-bold mb-4 px-2 sm:px-0">Search Results</h3>
@@ -1087,7 +1087,7 @@ const Music: React.FC = () => {
                                 </div>
                             )}
 
-                            <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
+                            <div className="space-y-2 max-h-60 overflow-y-auto">
                                 <p className="text-xs text-gray-500 uppercase font-bold mb-2">Select Playlist</p>
                                 {myPlaylists.map(p => (
                                     <button

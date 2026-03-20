@@ -172,7 +172,7 @@ const LibraryViewer: React.FC<LibraryViewerProps> = ({ isOpen, onClose, currentI
                             </div>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar">
+                        <div className="flex-1 overflow-y-auto p-2 space-y-1">
                             {currentFolderItems.map((item) => {
                                 const isSelected = currentItem?.id === item.id;
                                 const isFolder = item.type === 'folder' || (item.children && item.children.length > 0);
@@ -243,10 +243,7 @@ const LibraryViewer: React.FC<LibraryViewerProps> = ({ isOpen, onClose, currentI
                     80% { transform: translateY(2px); }
                     100% { transform: translateY(0); }
                 }
-                .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-                .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-                .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
-                .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
+                /* ...existing code... */
             `}</style>
         </div>
     );

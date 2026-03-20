@@ -685,7 +685,7 @@ const Attendance: React.FC = () => {
                                 </div>
 
                                 <div className="flex flex-col sm:flex-row justify-between gap-4 mb-4 shrink-0">
-                                    <div className="flex bg-gray-800 p-1 rounded-lg overflow-x-auto w-full sm:w-auto custom-scrollbar">
+                                    <div className="flex bg-gray-800 p-1 rounded-lg overflow-x-auto w-full sm:w-auto">
                                         <button onClick={() => setActiveTab('hadir')} className={`flex-shrink-0 px-3 py-2 rounded-md text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'hadir' ? 'bg-green-600 text-white shadow' : 'text-gray-400 hover:text-white'}`}>
                                             <div className="flex items-center gap-2"><UserCheck size={16} /> Hadir ({presentUsers.length})</div>
                                         </button>
@@ -723,7 +723,7 @@ const Attendance: React.FC = () => {
                                     </div>
                                 </div>
 
-                                <div className="flex-1 overflow-y-auto custom-scrollbar bg-black/50 rounded-lg border border-gray-800">
+                                <div className="flex-1 overflow-y-auto bg-black/50 rounded-lg border border-gray-800">
                                     <table className="w-full text-left text-sm">
                                         <thead className="bg-gray-800 text-gray-200 uppercase text-xs sticky top-0 z-10">
                                             <tr>

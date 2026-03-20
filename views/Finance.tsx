@@ -510,7 +510,7 @@ const Finance: React.FC = () => {
                                         <span>Tumben dah bayar semua XD</span>
                                     </div>
                                 ) : (
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-0 max-h-[400px] overflow-y-auto custom-scrollbar">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-0 max-h-[400px] overflow-y-auto">
                                         {dashboardUnpaidUsers.map((user) => (
                                             <div key={user.nim} className="flex items-center gap-3 p-3 border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors">
                                                 {user.avatar_url ? (
@@ -675,7 +675,7 @@ const Finance: React.FC = () => {
                                 <Plus className="text-yellow-400" /> Tambah Transaksi
                             </h2>
 
-                            <form onSubmit={handleSubmit} className="space-y-4 flex-1 overflow-y-auto pr-1 custom-scrollbar">
+                            <form onSubmit={handleSubmit} className="space-y-4 flex-1 overflow-y-auto pr-1">
                                 <div>
                                     <label className="block text-sm text-gray-400 mb-2">Jenis Transaksi</label>
                                     <div className="flex gap-2">
@@ -769,7 +769,7 @@ const Finance: React.FC = () => {
                                             </div>
 
                                             <div className="border border-gray-700 rounded-lg bg-black/30 overflow-hidden">
-                                                <div className="max-h-48 overflow-y-auto custom-scrollbar p-2 space-y-1">
+                                                <div className="max-h-48 overflow-y-auto p-2 space-y-1">
                                                     {filteredModalUsers.length === 0 ? (
                                                         <div className="text-gray-500 text-xs text-center py-4 flex flex-col items-center">
                                                             <span className="mt-1">Tidak ada / Semua orang sudah lunas</span>
