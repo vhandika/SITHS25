@@ -5,6 +5,19 @@ import {
 import LibraryViewer from '../components/LibraryViewer';
 import ParticleBackground from '../components/ParticleBackground';
 
+const getCookie = (name: string) => {
+  if (typeof document === 'undefined') return '';
+  return document.cookie.split('; ').reduce((result, value) => {
+    const parts = value.split('=');
+    return parts[0]?.trim() === name ? decodeURIComponent(parts[1] || '') : result;
+  }, '');
+};
+
+const getLibraryPopupStorageKey = () => {
+  const userNIM = getCookie('userNIM') || 'guest';
+  return `library_popup_dismissed_${userNIM}`;
+};
+
 export interface LibraryItem {
   id: string;
   title: string;
@@ -866,7 +879,23 @@ const Library: React.FC = () => {
   const [isViewerOpen, setIsViewerOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<LibraryItem | null>(null);
   
-  const [showPopup, setShowPopup] = useState(true);
+  const [showPopup, setShowPopup] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    return localStorage.getItem(getLibraryPopupStorageKey()) !== 'true';
+  });
+  const [dontShowPopupAgain, setDontShowPopupAgain] = useState(false);
+
+  const handleClosePopup = () => {
+    const storageKey = getLibraryPopupStorageKey();
+
+    if (dontShowPopupAgain) {
+      localStorage.setItem(storageKey, 'true');
+    } else {
+      localStorage.removeItem(storageKey);
+    }
+
+    setShowPopup(false);
+  };
 
   const handleOpenViewer = (item: LibraryItem) => {
     setSelectedItem(item);
@@ -898,7 +927,7 @@ const Library: React.FC = () => {
                 <h3 className="text-xl font-bold text-white tracking-wider">Pemberitahuan</h3>
               </div>
               <button 
-                onClick={() => setShowPopup(false)}
+                onClick={handleClosePopup}
                 className="text-gray-500 hover:text-white transition-colors p-1"
               >
                 <X size={24} />
@@ -913,8 +942,18 @@ const Library: React.FC = () => {
               </p>
             </div>
 
+            <label className="mb-6 flex items-center gap-3 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={dontShowPopupAgain}
+                onChange={(event) => setDontShowPopupAgain(event.target.checked)}
+                className="h-4 w-4 rounded border-gray-600 bg-gray-800 text-yellow-400 focus:ring-yellow-400 focus:ring-2"
+              />
+              <span className="text-sm text-gray-300">Jangan tampilkan lagi</span>
+            </label>
+
             <button
-              onClick={() => setShowPopup(false)}
+              onClick={handleClosePopup}
               className="w-full py-3 bg-yellow-400 hover:bg-yellow-500 text-black font-bold uppercase tracking-widest text-sm rounded-xl transition-colors duration-300"
             >
               Oke, Mengerti!

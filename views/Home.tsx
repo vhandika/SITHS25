@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SkewedButton from '../components/SkewedButton';
-import { BookOpen, Pen, ImagePlus, Trash2, Gift, X } from 'lucide-react';
+import { BookOpen, Pen, Gift, X } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import ParticleBackground from '../components/ParticleBackground';
 
 interface User {
     name: string;
@@ -19,11 +20,7 @@ const getCookie = (name: string) => {
 
 const Home: React.FC = () => {
     const navigate = useNavigate();
-    const [bgLoaded, setBgLoaded] = useState(false);
-    const HD_BG = "https://itb.ac.id/files/cover/170125-Kolam-Intel.jpg";
     const API_BASE_URL = 'https://api.sith-s25.my.id/api';
-    const savedBg = localStorage.getItem('homeBackgroundImage');
-    const [backgroundImageUrl, setBackgroundImageUrl] = useState(savedBg || HD_BG);
 
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
     const containerRef = useRef<HTMLDivElement>(null);
@@ -39,8 +36,6 @@ const Home: React.FC = () => {
     const [birthdayUsers, setBirthdayUsers] = useState<User[]>([]);
     const [showBirthdayModal, setShowBirthdayModal] = useState(false);
     const audioRef = useRef<HTMLAudioElement | null>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
-    const isCustomBackground = !!savedBg;
 
     useEffect(() => {
         const fetchBirthdays = async () => {
@@ -63,14 +58,6 @@ const Home: React.FC = () => {
         };
         fetchBirthdays();
     }, []);
-
-    useEffect(() => {
-        const img = new Image();
-        img.src = backgroundImageUrl;
-        img.onload = () => {
-            setBgLoaded(true);
-        };
-    }, [backgroundImageUrl]);
 
     useEffect(() => {
         audioRef.current = new Audio('/sounds/HBD.mp3');
@@ -133,31 +120,6 @@ const Home: React.FC = () => {
         }
     };
 
-    const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                const base64String = reader.result as string;
-                localStorage.setItem('homeBackgroundImage', base64String);
-                setBackgroundImageUrl(base64String);
-                setBgLoaded(true);
-            };
-            reader.readAsDataURL(file);
-        }
-    };
-
-    const handleBackgroundAction = () => {
-        if (isCustomBackground) {
-            localStorage.removeItem('homeBackgroundImage');
-            setBackgroundImageUrl(HD_BG);
-            setBgLoaded(false);
-            if (fileInputRef.current) fileInputRef.current.value = '';
-        } else {
-            fileInputRef.current?.click();
-        }
-    };
-
     return (
         <div
             ref={containerRef}
@@ -165,20 +127,15 @@ const Home: React.FC = () => {
             className="relative flex h-screen min-h-[600px] w-full items-center justify-center overflow-hidden selection:bg-yellow-400 selection:text-black bg-gray-900"
         >
             <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-black to-gray-800" />
-
-            <div
-                className={`absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000 ${bgLoaded ? 'opacity-100' : 'opacity-0'}`}
-                style={{ backgroundImage: `url('${backgroundImageUrl}')` }}
-            >
-                <div className="absolute inset-0 bg-black/60"></div>
-            </div>
+            <ParticleBackground />
+            <div className="absolute inset-0 bg-black/50"></div>
 
             <div className="relative z-10 flex flex-col items-center p-4 text-center">
                 <div className="mb-8 flex flex-col items-center relative group">
                     <img
                         src="/logo.png"
                         alt="SITH-S 25 Logo"
-                        className={`h-64 w-64 object-contain md:h-80 md:w-80 lg:h-[480px] lg:w-[480px] transition-all duration-1000 hover:scale-[1.02] active:scale-95 cursor-default ${bgLoaded ? 'opacity-100' : 'opacity-0'}`}
+                        className="h-64 w-64 object-contain md:h-80 md:w-80 lg:h-[480px] lg:w-[480px] transition-all duration-1000 hover:scale-[1.02] active:scale-95 cursor-default"
                     />
                 </div>
 
@@ -210,19 +167,6 @@ const Home: React.FC = () => {
                     </div>
                 )
             }
-
-            <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" id="bg-upload" />
-
-            <button
-                onClick={handleBackgroundAction}
-                className="group absolute bottom-5 right-5 z-20 flex items-center gap-2 rounded-full bg-black/50 p-3 text-white backdrop-blur-sm transition-all duration-300 ease-in-out hover:bg-yellow-400/90 hover:pr-4 hover:text-black focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2 focus:ring-offset-black"
-                title={isCustomBackground ? "Reset background ke default" : "Ganti gambar background"}
-            >
-                {isCustomBackground ? <Trash2 className="h-6 w-6" /> : <ImagePlus className="h-6 w-6" />}
-                <span className="max-w-0 overflow-hidden whitespace-nowrap text-sm font-medium transition-all duration-300 ease-in-out group-hover:max-w-xs">
-                    {isCustomBackground ? "Hapus Background" : "Ganti Background"}
-                </span>
-            </button>
 
             {
                 showBirthdayModal && (

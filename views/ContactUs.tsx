@@ -13,15 +13,7 @@ interface Contact {
 }
 
 const contacts: Contact[] = [
-    {
-        id: 1,
-        name: 'Yarvish',
-        role: 'Ketua Angkatan',
-        avatarUrl: '/assets',
-        waLink: 'https://wa.me/628',
-        igLink: 'https://instagram.com/9999',
-        lineLink: 'https://line.me/ti/p/9999',
-    },
+
 ];
 
 const ContactCard: React.FC<{ contact: Contact }> = ({ contact }) => {
