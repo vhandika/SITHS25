@@ -210,8 +210,17 @@ const MusicPlayer: React.FC = () => {
         loadAPI();
 
         return () => {
-            if (initCheckInterval) clearInterval(initCheckInterval);
+            if (initCheckInterval) {
+                clearInterval(initCheckInterval);
+                initCheckInterval = null;
+            }
             stopProgressTracking();
+            if (playerRef.current) {
+                try {
+                    playerRef.current.destroy?.();
+                } catch (e) {}
+                playerRef.current = null;
+            }
         };
     }, []);
 
@@ -275,7 +284,10 @@ const MusicPlayer: React.FC = () => {
     };
 
     const stopProgressTracking = () => {
-        if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+        if (progressIntervalRef.current) {
+            clearInterval(progressIntervalRef.current);
+            progressIntervalRef.current = null;
+        }
     };
 
     const togglePlay = () => {

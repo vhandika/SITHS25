@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Plus, X, Wallet, TrendingDown, Users, ArrowUpCircle, ArrowDownCircle, Calendar, User, Search, CheckSquare, History, QrCode } from 'lucide-react';
 import SkewedButton from '../components/SkewedButton';
 import { fetchWithAuth } from '../src/utils/api';
@@ -97,6 +97,7 @@ const Finance: React.FC = () => {
     const [amountPreset, setAmountPreset] = useState('5000');
     const [selectedNims, setSelectedNims] = useState<string[]>([]);
     const [searchUser, setSearchUser] = useState('');
+    const financeAbortControllerRef = useRef<AbortController | null>(null);
 
     const currentUserNIM = getCookie('userNIM');
     const currentUserRole = getCookie('userRole');

@@ -157,8 +157,10 @@ const ParticleBackground: React.FC<ParticleBackgroundProps> = ({
         ensureCanvas();
         if (!sharedCanvas || !sharedCtx) return;
 
+        const resizeHandler = resizeCanvas;
+        
         if (!resizeListenerAttached) {
-            window.addEventListener('resize', resizeCanvas);
+            window.addEventListener('resize', resizeHandler);
             resizeListenerAttached = true;
         }
 
@@ -173,8 +175,13 @@ const ParticleBackground: React.FC<ParticleBackgroundProps> = ({
 
         return () => {
             activeInstances = Math.max(0, activeInstances - 1);
+            
             if (activeInstances === 0) {
                 setCanvasVisibility(false);
+                if (animationFrameId !== null) {
+                    cancelAnimationFrame(animationFrameId);
+                    animationFrameId = null;
+                }
             }
         };
     }, [connectionDistance, connectionOpacity, lineWidth, maxParticles, particleColor, particleOpacity]);

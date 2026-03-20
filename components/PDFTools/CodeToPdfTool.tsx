@@ -157,6 +157,7 @@ const CodeToPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const [isGenerating, setIsGenerating] = useState(false);
     const [isPyLoading, setIsPyLoading] = useState(false);
     const workerRef = useRef<Worker | null>(null);
+    const workerBlobUrlRef = useRef<string | null>(null);
     const currentLangRef = useRef<string | null>(null);
 
     useEffect(() => {
@@ -177,6 +178,12 @@ const CodeToPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             workerRef.current.terminate();
             workerRef.current = null;
         }
+        
+        if (workerBlobUrlRef.current) {
+            URL.revokeObjectURL(workerBlobUrlRef.current);
+            workerBlobUrlRef.current = null;
+        }
+        
         setIsRunning(false);
         setIsPyLoading(false);
     }, [language]);
@@ -185,6 +192,12 @@ const CodeToPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         return () => {
             if (workerRef.current) {
                 workerRef.current.terminate();
+                workerRef.current = null;
+            }
+            
+            if (workerBlobUrlRef.current) {
+                URL.revokeObjectURL(workerBlobUrlRef.current);
+                workerBlobUrlRef.current = null;
             }
         };
     }, []);
@@ -370,7 +383,10 @@ const CodeToPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             try {
                 const scriptContent = language === 'javascript' ? JS_WORKER_SCRIPT : PYTHON_WORKER_SCRIPT;
                 const blob = new Blob([scriptContent], { type: 'application/javascript' });
-                const worker = new Worker(URL.createObjectURL(blob));
+                const workerUrl = URL.createObjectURL(blob);
+                workerBlobUrlRef.current = workerUrl;
+                
+                const worker = new Worker(workerUrl);
                 workerRef.current = worker;
                 currentLangRef.current = language;
 
@@ -399,6 +415,14 @@ const CodeToPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                         workerRef.current = null;
                     }
                 };
+                
+                worker.onerror = (error) => {
+                    printToTerminal(`Worker Error: ${error.message}`, 'output');
+                    setIsRunning(false);
+                    setIsPyLoading(false);
+                    worker.terminate();
+                    workerRef.current = null;
+                };
             } catch (e: any) {
                 printToTerminal(`Error initializing worker: ${e.message}`, 'output');
                 setIsRunning(false);
@@ -419,6 +443,12 @@ const CodeToPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             workerRef.current.terminate();
             workerRef.current = null;
         }
+        
+        if (workerBlobUrlRef.current) {
+            URL.revokeObjectURL(workerBlobUrlRef.current);
+            workerBlobUrlRef.current = null;
+        }
+        
         setIsRunning(false);
         setTerminalLogs([]);
         setIsWaitingInput(false);
