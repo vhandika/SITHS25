@@ -4,13 +4,45 @@
       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
             http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
-<!-- created with Free Online Sitemap Generator www.xml-sitemaps.com -->
-
 
 <url>
-  <loc>https://siths25.vercel.app/#/</loc>
-  <lastmod>2025-11-21T10:49:35+00:00</lastmod>
+  <loc>https://sith-s25.my.id/</loc>
+  <lastmod>2026-03-21T00:00:00+00:00</lastmod>
 </url>
 
+<url>
+  <loc>https://sith-s25.my.id/library</loc>
+  <lastmod>2026-03-21T00:00:00+00:00</lastmod>
+</url>
+
+<url>
+  <loc>https://sith-s25.my.id/news</loc>
+  <lastmod>2026-03-21T00:00:00+00:00</lastmod>
+</url>
+
+<url>
+  <loc>https://sith-s25.my.id/about</loc>
+  <lastmod>2026-03-21T00:00:00+00:00</lastmod>
+</url>
+
+<url>
+  <loc>https://sith-s25.my.id/contact</loc>
+  <lastmod>2026-03-21T00:00:00+00:00</lastmod>
+</url>
+
+<url>
+  <loc>https://sith-s25.my.id/PDFTools</loc>
+  <lastmod>2026-03-21T00:00:00+00:00</lastmod>
+</url>
+
+<url>
+  <loc>https://sith-s25.my.id/music</loc>
+  <lastmod>2026-03-21T00:00:00+00:00</lastmod>
+</url>
+
+<url>
+  <loc>https://sith-s25.my.id/calc</loc>
+  <lastmod>2026-03-21T00:00:00+00:00</lastmod>
+</url>
 
 </urlset>
