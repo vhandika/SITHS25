@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://sith-s25.my.id/sitemap.xml
