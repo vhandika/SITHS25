@@ -113,7 +113,7 @@ const About: React.FC = () => {
                     >
                         {bannerImages.map((src, index) => (
                             <div key={index} className="w-full flex-shrink-0 relative">
-                                <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60 z-10"></div>
+                                {theme !== 'light' && <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60 z-10"></div>}
                                 <img src={src} alt={`Banner ${index + 1}`} className="w-full h-full object-cover" />
                             </div>
                         ))}
