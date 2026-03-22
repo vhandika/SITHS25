@@ -5,6 +5,7 @@ import { fetchWithAuth } from '../src/utils/api';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../contexts/ToastContext';
 import ParticleBackground from '../components/ParticleBackground';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface GalleryItem {
     id: number;
@@ -76,6 +77,7 @@ const ScrollingTitle: React.FC<{ title: string }> = ({ title }) => {
 const Gallery: React.FC = () => {
     const navigate = useNavigate();
     const { showToast } = useToast();
+    const { theme } = useTheme();
     const [items, setItems] = useState<GalleryItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -163,7 +165,7 @@ const Gallery: React.FC = () => {
     };
 
     return (
-        <div className="relative min-h-screen w-full py-16 lg:py-24 px-4 sm:px-6 lg:px-8 mt-16 lg:mt-0 font-sans overflow-x-hidden selection:bg-yellow-400 selection:text-black">
+        <div className={`relative min-h-screen w-full py-16 lg:py-24 px-4 sm:px-6 lg:px-8 mt-16 lg:mt-0 font-sans overflow-x-hidden selection:bg-yellow-400 selection:text-black ${theme === 'light' ? 'bg-white' : 'bg-black'}`}>
             
             <style>{`
                 @keyframes marqueeContinuous {

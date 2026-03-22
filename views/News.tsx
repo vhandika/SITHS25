@@ -4,6 +4,7 @@ import SkewedButton from '../components/SkewedButton';
 import { fetchWithAuth } from '../src/utils/api';
 import { useToast } from '../contexts/ToastContext';
 import ParticleBackground from '../components/ParticleBackground';
+import { useTheme } from '../contexts/ThemeContext';
 
 const API_BASE_URL = 'https://api.sith-s25.my.id/api';
 
@@ -91,7 +92,8 @@ const NewsCard: React.FC<{
     canEdit: boolean;
     onEdit: (e: React.MouseEvent) => void;
     onDelete: (e: React.MouseEvent) => void;
-}> = ({ article, isFeatured, onClick, canEdit, onEdit, onDelete }) => (
+    theme?: string;
+}> = ({ article, isFeatured, onClick, canEdit, onEdit, onDelete, theme = 'dark' }) => (
     <div
         onClick={onClick}
         className={`group relative w-full shrink-0 transform cursor-pointer overflow-hidden transition-all duration-500 ease-in-out ${isFeatured ? 'lg:w-[60%]' : 'lg:w-[18%]'}`}
@@ -101,7 +103,7 @@ const NewsCard: React.FC<{
             alt={article.title}
             className={`h-full w-full object-cover transition-all duration-500 group-hover:scale-110 ${isFeatured ? '' : 'grayscale brightness-75 group-hover:grayscale-0 group-hover:brightness-100'}`}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
+        {theme !== 'light' && <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>}
 
         {!article.is_public && (
             <div className="absolute top-4 right-4 z-10 bg-red-600/90 backdrop-blur-sm p-1.5 rounded-lg text-white shadow-lg border border-red-500">
@@ -131,6 +133,7 @@ const NewsCard: React.FC<{
 
 const News: React.FC = () => {
     const { showToast } = useToast();
+    const { theme } = useTheme();
     const [newsData, setNewsData] = useState<NewsArticle[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(null);
@@ -329,11 +332,11 @@ const News: React.FC = () => {
         }, 300);
     };
 
-    if (loading) return <div className="min-h-screen w-full bg-black flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-yellow-400"></div></div>;
+    if (loading) return <div className={`min-h-screen w-full flex items-center justify-center ${theme === 'light' ? 'bg-white' : 'bg-black'}`}><div className={`animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 ${theme === 'light' ? 'border-emerald-600' : 'border-yellow-400'}`}></div></div>;
     const currentArticle = newsData.length > 0 ? newsData[currentIndex] : null;
 
     return (
-        <div className="min-h-screen w-full py-16 lg:py-24 px-4 sm:px-6 lg:px-8 mt-16 lg:mt-0 font-sans relative selection:bg-yellow-400 selection:text-black">
+        <div className={`min-h-screen w-full py-16 lg:py-24 px-4 sm:px-6 lg:px-8 mt-16 lg:mt-0 font-sans relative selection:bg-yellow-400 selection:text-black ${theme === 'light' ? 'bg-white' : 'bg-black'}`}>
             
             <ParticleBackground />
 
@@ -393,7 +396,7 @@ const News: React.FC = () => {
                                     {newsData.map((article) => (
                                         <div key={article.id} className="relative w-full h-full flex-shrink-0 cursor-pointer" onClick={() => handleOpenDetail(article)}>
                                             <img src={article.image_url || 'https://via.placeholder.com/800x600'} alt={article.title} className="w-full h-full object-cover" />
-                                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+                                            {theme !== 'light' && <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>}
                                             {canManageNews && (
                                                 <div className="absolute top-4 left-4 z-20 flex gap-2">
                                                     <button onClick={(e) => handleEditClick(article, e)} className="p-2 bg-blue-600 text-white rounded-full hover:bg-blue-500 shadow-lg"><Pencil size={16} /></button>
@@ -416,6 +419,7 @@ const News: React.FC = () => {
                                             canEdit={canManageNews || false}
                                             onEdit={(e) => handleEditClick(article, e)}
                                             onDelete={(e) => handleDelete(article.id, e)}
+                                            theme={theme}
                                         />
                                     ))}
                                 </div>
@@ -479,7 +483,7 @@ const News: React.FC = () => {
                                 className="absolute inset-0 w-full h-full object-cover"
                                 alt={selectedArticle.title}
                             />
-                            <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/60 to-transparent"></div>
+                            {theme !== 'light' && <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/60 to-transparent"></div>}
 
                             <div className="absolute bottom-0 left-0 w-full p-6 z-20 text-left">
                                 <div className="flex gap-3 mb-3">

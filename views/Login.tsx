@@ -4,6 +4,7 @@ import { KeyRound, LogIn, AlertCircle, Eye, EyeOff, X, Mail } from 'lucide-react
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../contexts/ToastContext';
 import ParticleBackground from '../components/ParticleBackground';
+import { useTheme } from '../contexts/ThemeContext';
 
 const setCookie = (name: string, value: string, days: number = 7) => {
     const expires = new Date(Date.now() + days * 864e5).toUTCString();
@@ -22,6 +23,7 @@ const deleteCookie = (name: string) => {
 };
 
 const Login: React.FC = () => {
+    const { theme } = useTheme();
     const [nim, setNim] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -141,7 +143,7 @@ const Login: React.FC = () => {
     };
 
     return (
-        <div className="relative flex min-h-screen w-full items-center justify-center py-16 px-4 mt-16 lg:mt-0 selection:bg-yellow-400 selection:text-black">
+        <div className={`relative flex min-h-screen w-full items-center justify-center py-16 px-4 mt-16 lg:mt-0 selection:bg-yellow-400 selection:text-black ${theme === 'light' ? 'bg-white' : 'bg-black'}`}>
 
             <ParticleBackground />
 

@@ -4,6 +4,7 @@ import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { MusicProvider } from './contexts/MusicContext';
 import { ToastProvider } from './contexts/ToastContext';
+import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import Sidebar from './components/Sidebar';
 import ActivityTracker from './components/ActivityTracker';
 import ToastContainer from './components/Toast';
@@ -42,16 +43,21 @@ const ResetPassword = lazy(() => import('./views/ResetPassword'));
 
 const API_BASE_URL = 'https://api.sith-s25.my.id/api';
 
-const LoadingFallback = () => (
-    <div className="flex items-center justify-center h-screen w-full bg-black text-yellow-400">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-yellow-400"></div>
-    </div>
-);
+const LoadingFallback: React.FC = () => {
+    const { theme } = useTheme();
+
+    return (
+        <div className={`flex items-center justify-center h-screen w-full ${theme === 'light' ? 'bg-white text-emerald-600' : 'bg-black text-yellow-400'}`}>
+            <div className={`animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 ${theme === 'light' ? 'border-emerald-600' : 'border-yellow-400'}`}></div>
+        </div>
+    );
+};
 
 const AppContent: React.FC = () => {
     const [showNimPopup, setShowNimPopup] = useState(false);
     const [hasChecked, setHasChecked] = useState(false);
     const location = useLocation();
+    const { theme } = useTheme();
 
     useEffect(() => {
         const checkAuth = async () => {
@@ -93,7 +99,7 @@ const AppContent: React.FC = () => {
     }, [location.pathname, hasChecked]);
 
     return (
-        <div className="flex min-h-screen bg-black">
+        <div className={`flex min-h-screen ${theme === 'light' ? 'bg-white' : 'bg-black'}`}>
             {showNimPopup && <NimPopup onSuccess={() => setShowNimPopup(false)} />}
             <Sidebar />
             <main className="flex-1 lg:ml-20">
@@ -128,15 +134,17 @@ const AppContent: React.FC = () => {
 const App: React.FC = () => {
     return (
         <BrowserRouter>
-            <ToastProvider>
-                <MusicProvider>
-                    <ActivityTracker />
-                    <ToastContainer />
-                    <AppContent />
-                    <Analytics />
-                    <SpeedInsights />
-                </MusicProvider>
-            </ToastProvider>
+            <ThemeProvider>
+                <ToastProvider>
+                    <MusicProvider>
+                        <ActivityTracker />
+                        <ToastContainer />
+                        <AppContent />
+                        <Analytics />
+                        <SpeedInsights />
+                    </MusicProvider>
+                </ToastProvider>
+            </ThemeProvider>
         </BrowserRouter>
     );
 };

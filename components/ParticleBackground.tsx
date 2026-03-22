@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface ParticleBackgroundProps {
     particleOpacity?: number;
@@ -142,6 +143,8 @@ const ParticleBackground: React.FC<ParticleBackgroundProps> = ({
     maxParticles = DEFAULT_CONFIG.maxParticles,
     connectionDistance = DEFAULT_CONFIG.connectionDistance
 }) => {
+    const { theme } = useTheme();
+
     useEffect(() => {
         if (typeof window === 'undefined') return;
 
@@ -153,6 +156,11 @@ const ParticleBackground: React.FC<ParticleBackgroundProps> = ({
             maxParticles,
             connectionDistance
         });
+
+        if (theme === 'light') {
+            setCanvasVisibility(false);
+            return;
+        }
 
         ensureCanvas();
         if (!sharedCanvas || !sharedCtx) return;
@@ -184,7 +192,16 @@ const ParticleBackground: React.FC<ParticleBackgroundProps> = ({
                 }
             }
         };
-    }, [connectionDistance, connectionOpacity, lineWidth, maxParticles, particleColor, particleOpacity]);
+    }, [connectionDistance, connectionOpacity, lineWidth, maxParticles, particleColor, particleOpacity, theme]);
+
+    if (theme === 'light') {
+        return (
+            <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
+                <div className="theme-light-blob theme-light-blob-red" />
+                <div className="theme-light-blob theme-light-blob-green" />
+            </div>
+        );
+    }
 
     return null;
 };

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Calculator, ArrowRight, RotateCcw, AlertCircle, Plus, X, Trash2, Save, CheckSquare, Square, ChevronDown } from 'lucide-react';
 import { useToast } from '../contexts/ToastContext'; 
 import ParticleBackground from '../components/ParticleBackground';
+import { useTheme } from '../contexts/ThemeContext';
 
 type CourseType = 'fisika' | 'matematika' | 'kimia' | string;
 
@@ -102,6 +103,7 @@ const AssessmentEditor: React.FC<AssessmentEditorProps> = ({ title, assessments,
 );
 
 const IndexCalculator: React.FC = () => {
+    const { theme } = useTheme();
     const toastContext = useToast() as any; 
     const triggerToast = (message: string, type: 'success' | 'error' | 'info') => {
         if (toastContext && typeof toastContext.addToast === 'function') {
@@ -338,7 +340,7 @@ const IndexCalculator: React.FC = () => {
     };
 
     return (
-        <div className="relative min-h-screen w-full py-16 lg:py-24 px-4 sm:px-6 lg:px-8 mt-16 lg:mt-0 font-sans selection:bg-yellow-400 selection:text-black">
+        <div className={`relative min-h-screen w-full py-16 lg:py-24 px-4 sm:px-6 lg:px-8 mt-16 lg:mt-0 font-sans selection:bg-yellow-400 selection:text-black ${theme === 'light' ? 'bg-white' : 'bg-black'}`}>
             <style>{`
                 @keyframes bounceIn {
                     0% { opacity: 0; transform: scale(0.9); }
@@ -634,3 +636,4 @@ const IndexCalculator: React.FC = () => {
 };
 
 export default IndexCalculator;
+

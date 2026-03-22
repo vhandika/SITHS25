@@ -1,7 +1,238 @@
 @import "tailwindcss";
 
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
 body {
   font-family: 'Rajdhani', sans-serif;
+  background: #000000;
+  transition: background-color 220ms ease;
+}
+
+body.theme-light {
+  background: #ffffff;
+}
+
+body.theme-light .text-white {
+  color: #111827;
+}
+
+body.theme-light .text-gray-400 {
+  color: #4b5563;
+}
+
+body.theme-light .text-gray-300 {
+  color: #374151;
+}
+
+body.theme-light .text-gray-200 {
+  color: #1f2937;
+}
+
+body.theme-light .text-gray-500 {
+  color: #6b7280;
+}
+
+body.theme-light [class*='bg-gray-900'],
+body.theme-light [class*='bg-gray-950'],
+body.theme-light [class*='bg-gray-800'],
+body.theme-light [class*='bg-gray-700'],
+body.theme-light [class*='bg-black'] {
+  background-color: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+body.theme-light [class*='border-gray-800'],
+body.theme-light [class*='border-gray-700'],
+body.theme-light [class*='border-gray-600'] {
+  border-color: rgba(209, 213, 219, 0.5);
+}
+
+body.theme-light input[class*='bg-black'],
+body.theme-light input[class*='bg-gray-900'],
+body.theme-light textarea[class*='bg-black'],
+body.theme-light textarea[class*='bg-gray-900'],
+body.theme-light select[class*='bg-black'],
+body.theme-light select[class*='bg-gray-900'] {
+  background-color: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: #111827;
+  border-color: rgba(209, 213, 219, 0.5);
+}
+
+body.theme-light input::placeholder,
+body.theme-light textarea::placeholder {
+  color: #6b7280;
+}
+
+body.theme-light button[class*='bg-gray-800'],
+body.theme-light button[class*='bg-gray-700'],
+body.theme-light button[class*='bg-gray-900'],
+body.theme-light button[class*='bg-black'],
+body.theme-light label[class*='bg-gray-800'],
+body.theme-light label[class*='bg-gray-700'],
+body.theme-light label[class*='bg-gray-900'],
+body.theme-light label[class*='bg-black'] {
+  background-color: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: #111827;
+  border-color: rgba(209, 213, 219, 0.5);
+}
+
+body.theme-light button[class*='hover:bg-gray-700']:hover,
+body.theme-light button[class*='hover:bg-gray-800']:hover,
+body.theme-light button[class*='hover:bg-gray-900']:hover,
+body.theme-light button[class*='hover:bg-black']:hover,
+body.theme-light label[class*='hover:bg-gray-700']:hover,
+body.theme-light label[class*='hover:bg-gray-800']:hover,
+body.theme-light label[class*='hover:bg-gray-900']:hover,
+body.theme-light label[class*='hover:bg-black']:hover {
+  background-color: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+body.theme-light button[class*='hover:text-white']:hover,
+body.theme-light label[class*='hover:text-white']:hover {
+  color: #111827;
+}
+
+body.theme-light [class*='bg-black/'] {
+  background-color: rgba(255, 255, 255, 0.6) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+body.theme-light [class*='bg-gray-900/'] {
+  background-color: rgba(255, 255, 255, 0.65) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+body.theme-light [class*='bg-gray-800/'] {
+  background-color: rgba(255, 255, 255, 0.7) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+body.theme-light [class*='bg-gray-700/'] {
+  background-color: rgba(255, 255, 255, 0.72) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+body.theme-light [class*='backdrop-blur'] {
+  background-color: rgba(255, 255, 255, 0.7) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+body.theme-light [class*='shadow'] {
+  box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.06) !important;
+}
+
+body.theme-light [class*='shadow-lg'] {
+  box-shadow: 0 8px 16px -2px rgba(0, 0, 0, 0.06);
+}
+
+body.theme-light [class*='shadow-xl'] {
+  box-shadow: 0 12px 24px -4px rgba(0, 0, 0, 0.06);
+}
+
+body.theme-light [class*='shadow-2xl'] {
+  box-shadow: 0 16px 32px -6px rgba(0, 0, 0, 0.06);
+}
+
+body.theme-light [class*='from-black'] {
+  --tw-gradient-from: rgba(255, 255, 255, 0.9) var(--tw-gradient-from-position) !important;
+}
+
+body.theme-light [class*='via-black'] {
+  --tw-gradient-via: rgba(255, 255, 255, 0.85) var(--tw-gradient-via-position) !important;
+}
+
+body.theme-light [class*='to-black'] {
+  --tw-gradient-to: rgba(255, 255, 255, 0.8) var(--tw-gradient-to-position) !important;
+}
+
+body.theme-light [class*='from-black/'] {
+  background: linear-gradient(to right, rgba(255, 255, 255, 0.9), transparent) !important;
+}
+
+body.theme-light [class*='via-black/'] {
+  --tw-gradient-via: rgba(255, 255, 255, 0.85) !important;
+}
+
+body.theme-light [class*='to-transparent'] {
+  --tw-gradient-to: transparent !important;
+}
+
+body.theme-light [class*='text-gray-300'],
+body.theme-light [class*='text-gray-400'],
+body.theme-light [class*='text-gray-500'] {
+  color: #374151 !important;
+}
+
+body.theme-light [class*='bg-gradient-to'] {
+  background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.9), transparent) !important;
+}
+
+body.theme-light [class*='grayscale'] {
+  filter: grayscale(100%) !important;
+}
+
+body.theme-light [class*='brightness-75'] {
+  filter: brightness(1) !important;
+}
+
+.theme-light-blob {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(120px);
+  opacity: 0.6;
+  will-change: transform;
+}
+
+.theme-light-blob-red {
+  width: min(52vw, 620px);
+  height: min(52vw, 620px);
+  top: -12%;
+  left: -8%;
+  background: radial-gradient(circle at center, rgba(239, 68, 68, 0.95) 0%, rgba(239, 68, 68, 0.15) 58%, transparent 78%);
+  animation: floatBlobRed 16s ease-in-out infinite alternate;
+}
+
+.theme-light-blob-green {
+  width: min(56vw, 680px);
+  height: min(56vw, 680px);
+  right: -12%;
+  bottom: -18%;
+  background: radial-gradient(circle at center, rgba(22, 163, 74, 0.95) 0%, rgba(22, 163, 74, 0.16) 58%, transparent 78%);
+  animation: floatBlobGreen 20s ease-in-out infinite alternate;
+}
+
+@keyframes floatBlobRed {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  100% {
+    transform: translate3d(16%, 12%, 0) scale(1.13);
+  }
+}
+
+@keyframes floatBlobGreen {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  100% {
+    transform: translate3d(-14%, -16%, 0) scale(1.15);
+  }
 }
 
 *::-webkit-scrollbar {

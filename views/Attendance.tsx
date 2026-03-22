@@ -10,6 +10,7 @@ import { fetchWithAuth } from '../src/utils/api';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../contexts/ToastContext';
 import ParticleBackground from '../components/ParticleBackground';
+import { useTheme } from '../contexts/ThemeContext';
 
 const API_BASE_URL = 'https://api.sith-s25.my.id/api';
 const API_INTERNAL_GANJIL = 'https://ganjil.sith-s25.my.id/api';
@@ -35,6 +36,7 @@ const getCookie = (name: string) => {
 const Attendance: React.FC = () => {
     const navigate = useNavigate();
     const { showToast } = useToast();
+    const { theme } = useTheme();
     const [sessions, setSessions] = useState<any[]>([]);
     const [allUsers, setAllUsers] = useState<any[]>([]);
     const [userRole, setUserRole] = useState<string | null>(null);
@@ -451,7 +453,7 @@ const Attendance: React.FC = () => {
     const GSHEET_URL = 'https://docs.google.com/spreadsheets/d/146MsEriqhrN2s-FzmgS9HAXZ2K5zWYYxuVLi-dcC4W8/edit';
 
     return (
-        <div className="min-h-screen w-full py-16 lg:py-24 px-4 sm:px-6 lg:px-8 mt-16 lg:mt-0 font-sans text-white relative selection:bg-yellow-400 selection:text-black">
+        <div className={`min-h-screen w-full py-16 lg:py-24 px-4 sm:px-6 lg:px-8 mt-16 lg:mt-0 font-sans text-white relative selection:bg-yellow-400 selection:text-black ${theme === 'light' ? 'bg-white' : 'bg-black'}`}>
             
             <ParticleBackground />
 

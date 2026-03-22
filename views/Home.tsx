@@ -4,6 +4,7 @@ import SkewedButton from '../components/SkewedButton';
 import { BookOpen, Pen, Gift, X } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import ParticleBackground from '../components/ParticleBackground';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface User {
     name: string;
@@ -21,6 +22,7 @@ const getCookie = (name: string) => {
 const Home: React.FC = () => {
     const navigate = useNavigate();
     const API_BASE_URL = 'https://api.sith-s25.my.id/api';
+    const { theme } = useTheme();
 
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
     const containerRef = useRef<HTMLDivElement>(null);
@@ -124,11 +126,11 @@ const Home: React.FC = () => {
         <div
             ref={containerRef}
             onMouseMove={handleMouseMove}
-            className="relative flex h-screen min-h-[600px] w-full items-center justify-center overflow-hidden selection:bg-yellow-400 selection:text-black bg-gray-900"
+            className={`relative flex h-screen min-h-[600px] w-full items-center justify-center overflow-hidden selection:bg-yellow-400 selection:text-black ${theme === 'light' ? 'bg-white' : 'bg-black'}`}
         >
-            <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-black to-gray-800" />
+            <div className={`absolute inset-0 ${theme === 'light' ? 'bg-gradient-to-br from-white via-rose-50/70 to-emerald-50/70' : 'bg-gradient-to-br from-gray-900 via-black to-gray-800'}`} />
             <ParticleBackground />
-            <div className="absolute inset-0 bg-black/50"></div>
+            {theme === 'dark' && <div className="absolute inset-0 bg-black/50"></div>}
 
             <div className="relative z-10 flex flex-col items-center p-4 text-center">
                 <div className="mb-8 flex flex-col items-center relative group">

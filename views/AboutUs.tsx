@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Users, ChevronRight, Instagram, ChevronLeft } from 'lucide-react';
 import ParticleBackground from '../components/ParticleBackground';
+import { useTheme } from '../contexts/ThemeContext';
 
 const bannerImages = [
     "BG1.webp"
@@ -32,6 +33,7 @@ const activitiesData: Activity[] = [
 ];
 
 const About: React.FC = () => {
+    const { theme } = useTheme();
     const [visibleSections, setVisibleSections] = useState<{ [key: string]: boolean }>({});
     const [selectedActivity, setSelectedActivity] = useState<Activity>(activitiesData[0]);
     const [currentBanner, setCurrentBanner] = useState(0);
@@ -87,7 +89,7 @@ const About: React.FC = () => {
     }, []);
 
     return (
-        <div className="relative min-h-screen w-full py-16 lg:py-24 px-4 sm:px-6 lg:px-8 mt-16 lg:mt-0 font-sans overflow-x-hidden selection:bg-yellow-400 selection:text-black">
+        <div className={`relative min-h-screen w-full py-16 lg:py-24 px-4 sm:px-6 lg:px-8 mt-16 lg:mt-0 font-sans overflow-x-hidden selection:bg-yellow-400 selection:text-black ${theme === 'light' ? 'bg-white' : 'bg-black'}`}>
             
             <ParticleBackground />
 

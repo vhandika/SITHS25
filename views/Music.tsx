@@ -4,6 +4,8 @@ import { useMusicPlayer } from '../contexts/MusicContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { fetchWithAuth } from '../src/utils/api';
 import { useToast } from '../contexts/ToastContext';
+import ParticleBackground from '../components/ParticleBackground';
+import { useTheme } from '../contexts/ThemeContext';
 
 const API_BASE_URL = 'https://api.sith-s25.my.id/api';
 
@@ -41,6 +43,7 @@ const Music: React.FC = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const { showToast } = useToast();
+    const { theme } = useTheme();
     const { playTrack, playQueue, setQueue, queue, currentIndex, setCurrentIndex } = useMusicPlayer();
     const [playlists, setPlaylists] = useState<Playlist[]>([]);
     const [selectedPlaylist, setSelectedPlaylist] = useState<Playlist | null>(null);
@@ -674,9 +677,10 @@ const Music: React.FC = () => {
     const [activeMobileTab, setActiveMobileTab] = useState<'playlists' | 'search'>('search');
 
     return (
-        <div className="h-[calc(100vh-4rem)] lg:h-screen w-full bg-black text-white flex flex-col mt-16 lg:mt-0">
+        <div className={`relative h-[calc(100vh-4rem)] lg:h-screen w-full flex flex-col mt-16 lg:mt-0 ${theme === 'light' ? 'bg-white text-gray-900' : 'bg-black text-white'}`}>
+            <ParticleBackground />
 
-            <div className="flex lg:hidden bg-gray-900 border-b border-gray-800 flex-shrink-0">
+            <div className={`relative z-10 flex lg:hidden border-b flex-shrink-0 ${theme === 'light' ? 'bg-white/90 border-gray-200' : 'bg-gray-900 border-gray-800'}`}>
                 <button
                     onClick={() => setActiveMobileTab('playlists')}
                     className={`flex-1 py-3 text-sm font-bold uppercase tracking-wider ${activeMobileTab === 'playlists' ? 'text-yellow-400 border-b-2 border-yellow-400' : 'text-gray-500'}`}
@@ -691,7 +695,7 @@ const Music: React.FC = () => {
                 </button>
             </div>
 
-            <div className="flex flex-col lg:flex-row flex-1 overflow-hidden relative">
+            <div className="relative z-10 flex flex-col lg:flex-row flex-1 overflow-hidden">
                 <div className={`border-r border-gray-800 p-4 overflow-y-auto transition-all duration-300 flex-shrink-0 ${(activeMobileTab === 'playlists' ? 'block w-full h-full' : 'hidden') + ' ' +
                     'lg:block lg:w-64'
                     }`}>

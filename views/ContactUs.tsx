@@ -1,6 +1,7 @@
 import React from 'react';
 import { Mail } from 'lucide-react';
 import ParticleBackground from '../components/ParticleBackground';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface Contact {
     id: number;
@@ -42,8 +43,9 @@ const ContactCard: React.FC<{ contact: Contact }> = ({ contact }) => {
 };
 
 const ContactUs: React.FC = () => {
+    const { theme } = useTheme();
     return (
-        <div className="relative min-h-screen w-full py-16 lg:py-24 px-4 sm:px-6 lg:px-8 mt-16 lg:mt-0 font-sans overflow-y-scroll selection:bg-yellow-400 selection:text-black">
+        <div className={`relative min-h-screen w-full py-16 lg:py-24 px-4 sm:px-6 lg:px-8 mt-16 lg:mt-0 font-sans overflow-y-scroll selection:bg-yellow-400 selection:text-black ${theme === 'light' ? 'bg-white' : 'bg-black'}`}>
             
             <ParticleBackground />
 

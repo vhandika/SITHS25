@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, Lock, RefreshCw, Smartphone, Monitor, Shield, AlertTriangle, XCircle, Clock } from 'lucide-react';
 import { fetchWithAuth } from '../src/utils/api';
+import ParticleBackground from '../components/ParticleBackground';
+import { useTheme } from '../contexts/ThemeContext';
 
 const API_BASE_URL = 'https://api.sith-s25.my.id/api';
 
@@ -30,6 +32,7 @@ interface SecurityLog {
 }
 
 const DevDashboard: React.FC = () => {
+    const { theme } = useTheme();
     const [activeUsers, setActiveUsers] = useState<ActiveUser[]>([]);
     const [securityLogs, setSecurityLogs] = useState<SecurityLog[]>([]);
     const [loading, setLoading] = useState(true);
@@ -144,7 +147,8 @@ const DevDashboard: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen w-full bg-black py-16 lg:py-24 px-4 sm:px-6 lg:px-8 mt-16 lg:mt-0 font-sans relative selection:bg-yellow-400 selection:text-black">
+        <div className={`min-h-screen w-full py-16 lg:py-24 px-4 sm:px-6 lg:px-8 mt-16 lg:mt-0 font-sans relative selection:bg-yellow-400 selection:text-black ${theme === 'light' ? 'bg-white' : 'bg-black'}`}>
+            <ParticleBackground />
             <div className="mx-auto max-w-7xl">
                 <div className="flex flex-col md:flex-row justify-between items-start mb-12 gap-4">
                     <div className="flex items-center gap-4 mb-4">
@@ -373,4 +377,5 @@ const DevDashboard: React.FC = () => {
 };
 
 export default DevDashboard;
+
 

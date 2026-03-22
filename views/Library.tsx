@@ -4,6 +4,7 @@ import {
 } from 'lucide-react';
 import LibraryViewer from '../components/LibraryViewer';
 import ParticleBackground from '../components/ParticleBackground';
+import { useTheme } from '../contexts/ThemeContext';
 
 const getCookie = (name: string) => {
   if (typeof document === 'undefined') return '';
@@ -872,6 +873,7 @@ const libraryData: LibraryItem[] = [
 ];
 
 const Library: React.FC = () => {
+  const { theme } = useTheme();
   const [selectedSemester, setSelectedSemester] = useState<number>(1);
   const [selectedCategory, setSelectedCategory] = useState<'mikrobiologi' | 'biologi'>('mikrobiologi');
   const [isSemesterOpen, setIsSemesterOpen] = useState(false);
@@ -911,31 +913,31 @@ const Library: React.FC = () => {
   const semesters = [1, 2, 3, 4, 5, 6, 7];
 
   return (
-    <div className="relative min-h-screen w-full py-16 lg:py-24 px-4 sm:px-6 lg:px-8 mt-16 lg:mt-0 font-sans overflow-x-hidden selection:bg-yellow-400 selection:text-black">
+    <div className={`relative min-h-screen w-full py-16 lg:py-24 px-4 sm:px-6 lg:px-8 mt-16 lg:mt-0 font-sans overflow-x-hidden selection:bg-yellow-400 selection:text-black ${theme === 'light' ? 'bg-white' : 'bg-black'}`}>
       
       <ParticleBackground />
 
       {showPopup && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/70 backdrop-blur-sm transition-opacity">
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 md:p-8 max-w-md w-full shadow-[0_0_30px_rgba(250,204,21,0.15)] relative animate-in fade-in zoom-in duration-300">
+          <div className={`${theme === 'light' ? 'bg-white border-gray-200' : 'bg-gray-900 border-gray-800'} border rounded-2xl p-6 md:p-8 max-w-md w-full shadow-[0_0_30px_rgba(250,204,21,0.15)] relative animate-in fade-in zoom-in duration-300`}>
             
             <div className="flex justify-between items-start mb-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-yellow-400/10 flex items-center justify-center">
                   <Info className="text-yellow-400" size={24} />
                 </div>
-                <h3 className="text-xl font-bold text-white tracking-wider">Pemberitahuan</h3>
+                <h3 className={`text-xl font-bold ${theme === 'light' ? 'text-black' : 'text-white'} tracking-wider`}>Pemberitahuan</h3>
               </div>
               <button 
                 onClick={handleClosePopup}
-                className="text-gray-500 hover:text-white transition-colors p-1"
+                className={`${theme === 'light' ? 'text-gray-500 hover:text-gray-700' : 'text-gray-500 hover:text-white'} transition-colors p-1`}
               >
                 <X size={24} />
               </button>
             </div>
 
             <div className="mb-6">
-              <p className="text-gray-300 leading-relaxed text-sm">
+              <p className={`${theme === 'light' ? 'text-gray-700' : 'text-gray-300'} leading-relaxed text-sm`}>
                 Halo! File yang ditampilkan di library web ini mungkin belum sepenuhnya lengkap. 
                 <br /><br />
                 Untuk melihat materi, tugas, atau <i>resource</i> yang lebih lengkap, sangat disarankan untuk langsung membuka <strong>link Google Drive</strong> pada masing-masing mata kuliah ya...
@@ -947,9 +949,9 @@ const Library: React.FC = () => {
                 type="checkbox"
                 checked={dontShowPopupAgain}
                 onChange={(event) => setDontShowPopupAgain(event.target.checked)}
-                className="h-4 w-4 rounded border-gray-600 bg-gray-800 text-yellow-400 focus:ring-yellow-400 focus:ring-2"
+                className={`h-4 w-4 rounded ${theme === 'light' ? 'border-gray-300 bg-white' : 'border-gray-600 bg-gray-800'} text-yellow-400 focus:ring-yellow-400 focus:ring-2`}
               />
-              <span className="text-sm text-gray-300">Jangan tampilkan lagi</span>
+              <span className={`text-sm ${theme === 'light' ? 'text-gray-700' : 'text-gray-300'}`}>Jangan tampilkan lagi</span>
             </label>
 
             <button
@@ -1008,7 +1010,7 @@ const Library: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex items-center gap-4 bg-gray-900/50 p-1 rounded-full border border-gray-800 relative w-64 h-12">
+            <div className={`flex items-center gap-4 ${theme === 'light' ? 'bg-gray-100 border-gray-300' : 'bg-gray-900/50 border-gray-800'} p-1 rounded-full border relative w-64 h-12`}>
               <div
                 className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-yellow-400 rounded-full transition-all duration-500 ease-in-out z-0 ${selectedCategory === 'biologi' ? 'left-[calc(50%+2px)]' : 'left-1'
                   }`}
@@ -1016,7 +1018,7 @@ const Library: React.FC = () => {
 
               <button
                 onClick={() => setSelectedCategory('mikrobiologi')}
-                className={`flex-1 flex items-center justify-center gap-2 z-10 transition-colors duration-300 ${selectedCategory === 'mikrobiologi' ? 'text-black' : 'text-gray-500 hover:text-gray-300'
+                className={`flex-1 flex items-center justify-center gap-2 z-10 transition-colors duration-300 ${selectedCategory === 'mikrobiologi' ? 'text-black' : theme === 'light' ? 'text-gray-600 hover:text-gray-800' : 'text-gray-500 hover:text-gray-300'
                   }`}
               >
                 <span className="text-[10px] font-black uppercase tracking-tighter">Mikrobiologi</span>
@@ -1024,7 +1026,7 @@ const Library: React.FC = () => {
 
               <button
                 onClick={() => setSelectedCategory('biologi')}
-                className={`flex-1 flex items-center justify-center gap-2 z-10 transition-colors duration-300 ${selectedCategory === 'biologi' ? 'text-black' : 'text-gray-500 hover:text-gray-300'
+                className={`flex-1 flex items-center justify-center gap-2 z-10 transition-colors duration-300 ${selectedCategory === 'biologi' ? 'text-black' : theme === 'light' ? 'text-gray-600 hover:text-gray-800' : 'text-gray-500 hover:text-gray-300'
                   }`}
               >
                 <span className="text-[10px] font-black uppercase tracking-tighter">Biologi</span>
@@ -1039,20 +1041,20 @@ const Library: React.FC = () => {
                   <button
                     key={item.id}
                     onClick={() => handleOpenViewer(item)}
-                    className="group relative block w-full text-left bg-black rounded-xl overflow-hidden shadow-lg hover:shadow-yellow-500/40 transition-all duration-300 transform hover:-translate-y-2 border-2 border-transparent hover:border-yellow-400"
+                    className={`group relative block w-full text-left ${theme === 'light' ? 'bg-white' : 'bg-black'} rounded-xl overflow-hidden shadow-lg hover:shadow-yellow-500/40 transition-all duration-300 transform hover:-translate-y-2 border-2 border-transparent hover:border-yellow-400`}
                   >
                     <img src={item.image} alt={item.title} className="w-full h-56 object-cover transform group-hover:scale-110 transition-transform duration-500" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-transparent"></div>
+                    {theme !== 'light' && <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-transparent"></div>}
                     <div className="absolute bottom-0 left-0 right-0 p-5 text-left">
-                      <h3 className="text-xl font-bold text-white">{item.title}</h3>
-                      <p className="mt-1 text-gray-300 text-sm">{item.description}</p>
+                      <h3 className={`text-xl font-bold ${theme === 'light' ? 'text-black' : 'text-white'}`}>{item.title}</h3>
+                      <p className={`mt-1 ${theme === 'light' ? 'text-gray-600' : 'text-gray-300'} text-sm`}>{item.description}</p>
                     </div>
-                    <ArrowUpRight className="absolute top-4 right-4 w-6 h-6 text-gray-400 group-hover:text-yellow-400 transition-colors duration-300 opacity-0 group-hover:opacity-100 transform scale-75 group-hover:scale-100" />
+                    <ArrowUpRight className={`absolute top-4 right-4 w-6 h-6 ${theme === 'light' ? 'text-gray-500 group-hover:text-yellow-500' : 'text-gray-400 group-hover:text-yellow-400'} transition-colors duration-300 opacity-0 group-hover:opacity-100 transform scale-75 group-hover:scale-100`} />
                   </button>
                 ))}
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center h-64 text-gray-500 animate-pulse bg-black/40 backdrop-blur-sm rounded-2xl border border-gray-800 mx-4 md:mx-0">
+              <div className={`flex flex-col items-center justify-center h-64 ${theme === 'light' ? 'text-gray-400 bg-gray-100' : 'text-gray-500 bg-black/40'} animate-pulse backdrop-blur-sm rounded-2xl ${theme === 'light' ? 'border border-gray-300' : 'border border-gray-800'} mx-4 md:mx-0`}>
                 <div className="w-16 h-16 mb-4 border-2 border-gray-800 rounded-full flex items-center justify-center">
                   <LibraryIcon size={32} className="text-gray-700" />
                 </div>

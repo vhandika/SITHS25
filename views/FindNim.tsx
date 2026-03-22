@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Search, Loader, User, AlertCircle } from 'lucide-react';
 import ProfileModal from '../components/ProfileModal';
 import ParticleBackground from '../components/ParticleBackground';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface Student {
     id: number;
@@ -22,6 +23,7 @@ const getCookie = (name: string) => {
 
 const FindNim: React.FC = () => {
     const navigate = useNavigate();
+    const { theme } = useTheme();
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<Student[]>([]);
     const [loading, setLoading] = useState(false);
@@ -75,7 +77,7 @@ const FindNim: React.FC = () => {
     };
 
     return (
-        <div className="relative min-h-screen w-full py-16 lg:py-24 px-4 sm:px-6 lg:px-8 mt-16 lg:mt-0 font-sans overflow-x-hidden selection:bg-yellow-400 selection:text-black">
+        <div className={`relative min-h-screen w-full py-16 lg:py-24 px-4 sm:px-6 lg:px-8 mt-16 lg:mt-0 font-sans overflow-x-hidden selection:bg-yellow-400 selection:text-black ${theme === 'light' ? 'bg-white' : 'bg-black'}`}>
             
             <ParticleBackground />
 

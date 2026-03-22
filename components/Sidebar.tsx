@@ -5,8 +5,10 @@ import {
     LogIn, LogOut, KeyRound, UserCircle, CameraIcon, Search,
     CalendarCheck, FileText, Flag, Music, Monitor, Wallet, CalculatorIcon
 } from 'lucide-react'
+import { Moon, SunMedium } from 'lucide-react';
 import ProfileModal from '../components/ProfileModal';
 import ReportModal from '../components/ReportModal';
+import { ThemeMode, useTheme } from '../contexts/ThemeContext';
 
 const API_BASE_URL = 'https://api.sith-s25.my.id/api';
 
@@ -37,9 +39,10 @@ interface NavLinksProps {
     isLoggedIn: boolean;
     userRole: string | null;
     onReportClick: () => void;
+    theme: ThemeMode;
 }
 
-const DesktopNavLinks: React.FC<NavLinksProps> = ({ isExpanded, isLoggedIn, userRole, onReportClick }) => {
+const DesktopNavLinks: React.FC<NavLinksProps> = ({ isExpanded, isLoggedIn, userRole, onReportClick, theme }) => {
     const navItems = [...staticNavItems];
 
     if (isLoggedIn) {
@@ -62,7 +65,7 @@ const DesktopNavLinks: React.FC<NavLinksProps> = ({ isExpanded, isLoggedIn, user
                     key={item.path}
                     to={item.path}
                     className={({ isActive }) =>
-                        `group relative flex w-full items-center rounded-lg p-3 transition-colors duration-200 ${isActive ? 'bg-yellow-400/10 text-yellow-400' : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                        `group relative flex w-full items-center rounded-lg p-3 transition-colors duration-200 ${isActive ? 'bg-yellow-400/10 text-yellow-500' : theme === 'light' ? 'text-gray-700 hover:bg-emerald-100/70 hover:text-emerald-800' : 'text-gray-400 hover:bg-gray-800 hover:text-white'
                         }`
                     }
                 >
@@ -85,7 +88,7 @@ const DesktopNavLinks: React.FC<NavLinksProps> = ({ isExpanded, isLoggedIn, user
 
             <button
                 onClick={onReportClick}
-                className="group relative flex w-full items-center rounded-lg p-3 transition-colors duration-200 text-gray-400 hover:bg-gray-800 hover:text-red-400"
+                className={`group relative flex w-full items-center rounded-lg p-3 transition-colors duration-200 ${theme === 'light' ? 'text-gray-700 hover:bg-red-50 hover:text-red-600' : 'text-gray-400 hover:bg-gray-800 hover:text-red-400'}`}
             >
                 <Flag className="h-6 w-6 flex-shrink-0" />
                 <span
@@ -107,6 +110,7 @@ const Sidebar: React.FC = () => {
     const [showMyProfile, setShowMyProfile] = useState(false);
     const [showReport, setShowReport] = useState(false);
     const [userAvatar, setUserAvatar] = useState<string | null>(null);
+    const { theme, toggleTheme } = useTheme();
 
     const location = useLocation();
     const navigate = useNavigate();
@@ -188,7 +192,7 @@ const Sidebar: React.FC = () => {
             `}</style>
 
             <aside
-                className={`fixed left-0 top-0 z-50 hidden h-full flex-col justify-between border-r border-gray-800 bg-black/80 pt-6 pb-0 backdrop-blur-sm transition-all duration-300 ease-in-out lg:flex selection:bg-yellow-400 selection:text-black ${isExpanded ? 'w-64 items-start px-4' : 'w-20 items-center'
+                className={`fixed left-0 top-0 z-50 hidden h-full flex-col justify-between border-r pt-6 pb-0 backdrop-blur-sm transition-all duration-300 ease-in-out lg:flex selection:bg-yellow-400 selection:text-black ${theme === 'light' ? 'border-gray-200 bg-white/80' : 'border-gray-800 bg-black/80'} ${isExpanded ? 'w-64 items-start px-4' : 'w-20 items-center'
                     }`}
                 onMouseEnter={() => setIsExpanded(true)}
                 onMouseLeave={() => setIsExpanded(false)}
@@ -199,14 +203,29 @@ const Sidebar: React.FC = () => {
                         isLoggedIn={isLoggedIn}
                         userRole={userRole}
                         onReportClick={() => setShowReport(true)}
+                        theme={theme}
                     />
+
+                    <button
+                        onClick={toggleTheme}
+                        className={`group relative flex w-full items-center rounded-lg p-3 transition-colors duration-200 ${theme === 'light' ? 'text-emerald-700 hover:bg-emerald-100/70' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}
+                        title="Toggle theme"
+                    >
+                        {theme === 'light' ? <Moon className="h-6 w-6 flex-shrink-0" /> : <SunMedium className="h-6 w-6 flex-shrink-0" />}
+                        <span
+                            className={`absolute left-12 whitespace-nowrap text-sm font-medium transition-all duration-300 ${isExpanded ? 'translate-x-0 opacity-100' : '-translate-x-4 opacity-0'
+                                }`}
+                        >
+                            {theme === 'light' ? 'Dark Theme' : 'Light Theme'}
+                        </span>
+                    </button>
                 </div>
 
                 {isLoggedIn && (
-                    <div className="mt-auto w-full h-20 border-t border-gray-800 relative overflow-hidden flex-shrink-0 bg-black/80">
+                    <div className={`mt-auto w-full h-20 border-t relative overflow-hidden flex-shrink-0 ${theme === 'light' ? 'border-gray-200 bg-white/80' : 'border-gray-800 bg-black/80'}`}>
                         <div
                             onClick={() => setShowMyProfile(true)}
-                            className={`absolute top-0 left-0 h-full flex items-center px-2 w-[80%] transition-all duration-300 ease-in-out cursor-pointer hover:bg-white/5 rounded-l-lg ${isExpanded ? 'translate-x-0 opacity-100' : '-translate-x-10 opacity-0 pointer-events-none'
+                            className={`absolute top-0 left-0 h-full flex items-center px-2 w-[80%] transition-all duration-300 ease-in-out cursor-pointer rounded-l-lg ${theme === 'light' ? 'hover:bg-emerald-50/80' : 'hover:bg-white/5'} ${isExpanded ? 'translate-x-0 opacity-100' : '-translate-x-10 opacity-0 pointer-events-none'
                                 }`}
                         >
                             <div className="flex items-center gap-3 overflow-hidden whitespace-nowrap">
@@ -214,8 +233,8 @@ const Sidebar: React.FC = () => {
                                     {renderAvatar(userAvatar ? "w-10 h-10" : "w-6 h-6", 24)}
                                 </div>
                                 <div className="overflow-hidden">
-                                    <p className="text-xs text-gray-400">Logged in as</p>
-                                    <p className="text-sm font-bold truncate text-white" title={userNIM || ''}>{userNIM}</p>
+                                    <p className={`text-xs ${theme === 'light' ? 'text-gray-500' : 'text-gray-400'}`}>Logged in as</p>
+                                    <p className={`text-sm font-bold truncate ${theme === 'light' ? 'text-gray-900' : 'text-white'}`} title={userNIM || ''}>{userNIM}</p>
                                 </div>
                             </div>
                         </div>
@@ -238,18 +257,18 @@ const Sidebar: React.FC = () => {
 
             <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="fixed top-4 right-4 z-50 p-2 text-white transition-all duration-300 ease-in-out lg:hidden hover:bg-white/10 rounded-full"
+                className={`fixed top-4 right-4 z-50 p-2 transition-all duration-300 ease-in-out lg:hidden rounded-full ${theme === 'light' ? 'text-gray-900 hover:bg-gray-200/70' : 'text-white hover:bg-white/10'}`}
                 style={{ transform: isMobileMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
             >
                 {isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
             </button>
             <div
-                className={`fixed inset-0 z-[55] bg-black/80 backdrop-blur-sm transition-opacity duration-300 lg:hidden ${isMobileMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+                className={`fixed inset-0 z-[55] backdrop-blur-sm transition-opacity duration-300 lg:hidden ${theme === 'light' ? 'bg-white/70' : 'bg-black/80'} ${isMobileMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
                     }`}
                 onClick={() => setIsMobileMenuOpen(false)}
             />
             <div
-                className={`fixed top-0 left-0 z-[60] h-full w-64 bg-black border-r border-gray-800 pt-20 pb-6 px-4 transition-transform duration-300 ease-in-out lg:hidden ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+                className={`fixed top-0 left-0 z-[60] h-full w-64 border-r pt-20 pb-6 px-4 transition-transform duration-300 ease-in-out lg:hidden ${theme === 'light' ? 'bg-white border-gray-200' : 'bg-black border-gray-800'} ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
                     }`}
             >
                 <div className="flex h-full flex-col justify-between">
@@ -259,7 +278,7 @@ const Sidebar: React.FC = () => {
                                 key={item.path}
                                 to={item.path}
                                 className={({ isActive }) =>
-                                    `flex items-center gap-3 rounded-lg p-3 text-sm font-medium transition-colors flex-shrink-0 ${isActive ? 'bg-yellow-400/10 text-yellow-400' : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                                    `flex items-center gap-3 rounded-lg p-3 text-sm font-medium transition-colors flex-shrink-0 ${isActive ? 'bg-yellow-400/10 text-yellow-500' : theme === 'light' ? 'text-gray-700 hover:bg-emerald-100/70 hover:text-emerald-800' : 'text-gray-400 hover:bg-gray-800 hover:text-white'
                                     }`
                                 }
                                 onClick={() => setIsMobileMenuOpen(false)}
@@ -269,15 +288,22 @@ const Sidebar: React.FC = () => {
                             </NavLink>
                         ))}
                         <button
+                            onClick={() => { toggleTheme(); setIsMobileMenuOpen(false); }}
+                            className={`flex items-center gap-3 rounded-lg p-3 text-sm font-medium transition-colors flex-shrink-0 ${theme === 'light' ? 'text-emerald-700 hover:bg-emerald-100/70' : 'text-gray-300 hover:bg-gray-800 hover:text-yellow-300'}`}
+                        >
+                            {theme === 'light' ? <Moon size={20} /> : <SunMedium size={20} />}
+                            {theme === 'light' ? 'Dark Theme' : 'Light Theme'}
+                        </button>
+                        <button
                             onClick={() => { setShowReport(true); setIsMobileMenuOpen(false); }}
-                            className="flex items-center gap-3 rounded-lg p-3 text-sm font-medium transition-colors text-gray-400 hover:bg-gray-800 hover:text-red-400 flex-shrink-0"
+                            className={`flex items-center gap-3 rounded-lg p-3 text-sm font-medium transition-colors flex-shrink-0 ${theme === 'light' ? 'text-gray-700 hover:bg-red-50 hover:text-red-600' : 'text-gray-400 hover:bg-gray-800 hover:text-red-400'}`}
                         >
                             <Flag size={20} /> Laporkan
                         </button>
                     </nav>
 
                     {isLoggedIn && (
-                        <div className="border-t border-gray-800 pt-4 mt-4 flex-shrink-0">
+                        <div className={`border-t pt-4 mt-4 flex-shrink-0 ${theme === 'light' ? 'border-gray-200' : 'border-gray-800'}`}>
                             <div className="flex items-center justify-between">
                                 <div
                                     className="flex items-center gap-3 overflow-hidden cursor-pointer"
@@ -287,8 +313,8 @@ const Sidebar: React.FC = () => {
                                         {renderAvatar(userAvatar ? "w-9 h-9" : "w-5 h-5", 20)}
                                     </div>
                                     <div className="overflow-hidden">
-                                        <p className="text-xs text-gray-400">Logged in as</p>
-                                        <p className="text-sm font-bold text-white truncate w-24">{userNIM}</p>
+                                        <p className={`text-xs ${theme === 'light' ? 'text-gray-500' : 'text-gray-400'}`}>Logged in as</p>
+                                        <p className={`text-sm font-bold truncate w-24 ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>{userNIM}</p>
                                     </div>
                                 </div>
                                 <button

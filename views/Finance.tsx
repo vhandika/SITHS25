@@ -5,6 +5,7 @@ import { fetchWithAuth } from '../src/utils/api';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../contexts/ToastContext';
 import ParticleBackground from '../components/ParticleBackground';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface Transaction {
     id: number;
@@ -71,6 +72,7 @@ const availableMonths = getMonthsList();
 const Finance: React.FC = () => {
     const navigate = useNavigate();
     const { showToast } = useToast();
+    const { theme } = useTheme();
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [summary, setSummary] = useState<Summary | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -304,7 +306,7 @@ const Finance: React.FC = () => {
     );
 
     return (
-        <div className="relative min-h-screen w-full py-16 lg:py-24 px-4 sm:px-6 lg:px-8 mt-16 lg:mt-0 font-sans overflow-x-hidden selection:bg-yellow-400 selection:text-black">
+        <div className={`relative min-h-screen w-full py-16 lg:py-24 px-4 sm:px-6 lg:px-8 mt-16 lg:mt-0 font-sans overflow-x-hidden selection:bg-yellow-400 selection:text-black ${theme === 'light' ? 'bg-white' : 'bg-black'}`}>
 
             <ParticleBackground />
 

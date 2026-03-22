@@ -3,8 +3,10 @@ import SkewedButton from '../components/SkewedButton';
 import { KeyRound, AlertCircle, Eye, EyeOff, CheckCircle2, XCircle } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import ParticleBackground from '../components/ParticleBackground';
+import { useTheme } from '../contexts/ThemeContext';
 
 const ResetPassword: React.FC = () => {
+    const { theme } = useTheme();
     const [searchParams] = useSearchParams();
     const token = searchParams.get('token');
     const navigate = useNavigate();
@@ -90,7 +92,7 @@ const ResetPassword: React.FC = () => {
 
     if (!token) {
         return (
-            <div className="relative flex min-h-screen w-full items-center justify-center py-16 px-4 mt-16 lg:mt-0 selection:bg-yellow-400 selection:text-black">
+            <div className={`relative flex min-h-screen w-full items-center justify-center py-16 px-4 mt-16 lg:mt-0 selection:bg-yellow-400 selection:text-black ${theme === 'light' ? 'bg-white' : 'bg-black'}`}>
                 <ParticleBackground />
                 <div className="relative z-10 w-full max-w-md space-y-6 rounded-lg border border-gray-800 bg-black/80 p-8 shadow-2xl shadow-yellow-500/5 backdrop-blur-md text-center">
                     <div className="w-16 h-16 mx-auto rounded-full bg-red-500/10 flex items-center justify-center">
@@ -113,7 +115,7 @@ const ResetPassword: React.FC = () => {
 
     if (success) {
         return (
-            <div className="relative flex min-h-screen w-full items-center justify-center py-16 px-4 mt-16 lg:mt-0 selection:bg-yellow-400 selection:text-black">
+            <div className={`relative flex min-h-screen w-full items-center justify-center py-16 px-4 mt-16 lg:mt-0 selection:bg-yellow-400 selection:text-black ${theme === 'light' ? 'bg-white' : 'bg-black'}`}>
                 <ParticleBackground />
                 <div className="relative z-10 w-full max-w-md space-y-6 rounded-lg border border-gray-800 bg-black/80 p-8 shadow-2xl shadow-yellow-500/5 backdrop-blur-md text-center">
                     <div className="w-16 h-16 mx-auto rounded-full bg-green-500/10 flex items-center justify-center">
@@ -138,7 +140,7 @@ const ResetPassword: React.FC = () => {
     }
 
     return (
-        <div className="relative flex min-h-screen w-full items-center justify-center py-16 px-4 mt-16 lg:mt-0 selection:bg-yellow-400 selection:text-black">
+        <div className={`relative flex min-h-screen w-full items-center justify-center py-16 px-4 mt-16 lg:mt-0 selection:bg-yellow-400 selection:text-black ${theme === 'light' ? 'bg-white' : 'bg-black'}`}>
             <ParticleBackground />
 
             <div className="relative z-10 w-full max-w-md space-y-8 rounded-lg border border-gray-800 bg-black/80 p-8 shadow-2xl shadow-yellow-500/5 backdrop-blur-md">
@@ -226,3 +228,4 @@ const ResetPassword: React.FC = () => {
 };
 
 export default ResetPassword;
+

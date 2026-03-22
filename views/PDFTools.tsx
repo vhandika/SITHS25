@@ -4,6 +4,7 @@ import {
     FileCode, Files, FilePenLine
 } from 'lucide-react';
 import ParticleBackground from '../components/ParticleBackground';
+import { useTheme } from '../contexts/ThemeContext';
 const PhotoToPdfTool = React.lazy(() => import('../components/PDFTools/PhotoToPdfTool'));
 const CodeToPdfTool = React.lazy(() => import('../components/PDFTools/CodeToPdfTool'));
 const MergePdfTool = React.lazy(() => import('../components/PDFTools/MergePdfTool'));
@@ -12,6 +13,7 @@ const PlaceholderTool = React.lazy(() => import('../components/PDFTools/Placehol
 type ToolType = 'menu' | 'photo' | 'code' | 'merge' | 'edit';
 
 const PdfTools: React.FC = () => {
+    const { theme } = useTheme();
     const [activeTool, setActiveTool] = useState<ToolType>(() => (localStorage.getItem('pdf_active_tool') as ToolType) || 'menu');
 
     useEffect(() => {
@@ -19,7 +21,7 @@ const PdfTools: React.FC = () => {
     }, [activeTool]);
 
     return (
-        <div className="relative min-h-screen w-full py-16 lg:py-24 px-4 sm:px-6 lg:px-8 mt-16 lg:mt-0 font-sans overflow-x-hidden selection:bg-yellow-400 selection:text-black">
+        <div className={`relative min-h-screen w-full py-16 lg:py-24 px-4 sm:px-6 lg:px-8 mt-16 lg:mt-0 font-sans overflow-x-hidden selection:bg-yellow-400 selection:text-black ${theme === 'light' ? 'bg-white' : 'bg-black'}`}>
             
             <ParticleBackground />
 
