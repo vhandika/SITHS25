@@ -1,14 +1,25 @@
 {
   "redirects": [
     {
-      "source": "/:path*",
+      "source": "/(.*)",
       "has": [
         {
           "type": "host",
-          "value": "(.*)\\.vercel\\.app"
+          "value": "siths25.vercel.app"
         }
       ],
-      "destination": "https://sith-s25.my.id/:path*",
+      "destination": "https://sith-s25.my.id/$1",
+      "permanent": true
+    },
+    {
+      "source": "/(.*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "sith-s25.vercel.app"
+        }
+      ],
+      "destination": "https://sith-s25.my.id/$1",
       "permanent": true
     }
   ],
