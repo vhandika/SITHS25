@@ -91,43 +91,21 @@ const Attendance: React.FC = () => {
     const isAdminOrSekretaris = userRole === 'admin' || userRole === 'sekretaris' || userRole === 'dev';
 
     const fetchSessions = async (currentNIM: string | null = userNIM) => {
+        if (!currentNIM) return;
+
+        const attendanceApi = getAttendanceApiUrl(currentNIM);
         setLoading(true);
         try {
-            const res = await fetch(`${API_INTERNAL_GANJIL}/attendance/sessions`, {
+            const res = await fetch(`${attendanceApi}/attendance/bootstrap`, {
                 credentials: 'include'
             });
             const json = await res.json();
             if (res.ok) {
-                setSessions(json.data);
-                if (currentNIM) {
-                    checkUserAttendanceStatus(json.data, currentNIM);
-                }
+                setSessions(json.data?.sessions || []);
+                setUserStatusMap(json.data?.statusMap || {});
             }
         } catch (error) { }
         finally { setLoading(false); }
-    };
-
-    const checkUserAttendanceStatus = async (currentSessions: any[], nim: string) => {
-        const attendanceApi = getAttendanceApiUrl(nim);
-
-        try {
-            const res = await fetch(`${attendanceApi}/attendance/my-status-all`, {
-                credentials: 'include'
-            });
-            if (res.ok) {
-                const statusMap = await res.json();
-                const formattedMap: { [key: number]: { status: string, reason: string | null } } = {};
-                for (const sessionId in statusMap) {
-                    formattedMap[parseInt(sessionId)] = {
-                        status: statusMap[sessionId].status,
-                        reason: statusMap[sessionId].reason
-                    };
-                }
-                setUserStatusMap(formattedMap);
-            }
-        } catch (err) {
-            console.error('Failed to fetch attendance status:', err);
-        }
     };
 
     const fetchAllUsers = async () => {
