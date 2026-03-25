@@ -46,23 +46,37 @@ print(\`Karyawan \${nama},\`);
 print(\`Mendapatkan Gaji Pokok: Rp \${gaji_pokok}\`);`;
 
 const PYTHON_WORKER_SCRIPT = `
-importScripts("https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js");
+importScripts("https://cdn.jsdelivr.net/pyodide/v0.29.3/full/pyodide.js");
 
 let pyodide = null;
 
+const ensurePyodideLoaded = async (silent = false) => {
+    if (!pyodide) {
+        if (!silent) self.postMessage({ type: 'status', text: '> Loading Python engine...' });
+        pyodide = await loadPyodide({
+            indexURL: "https://cdn.jsdelivr.net/pyodide/v0.29.3/full/"
+        });
+        if (!silent) self.postMessage({ type: 'status', text: '> Engine loaded.' });
+        self.postMessage({ type: 'loaded' });
+    }
+};
+
 self.onmessage = async (e) => {
-    const { type, code, stdinLines } = e.data;
+    const { type, code, stdinLines, silent } = e.data;
+
+    if (type === 'warmup') {
+        try {
+            await ensurePyodideLoaded(Boolean(silent));
+            self.postMessage({ type: 'warmed' });
+        } catch (err) {
+            self.postMessage({ type: 'error', message: err.message });
+        }
+        return;
+    }
     
     if (type === 'execute') {
         try {
-            if (!pyodide) {
-                self.postMessage({ type: 'status', text: '> Loading Python engine...' });
-                pyodide = await loadPyodide({
-                    indexURL: "https://cdn.jsdelivr.net/pyodide/v0.25.0/full/"
-                });
-                self.postMessage({ type: 'status', text: '> Engine loaded.' });
-                self.postMessage({ type: 'loaded' });
-            }
+            await ensurePyodideLoaded(false);
 
             pyodide.setStdout({
                 batched: (text) => self.postMessage({ type: 'print', text })
@@ -159,6 +173,7 @@ const CodeToPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const workerRef = useRef<Worker | null>(null);
     const workerBlobUrlRef = useRef<string | null>(null);
     const currentLangRef = useRef<string | null>(null);
+    const isPyWarmupInProgressRef = useRef(false);
 
     useEffect(() => {
         if (language === 'python') localStorage.setItem('pdf_code_content_python', code);
@@ -186,6 +201,7 @@ const CodeToPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         
         setIsRunning(false);
         setIsPyLoading(false);
+        isPyWarmupInProgressRef.current = false;
     }, [language]);
 
     useEffect(() => {
@@ -201,6 +217,73 @@ const CodeToPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             }
         };
     }, []);
+
+    const initWorker = () => {
+        if (workerRef.current) return workerRef.current;
+
+        const scriptContent = language === 'javascript' ? JS_WORKER_SCRIPT : PYTHON_WORKER_SCRIPT;
+        const blob = new Blob([scriptContent], { type: 'application/javascript' });
+        const workerUrl = URL.createObjectURL(blob);
+        workerBlobUrlRef.current = workerUrl;
+
+        const worker = new Worker(workerUrl);
+        workerRef.current = worker;
+        currentLangRef.current = language;
+
+        worker.onmessage = async (e) => {
+            const { type, text, prompt, message } = e.data;
+            if (type === 'status') {
+                printToTerminal(text, 'system');
+                if (text.includes("Loading")) setIsPyLoading(true);
+            } else if (type === 'loaded' || type === 'warmed') {
+                setIsPyLoading(false);
+                isPyWarmupInProgressRef.current = false;
+            } else if (type === 'print') {
+                setIsPyLoading(false);
+                printToTerminal(text, 'output');
+            } else if (type === 'input_request') {
+                const val = await waitForInput(prompt);
+                worker.postMessage({ type: 'input_response', value: val });
+            } else if (type === 'finished') {
+                printToTerminal("> Finished.", 'system');
+                setIsRunning(false);
+                setIsPyLoading(false);
+            } else if (type === 'error') {
+                printToTerminal(`Error: ${message}`, 'output');
+                setIsRunning(false);
+                setIsPyLoading(false);
+                isPyWarmupInProgressRef.current = false;
+                worker.terminate();
+                workerRef.current = null;
+            }
+        };
+
+        worker.onerror = (error) => {
+            printToTerminal(`Worker Error: ${error.message}`, 'output');
+            setIsRunning(false);
+            setIsPyLoading(false);
+            isPyWarmupInProgressRef.current = false;
+            worker.terminate();
+            workerRef.current = null;
+        };
+
+        return worker;
+    };
+
+    useEffect(() => {
+        if (language !== 'python') return;
+        if (isPyWarmupInProgressRef.current) return;
+
+        try {
+            const worker = initWorker();
+            isPyWarmupInProgressRef.current = true;
+            setIsPyLoading(true);
+            worker.postMessage({ type: 'warmup', silent: true });
+        } catch {
+            isPyWarmupInProgressRef.current = false;
+            setIsPyLoading(false);
+        }
+    }, [language]);
 
     const [terminalLogs, setTerminalLogs] = useState<{ type: 'output' | 'user-input' | 'system'; text: string }[]>([]);
     const [isWaitingInput, setIsWaitingInput] = useState(false);
@@ -374,6 +457,7 @@ const CodeToPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         if (workerRef.current && (isRunning || currentLangRef.current !== language)) {
             workerRef.current.terminate();
             workerRef.current = null;
+            isPyWarmupInProgressRef.current = false;
         }
 
         setTerminalLogs([{ type: 'system', text: `> Running ${language}...` }]);
@@ -381,48 +465,7 @@ const CodeToPdfTool: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
         if (!workerRef.current) {
             try {
-                const scriptContent = language === 'javascript' ? JS_WORKER_SCRIPT : PYTHON_WORKER_SCRIPT;
-                const blob = new Blob([scriptContent], { type: 'application/javascript' });
-                const workerUrl = URL.createObjectURL(blob);
-                workerBlobUrlRef.current = workerUrl;
-                
-                const worker = new Worker(workerUrl);
-                workerRef.current = worker;
-                currentLangRef.current = language;
-
-                worker.onmessage = async (e) => {
-                    const { type, text, prompt, message } = e.data;
-                    if (type === 'status') {
-                        printToTerminal(text, 'system');
-                        if (text.includes("Loading")) setIsPyLoading(true);
-                    } else if (type === 'loaded') {
-                        setIsPyLoading(false);
-                    } else if (type === 'print') {
-                        setIsPyLoading(false);
-                        printToTerminal(text, 'output');
-                    } else if (type === 'input_request') {
-                        const val = await waitForInput(prompt);
-                        worker.postMessage({ type: 'input_response', value: val });
-                    } else if (type === 'finished') {
-                        printToTerminal("> Finished.", 'system');
-                        setIsRunning(false);
-                        setIsPyLoading(false);
-                    } else if (type === 'error') {
-                        printToTerminal(`Error: ${message}`, 'output');
-                        setIsRunning(false);
-                        setIsPyLoading(false);
-                        worker.terminate();
-                        workerRef.current = null;
-                    }
-                };
-                
-                worker.onerror = (error) => {
-                    printToTerminal(`Worker Error: ${error.message}`, 'output');
-                    setIsRunning(false);
-                    setIsPyLoading(false);
-                    worker.terminate();
-                    workerRef.current = null;
-                };
+                initWorker();
             } catch (e: any) {
                 printToTerminal(`Error initializing worker: ${e.message}`, 'output');
                 setIsRunning(false);
