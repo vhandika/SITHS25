@@ -25,10 +25,17 @@ const activitiesData: Activity[] = [
     },
     {
         id: 2,
-        title: "Kutukan",
+        title: "KUTUKAN",
         date: "23 November 2025",
         description: "KUTUKAN (Kunci Teror Pembuktian) – UNITI VINCIAMO merupakan simpul persaudaraan dan manifestasi gelora semangat dari massa SITH-R dan SITH-S yang bersatu dalam satu komando tribun. Mengusung semboyan 'Uniti Vinciamo' yang berarti 'Bersatu Kita Menang', aliansi ini bukan sekadar kelompok supporter, melainkan representasi resiliensi dan loyalitas tanpa batas bagi identitas hijau di setiap kompetisi. Dengan atmosfer yang mengintimidasi namun tetap suportif, KUTUKAN hadir sebagai energi tambahan bagi para atlet di lapangan sekaligus bukti nyata bahwa di bawah naungan Sekolah Ilmu dan Teknologi Hayati, perbedaan program studi melebur menjadi satu kekuatan yang solid, vokal, dan tak tergoyahkan.",
         imageUrl: "Aca2.webp"
+    },
+    {
+        id: 3,
+        title: "SI-BIMA",
+        date: "13 Maret 2026",
+        description: "SI-BIMA merupakan aksi angkatan mahasiswa SITH-S 2025 dengan mengadakan aksi berbagi untuk merangkul dan menyongsong kepedulian dari massa fakultas, massa kampus, serta masyarakat luas. Kegiatan ini berbanding lurus dengan visi dan misi angkatan kami yang bergerak dalam bidang sosial, sekaligus menjadi dasar untuk memperoleh banyak keberkahan terutama di bulan suci Ramadhan. Kegiatan SI-BIMA juga menjadi bentuk kolaborasi antara mahasiswa dan orang tua mahasiswa dalam menumbuhkan nilai kepedulian sosial.",
+        imageUrl: "Aca3.webp" 
     }
 ];
 
@@ -418,11 +425,27 @@ const About: React.FC = () => {
                 </div>
 
                 <footer className="mt-12 border-t border-gray-800 pt-12 pb-8 text-center text-gray-500 bg-black/60 backdrop-blur-md">
-                    <span className="text-2xl md:text-4xl font-bold tracking-[.2em] text-gray-700 block mb-4">SITH-S 25</span>
-                    <p className="text-xs mb-6">Copyright © SITES Angkatan 2025.</p>
+                    <span className="text-4xl font-bold tracking-[.2em] text-gray-700 block mb-4">SITH-S 25</span>
+                    <p className="text-xs mb-6">Copyright © SITHS Angkatan 2025.</p>
                     <div className="flex justify-center">
-                        <a href="https://www.instagram.com/sithsitb25?igsh=Mmg2Nm43aW4zYW91" target="_blank" rel="noopener noreferrer" className="text-gray-500 transition-colors duration-300 hover:text-white">
+                        <a
+                            href="https://www.instagram.com/sithsitb25?igsh=Mmg2Nm43aW4zYW91"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-gray-500 transition-colors duration-300 hover:text-white"
+                            title="Visit our Instagram"
+                        >
                             <Instagram size={20} />
+                        </a>
+                        <a
+                            href="https://www.tiktok.com/@sithsitb25"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="ml-4 text-gray-500 transition-colors duration-300 hover:text-white"
+                            title="Visit our TikTok"
+                            aria-label="Visit our TikTok"
+                        >
+                            <i className="fa-brands fa-tiktok text-[20px] leading-none"></i>
                         </a>
                     </div>
                 </footer>

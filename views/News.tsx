@@ -437,7 +437,7 @@ const News: React.FC = () => {
 
                 <footer className="mt-12 border-t border-gray-800 pt-12 pb-8 text-center text-gray-500 bg-black/60 backdrop-blur-md">
                     <span className="text-4xl font-bold tracking-[.2em] text-gray-700 block mb-4">SITH-S 25</span>
-                    <p className="text-xs mb-6">Copyright © SITES Angkatan 2025.</p>
+                    <p className="text-xs mb-6">Copyright © SITHS Angkatan 2025.</p>
                     <div className="flex justify-center">
                         <a
                             href="https://www.instagram.com/sithsitb25?igsh=Mmg2Nm43aW4zYW91"
@@ -447,6 +447,16 @@ const News: React.FC = () => {
                             title="Visit our Instagram"
                         >
                             <Instagram size={20} />
+                        </a>
+                        <a
+                            href="https://www.tiktok.com/@sithsitb25"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="ml-4 text-gray-500 transition-colors duration-300 hover:text-white"
+                            title="Visit our TikTok"
+                            aria-label="Visit our TikTok"
+                        >
+                            <i className="fa-brands fa-tiktok text-[20px] leading-none"></i>
                         </a>
                     </div>
                 </footer>
