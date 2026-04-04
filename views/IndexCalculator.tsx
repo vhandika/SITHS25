@@ -411,7 +411,7 @@ const IndexCalculator: React.FC = () => {
                                                 {range.grade}
                                             </div>
                                             
-                                            <input type="number" value={range.minScore === 0 && range.minScore !== "0" ? "" : range.minScore} onChange={e => {
+                                            <input type="number" min="0" value={range.minScore === '' ? '' : range.minScore} onChange={e => {
                                                 const val = e.target.value;
                                                 const newArr = [...newGradeRanges]; 
                                                 newArr[i].minScore = val === '' ? '' : parseFloat(val); 
@@ -467,25 +467,23 @@ const IndexCalculator: React.FC = () => {
                                                 <ChevronDown size={18} className={`shrink-0 text-gray-400 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
                                             </button>
                                             
-                                            {isDropdownOpen && (
-                                                <div className="absolute z-50 w-full mt-2 bg-gray-900 border border-gray-700 rounded-lg shadow-[0_10px_40px_-10px_rgba(0,0,0,0.5)] overflow-y-auto max-h-60">
-                                                    <div className="p-2 space-y-1">
-                                                        <div className="text-xs font-bold text-gray-500 uppercase px-3 py-2">Mafiki</div>
-                                                        <button onClick={() => { setCourse('fisika'); setIsDropdownOpen(false); }} className={`w-full text-left px-3 py-2 rounded-md hover:bg-gray-800 transition-colors ${course === 'fisika' ? 'text-yellow-400 bg-gray-800/50 font-medium' : 'text-gray-300'}`}>Fisika Dasar I</button>
-                                                        <button onClick={() => { setCourse('matematika'); setIsDropdownOpen(false); }} className={`w-full text-left px-3 py-2 rounded-md hover:bg-gray-800 transition-colors ${course === 'matematika' ? 'text-yellow-400 bg-gray-800/50 font-medium' : 'text-gray-300'}`}>Matematika I</button>
-                                                        <button onClick={() => { setCourse('kimia'); setIsDropdownOpen(false); }} className={`w-full text-left px-3 py-2 rounded-md hover:bg-gray-800 transition-colors ${course === 'kimia' ? 'text-yellow-400 bg-gray-800/50 font-medium' : 'text-gray-300'}`}>Kimia Dasar I</button>
+                                            <div className={`absolute z-50 w-full mt-2 bg-gray-900 border border-gray-700 rounded-lg shadow-[0_10px_40px_-10px_rgba(0,0,0,0.5)] overflow-y-auto max-h-60 transition-all duration-300 transform origin-top ${isDropdownOpen ? 'scale-y-100 opacity-100' : 'scale-y-0 opacity-0 pointer-events-none'}`}>
+                                                <div className="p-2 space-y-1">
+                                                    <div className="text-xs font-bold text-gray-500 uppercase px-3 py-2">Mafiki</div>
+                                                    <button onClick={() => { setCourse('fisika'); setIsDropdownOpen(false); }} className={`w-full text-left px-3 py-2 rounded-md hover:bg-gray-800 transition-colors ${course === 'fisika' ? 'text-yellow-400 bg-gray-800/50 font-medium' : 'text-gray-300'}`}>Fisika Dasar I</button>
+                                                    <button onClick={() => { setCourse('matematika'); setIsDropdownOpen(false); }} className={`w-full text-left px-3 py-2 rounded-md hover:bg-gray-800 transition-colors ${course === 'matematika' ? 'text-yellow-400 bg-gray-800/50 font-medium' : 'text-gray-300'}`}>Matematika I</button>
+                                                    <button onClick={() => { setCourse('kimia'); setIsDropdownOpen(false); }} className={`w-full text-left px-3 py-2 rounded-md hover:bg-gray-800 transition-colors ${course === 'kimia' ? 'text-yellow-400 bg-gray-800/50 font-medium' : 'text-gray-300'}`}>Kimia Dasar I</button>
 
-                                                        {customCourses.length > 0 && (
-                                                            <>
-                                                                <div className="text-xs font-bold text-gray-500 uppercase px-3 py-2 mt-2 border-t border-gray-800 pt-3">Custom</div>
-                                                                {customCourses.map(c => (
-                                                                    <button key={c.id} onClick={() => { setCourse(c.id); setIsDropdownOpen(false); }} className={`w-full text-left px-3 py-2 rounded-md hover:bg-gray-800 transition-colors ${course === c.id ? 'text-yellow-400 bg-gray-800/50 font-medium' : 'text-gray-300'}`}>{c.name}</button>
-                                                                ))}
-                                                            </>
-                                                        )}
-                                                    </div>
+                                                    {customCourses.length > 0 && (
+                                                        <>
+                                                            <div className="text-xs font-bold text-gray-500 uppercase px-3 py-2 mt-2 border-t border-gray-800 pt-3">Custom</div>
+                                                            {customCourses.map(c => (
+                                                                <button key={c.id} onClick={() => { setCourse(c.id); setIsDropdownOpen(false); }} className={`w-full text-left px-3 py-2 rounded-md hover:bg-gray-800 transition-colors ${course === c.id ? 'text-yellow-400 bg-gray-800/50 font-medium' : 'text-gray-300'}`}>{c.name}</button>
+                                                            ))}
+                                                        </>
+                                                    )}
                                                 </div>
-                                            )}
+                                            </div>
                                         </div>
 
                                         {isCustomCourse && (
@@ -636,4 +634,3 @@ const IndexCalculator: React.FC = () => {
 };
 
 export default IndexCalculator;
-
