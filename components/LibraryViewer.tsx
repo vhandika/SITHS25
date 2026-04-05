@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { X, ExternalLink, ChevronRight, FileText, LayoutList, Folder, ChevronLeft } from 'lucide-react';
 import { LibraryItem } from '../views/Library';
 
@@ -17,6 +17,8 @@ const LibraryViewer: React.FC<LibraryViewerProps> = ({ isOpen, onClose, currentI
     const [rootItem, setRootItem] = useState<LibraryItem | null>(null);
     const [mobileNavHeight, setMobileNavHeight] = useState(40); // Percentage for sidebar height on mobile
     const [isDragging, setIsDragging] = useState(false);
+    const dragStartYRef = useRef<number | null>(null);
+    const dragStartHeightRef = useRef(40);
 
     useEffect(() => {
         if (isOpen) {
@@ -32,17 +34,31 @@ const LibraryViewer: React.FC<LibraryViewerProps> = ({ isOpen, onClose, currentI
     }, [isOpen]);
 
     const handleTouchMove = (e: React.TouchEvent) => {
-        if (!isDragging) return;
+        if (!isDragging || dragStartYRef.current === null) return;
+
+        // Prevent page/container scroll while dragging the split handle.
+        e.preventDefault();
+
         const touch = e.touches[0];
         const container = document.getElementById('viewer-content-area');
         if (container) {
             const rect = container.getBoundingClientRect();
-            const relativeY = touch.clientY - rect.top;
-            const percentage = (relativeY / rect.height) * 100;
-            if (percentage > 20 && percentage < 80) {
-                setMobileNavHeight(percentage);
-            }
+            const deltaY = touch.clientY - dragStartYRef.current;
+            const deltaPercent = (deltaY / rect.height) * 100;
+            const nextHeight = Math.max(15, Math.min(85, dragStartHeightRef.current + deltaPercent));
+            setMobileNavHeight(nextHeight);
         }
+    };
+
+    const handleDragStart = (e: React.TouchEvent) => {
+        dragStartYRef.current = e.touches[0].clientY;
+        dragStartHeightRef.current = mobileNavHeight;
+        setIsDragging(true);
+    };
+
+    const handleDragEnd = () => {
+        setIsDragging(false);
+        dragStartYRef.current = null;
     };
 
     if (!isOpen && !isAnimating) return null;
@@ -78,7 +94,7 @@ const LibraryViewer: React.FC<LibraryViewerProps> = ({ isOpen, onClose, currentI
         }
     };
 
-    const currentFolderItems = viewingItem?.children || relatedItems;
+    const currentFolderItems = viewingItem ? (viewingItem.children ?? []) : relatedItems;
     const isRoot = navHistory.length === 0;
 
     return (
@@ -128,10 +144,10 @@ const LibraryViewer: React.FC<LibraryViewerProps> = ({ isOpen, onClose, currentI
                     id="viewer-content-area"
                     className="flex flex-1 overflow-hidden flex-col md:flex-row"
                     onTouchMove={handleTouchMove}
-                    onTouchEnd={() => setIsDragging(false)}
+                    onTouchEnd={handleDragEnd}
                 >
                     <div
-                        className="bg-black/30 border-b md:border-b-0 md:border-r border-white/5 flex flex-col shrink-0 overflow-hidden transition-all duration-300 ease-out"
+                        className={`bg-black/30 border-b md:border-b-0 md:border-r border-white/5 flex flex-col shrink-0 overflow-hidden ${isDragging ? 'transition-none' : 'transition-all duration-300 ease-out'}`}
                         style={{
                             height: typeof window !== 'undefined' && window.innerWidth < 768 ? `${mobileNavHeight}%` : 'auto',
                             width: typeof window !== 'undefined' && window.innerWidth >= 768 ? '20rem' : '100%'
@@ -173,39 +189,49 @@ const LibraryViewer: React.FC<LibraryViewerProps> = ({ isOpen, onClose, currentI
                         </div>
 
                         <div className="flex-1 overflow-y-auto p-2 space-y-1">
-                            {currentFolderItems.map((item) => {
-                                const isSelected = currentItem?.id === item.id;
-                                const isFolder = item.type === 'folder' || (item.children && item.children.length > 0);
+                            {currentFolderItems.length > 0 ? (
+                                currentFolderItems.map((item) => {
+                                    const isSelected = currentItem?.id === item.id;
+                                    const isFolder = item.type === 'folder' || (item.children && item.children.length > 0);
 
-                                return (
-                                    <button
-                                        key={item.id}
-                                        onClick={() => handleItemClick(item)}
-                                        className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all group ${isSelected ? 'bg-yellow-400 text-black shadow-lg shadow-yellow-400/20' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
-                                    >
-                                        <div className={`p-2 rounded-lg shrink-0 ${isSelected ? 'bg-black/10' : 'bg-gray-800/50 group-hover:bg-gray-700'}`}>
-                                            {isFolder ? <Folder size={18} /> : <FileText size={18} />}
-                                        </div>
-                                        <div className="flex flex-col min-w-0 flex-1">
-                                            <span className="text-xs font-bold truncate text-left">
-                                                {item.title}
-                                            </span>
-                                            {isFolder && (
-                                                <span className={`text-[8px] font-black uppercase tracking-tighter text-left ${isSelected ? 'text-black/50' : 'text-gray-600'}`}>
-                                                    Folder • {item.children?.length || 0} items
+                                    return (
+                                        <button
+                                            key={item.id}
+                                            onClick={() => handleItemClick(item)}
+                                            className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all group ${isSelected ? 'bg-yellow-400 text-black shadow-lg shadow-yellow-400/20' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
+                                        >
+                                            <div className={`p-2 rounded-lg shrink-0 ${isSelected ? 'bg-black/10' : 'bg-gray-800/50 group-hover:bg-gray-700'}`}>
+                                                {isFolder ? <Folder size={18} /> : <FileText size={18} />}
+                                            </div>
+                                            <div className="flex flex-col min-w-0 flex-1">
+                                                <span className="text-xs font-bold truncate text-left">
+                                                    {item.title}
                                                 </span>
-                                            )}
-                                        </div>
-                                        {isFolder && <ChevronRight size={14} className={isSelected ? 'text-black/50' : 'text-gray-700'} />}
-                                    </button>
-                                );
-                            })}
+                                                {isFolder && (
+                                                    <span className={`text-[8px] font-black uppercase tracking-tighter text-left ${isSelected ? 'text-black/50' : 'text-gray-600'}`}>
+                                                        Folder • {item.children?.length || 0} items
+                                                    </span>
+                                                )}
+                                            </div>
+                                            {isFolder && <ChevronRight size={14} className={isSelected ? 'text-black/50' : 'text-gray-700'} />}
+                                        </button>
+                                    );
+                                })
+                            ) : (
+                                <div className="flex h-full min-h-[240px] flex-col items-center justify-center rounded-2xl border border-dashed border-white/10 bg-white/5 px-4 text-center">
+                                    <Folder size={28} className="text-gray-600 mb-3" />
+                                    <p className="text-sm font-black uppercase tracking-widest text-gray-400">Tidak ada file</p>
+                                    <p className="mt-2 max-w-xs text-xs text-gray-500">
+                                        Folder ini belum punya file atau subfolder di dalamnya.
+                                    </p>
+                                </div>
+                            )}
                         </div>
                     </div>
 
                     <div
                         className="md:hidden h-2 w-full bg-white/5 flex items-center justify-center cursor-row-resize active:bg-yellow-400/20 transition-colors shrink-0"
-                        onTouchStart={() => setIsDragging(true)}
+                        onTouchStart={handleDragStart}
                     >
                         <div className="w-12 h-1 bg-white/20 rounded-full" />
                     </div>
@@ -218,6 +244,18 @@ const LibraryViewer: React.FC<LibraryViewerProps> = ({ isOpen, onClose, currentI
                                 allow="autoplay"
                                 title="File Preview"
                             />
+                        ) : viewingItem && (viewingItem.children?.length ?? 0) === 0 ? (
+                            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-6">
+                                <div className="w-24 h-24 bg-yellow-400/5 rounded-full flex items-center justify-center animate-pulse">
+                                    <Folder size={48} className="text-yellow-400/20" />
+                                </div>
+                                <div className="max-w-xs">
+                                    <h3 className="text-lg font-bold text-white mb-2">Tidak ada file</h3>
+                                    <p className="text-sm text-gray-500 font-medium">
+                                        Folder ini masih kosong. Silakan kembali atau pilih folder lain.
+                                    </p>
+                                </div>
+                            </div>
                         ) : (
                             <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-6">
                                 <div className="w-24 h-24 bg-yellow-400/5 rounded-full flex items-center justify-center animate-pulse">
