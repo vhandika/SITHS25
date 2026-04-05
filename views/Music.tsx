@@ -3,7 +3,7 @@ import { Search, Plus, Music2, Lock, Globe, Play, Loader, X, Trash2, Edit2, Chec
 import { useMusicPlayer } from '../contexts/MusicContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { fetchWithAuth } from '../src/utils/api';
-import { getAuthState } from '../src/utils/auth';
+import { ensureGuestToken, getAuthState, getGuestToken } from '../src/utils/auth';
 import { useToast } from '../contexts/ToastContext';
 import ParticleBackground from '../components/ParticleBackground';
 import { useTheme } from '../contexts/ThemeContext';
@@ -83,7 +83,10 @@ const Music: React.FC = () => {
             let isLoggedIn = localAuth.isLoggedIn;
 
             try {
-                const res = await fetchWithAuth(`${API_BASE_URL}/validate-token`);
+                const res = await fetch(`${API_BASE_URL}/validate-token`, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    credentials: 'include'
+                });
                 if (res.ok) {
                     const data = await res.json();
                     if (data.user && data.user.nim) {
@@ -103,25 +106,10 @@ const Music: React.FC = () => {
             }
 
             if (!isLoggedIn) {
-                let guestId = localStorage.getItem('music_guest_id');
-                if (!guestId) {
-                    try {
-                        const res = await fetch(`${API_BASE_URL}/guest-token`);
-                        const data = await res.json();
-                        if (data.guestId) {
-                            guestId = data.guestId;
-                            localStorage.setItem('music_guest_id', guestId);
-                        }
-                    } catch (error) {
-                    }
-                }
-
-                if (guestId) {
-                    const parts = guestId.split('.');
-                    if (parts.length > 0) {
-                        setCurrentUserNim(parts[0]);
-                        setIsGuest(true);
-                    }
+                const ensured = await ensureGuestToken(API_BASE_URL);
+                if (ensured.token) {
+                    setCurrentUserNim(ensured.nim);
+                    setIsGuest(true);
                 }
             }
 
@@ -167,9 +155,9 @@ const Music: React.FC = () => {
             'X-Requested-With': 'XMLHttpRequest'
         };
 
-        const guestId = localStorage.getItem('music_guest_id');
-        if (guestId) {
-            headers['X-Guest-ID'] = guestId;
+        const guestToken = getGuestToken();
+        if (guestToken) {
+            headers['X-Guest-ID'] = guestToken;
         }
         return headers;
     };

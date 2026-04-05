@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import { isAuthenticated } from '../src/utils/auth';
+import { ensureGuestToken, isAuthenticated } from '../src/utils/auth';
 
 const API_BASE_URL = 'https://api.sith-s25.my.id/api';
 
@@ -33,28 +33,15 @@ const ActivityTracker: React.FC = () => {
                     return;
                 }
 
-                let guestId = localStorage.getItem('music_guest_id');
+                const { token: guestToken } = await ensureGuestToken(API_BASE_URL);
 
-                if (!guestId) {
-                    const res = await fetch(`${API_BASE_URL}/guest-token`, {
-                        signal: abortControllerRef.current.signal
-                    });
-                    if (res.ok) {
-                        const data = await res.json();
-                        if (data.guestId) {
-                            guestId = data.guestId;
-                            localStorage.setItem('music_guest_id', guestId);
-                        }
-                    }
-                }
-
-                if (guestId) {
+                if (guestToken) {
                     await fetch(`${API_BASE_URL}/activity`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                             'X-Requested-With': 'XMLHttpRequest',
-                            'X-Guest-Id': guestId
+                            'X-Guest-Id': guestToken
                         },
                         credentials: 'include',
                         body: JSON.stringify({

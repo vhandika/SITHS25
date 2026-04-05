@@ -1,4 +1,4 @@
-import { clearAuthSession } from './auth';
+import { clearAuthSession, getGuestToken } from './auth';
 
 const API_BASE_URL = 'https://api.sith-s25.my.id';
 
@@ -9,9 +9,9 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
         ? { 'X-Requested-With': 'XMLHttpRequest' }
         : { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' };
 
-    const guestId = localStorage.getItem('music_guest_id');
-    if (guestId) {
-        headers['X-Guest-ID'] = guestId;
+    const guestToken = getGuestToken();
+    if (guestToken) {
+        headers['X-Guest-ID'] = guestToken;
     }
 
     if (options.headers) {
@@ -26,7 +26,7 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
         });
 
         if (response.status === 401 || response.status === 403) {
-            if (!guestId) {
+            if (!guestToken) {
                 clearAuthSession();
                 window.location.href = '/login';
             }
