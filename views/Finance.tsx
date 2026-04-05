@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Plus, X, Wallet, TrendingDown, Users, ArrowUpCircle, ArrowDownCircle, Calendar, User, Search, CheckSquare, History, QrCode } from 'lucide-react';
 import SkewedButton from '../components/SkewedButton';
 import { fetchWithAuth } from '../src/utils/api';
-import { useNavigate } from 'react-router-dom';
 import { useToast } from '../contexts/ToastContext';
 import ParticleBackground from '../components/ParticleBackground';
 import { useTheme } from '../contexts/ThemeContext';
@@ -70,7 +69,6 @@ const getMonthsList = () => {
 const availableMonths = getMonthsList();
 
 const Finance: React.FC = () => {
-    const navigate = useNavigate();
     const { showToast } = useToast();
     const { theme } = useTheme();
     const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -101,7 +99,6 @@ const Finance: React.FC = () => {
     const [searchUser, setSearchUser] = useState('');
     const financeAbortControllerRef = useRef<AbortController | null>(null);
 
-    const currentUserNIM = getCookie('userNIM');
     const currentUserRole = getCookie('userRole');
     const API_BASE_URL = 'https://api.sith-s25.my.id/api';
     const canAdd = ['bendahara', 'admin', 'dev'].includes(currentUserRole);
@@ -152,13 +149,9 @@ const Finance: React.FC = () => {
     };
 
     useEffect(() => {
-        if (!currentUserNIM) {
-            navigate('/login');
-            return;
-        }
         fetchFinance();
         fetchDashboardUnpaid(dashboardMonth);
-    }, [currentUserNIM, navigate]);
+    }, []);
 
     useEffect(() => {
         fetchDashboardUnpaid(dashboardMonth);

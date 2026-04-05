@@ -3,7 +3,7 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
     Home, Library, Newspaper, Users, Mail, X, Menu,
     LogIn, LogOut, KeyRound, UserCircle, CameraIcon, Search,
-    CalendarCheck, FileText, Flag, Music, Monitor, Wallet, CalculatorIcon, MessageCircle
+    CalendarCheck, FileText, Flag, Music, Monitor, Wallet, CalculatorIcon
 } from 'lucide-react'
 import { Moon, SunMedium } from 'lucide-react';
 import ProfileModal from '../components/ProfileModal';
@@ -31,7 +31,7 @@ const staticNavItems = [
     { path: '/about', name: 'About Us', icon: Users },
     { path: '/contact', name: 'Contact Us', icon: Mail },
     { path: '/PDFTools', name: 'PDF Tools', icon: FileText },
-    { path: '/music', name: 'Music', icon: Music }
+        { path: '/music', name: 'Music', icon: Music }
 ];
 
 interface NavLinksProps {

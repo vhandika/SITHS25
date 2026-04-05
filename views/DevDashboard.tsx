@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Users, Lock, RefreshCw, Smartphone, Monitor, Shield, AlertTriangle, XCircle, Clock } from 'lucide-react';
 import { fetchWithAuth } from '../src/utils/api';
 import ParticleBackground from '../components/ParticleBackground';
@@ -42,21 +41,8 @@ const DevDashboard: React.FC = () => {
     const [resetStatus, setResetStatus] = useState('');
     const [errorMsg, setErrorMsg] = useState('');
     const [logsError, setLogsError] = useState('');
-    const navigate = useNavigate();
-
-    const getCookie = (name: string) => {
-        return document.cookie.split('; ').reduce((r, v) => {
-            const parts = v.split('=');
-            return parts[0].trim() === name ? decodeURIComponent(parts[1]) : r;
-        }, '');
-    };
 
     useEffect(() => {
-        const role = getCookie('userRole');
-        if (role !== 'dev') {
-            navigate('/');
-        }
-
         loadActiveUsers();
         loadSecurityLogs();
         const interval = setInterval(loadActiveUsers, 30000);

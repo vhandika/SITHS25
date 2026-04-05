@@ -8,6 +8,7 @@ import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import Sidebar from './components/Sidebar';
 import ActivityTracker from './components/ActivityTracker';
 import ToastContainer from './components/Toast';
+import { ProtectedRoute, RoleRoute } from './components/RouteGuards';
 import axios from 'axios';
 axios.interceptors.response.use(
     (response) => response,
@@ -34,7 +35,6 @@ const Attendance = lazy(() => import('./views/Attendance'));
 const Gallery = lazy(() => import('./views/Gallery'));
 const PDFTools = lazy(() => import('./views/PDFTools'));
 const Music = lazy(() => import('./views/Music'));
-const AnonChat = lazy(() => import('./views/AnonChat'));
 const DevDashboard = lazy(() => import('./views/DevDashboard'));
 const Finance = lazy(() => import('./views/Finance'));
 const Calc = lazy(() => import('./views/IndexCalculator'));
@@ -66,15 +66,18 @@ const AppContent: React.FC = () => {
                         <Route path="/about" element={<AboutUs />} />
                         <Route path="/contact" element={<ContactUs />} />
                         <Route path="/login" element={<Login />} />
-                        <Route path="/change-password" element={<ChangePassword />} />
-                        <Route path="/find-nim" element={<FindNim />} />
-                        <Route path="/attendance" element={<Attendance />} />
-                        <Route path="/gallery" element={<Gallery />} />
-                        <Route path="/PDFTools" element={<PDFTools />} />
+                        <Route element={<ProtectedRoute />}>
+                            <Route path="/change-password" element={<ChangePassword />} />
+                            <Route path="/find-nim" element={<FindNim />} />
+                            <Route path="/attendance" element={<Attendance />} />
+                            <Route path="/gallery" element={<Gallery />} />
+                            <Route path="/PDFTools" element={<PDFTools />} />
+                            <Route path="/finance" element={<Finance />} />
+                        </Route>
                         <Route path="/music" element={<Music />} />
-                        <Route path="/anon-chat" element={<AnonChat />} />
-                        <Route path="/dev" element={<DevDashboard />} />
-                        <Route path="/finance" element={<Finance />} />
+                        <Route element={<RoleRoute allowedRoles={['dev']} />}>
+                            <Route path="/dev" element={<DevDashboard />} />
+                        </Route>
                         <Route path="/Calc" element={<Calc />} />
                         <Route path="/reset-password" element={<ResetPassword />} />
                     </Routes>
