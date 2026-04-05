@@ -18,16 +18,7 @@ const Home: React.FC = () => {
     const API_BASE_URL = 'https://api.sith-s25.my.id/api';
     const { theme } = useTheme();
 
-    const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
     const containerRef = useRef<HTMLDivElement>(null);
-
-    const handleMouseMove = (e: React.MouseEvent) => {
-        if (!containerRef.current) return;
-        const { left, top, width, height } = containerRef.current.getBoundingClientRect();
-        const x = (e.clientX - left - width / 2) * 0.12;
-        const y = (e.clientY - top - height / 2) * 0.12;
-        setMousePos({ x, y });
-    };
 
     const [birthdayUsers, setBirthdayUsers] = useState<User[]>([]);
     const [showBirthdayModal, setShowBirthdayModal] = useState(false);
@@ -118,7 +109,6 @@ const Home: React.FC = () => {
     return (
         <div
             ref={containerRef}
-            onMouseMove={handleMouseMove}
             className={`relative flex h-screen min-h-[600px] w-full items-center justify-center overflow-hidden selection:bg-yellow-400 selection:text-black ${theme === 'light' ? 'bg-white' : 'bg-black'}`}
         >
             <div className={`absolute inset-0 ${theme === 'light' ? 'bg-gradient-to-br from-white via-rose-50/70 to-emerald-50/70' : 'bg-gradient-to-br from-gray-900 via-black to-gray-800'}`} />

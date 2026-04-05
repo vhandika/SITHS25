@@ -1,5 +1,5 @@
 import React, { Suspense, lazy } from 'react';
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { MusicProvider } from './contexts/MusicContext';
@@ -9,20 +9,8 @@ import Sidebar from './components/Sidebar';
 import ActivityTracker from './components/ActivityTracker';
 import ToastContainer from './components/Toast';
 import { ProtectedRoute, RoleRoute } from './components/RouteGuards';
-import { clearAuthSession, getAuthState } from './src/utils/auth';
-import axios from 'axios';
-axios.interceptors.response.use(
-    (response) => response,
-    (error) => {
-        if (error.response && error.response.status === 401) {
-            clearAuthSession();
-            if (window.location.pathname !== '/login') {
-                window.location.href = '/login';
-            }
-        }
-        return Promise.reject(error);
-    }
-);
+import { getAuthState } from './src/utils/auth';
+import { useMusicPlayer } from './contexts/MusicContext';
 
 const UnknownRouteRedirect: React.FC = () => {
     const { isLoggedIn } = getAuthState();
@@ -60,6 +48,9 @@ const LoadingFallback: React.FC = () => {
 
 const AppContent: React.FC = () => {
     const { theme } = useTheme();
+    const { queue, isPlaying } = useMusicPlayer();
+    const location = useLocation();
+    const shouldRenderMusicPlayer = queue.length > 0 || isPlaying || location.pathname === '/music';
 
     return (
         <div className={`flex min-h-screen ${theme === 'light' ? 'bg-white' : 'bg-black'}`}>
@@ -91,9 +82,11 @@ const AppContent: React.FC = () => {
                     </Routes>
                 </Suspense>
             </main>
-            <Suspense fallback={null}>
-                <MusicPlayer />
-            </Suspense>
+            {shouldRenderMusicPlayer ? (
+                <Suspense fallback={null}>
+                    <MusicPlayer />
+                </Suspense>
+            ) : null}
         </div>
     );
 };
