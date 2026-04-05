@@ -5,19 +5,13 @@ import { BookOpen, Pen, Gift, X } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import ParticleBackground from '../components/ParticleBackground';
 import { useTheme } from '../contexts/ThemeContext';
+import { isAuthenticated } from '../src/utils/auth';
 
 interface User {
     name: string;
     birthday: string | null;
     avatar_url?: string;
 }
-
-const getCookie = (name: string) => {
-    return document.cookie.split('; ').reduce((r, v) => {
-        const parts = v.split('=');
-        return parts[0].trim() === name ? decodeURIComponent(parts[1]) : r;
-    }, '');
-};
 
 const Home: React.FC = () => {
     const navigate = useNavigate();
@@ -41,8 +35,7 @@ const Home: React.FC = () => {
 
     useEffect(() => {
         const fetchBirthdays = async () => {
-            const userNIM = getCookie('userNIM');
-            if (!userNIM) {
+            if (!isAuthenticated()) {
                 return;
             }
 

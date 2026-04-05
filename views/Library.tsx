@@ -5,17 +5,11 @@ import {
 import LibraryViewer from '../components/LibraryViewer';
 import ParticleBackground from '../components/ParticleBackground';
 import { useTheme } from '../contexts/ThemeContext';
-
-const getCookie = (name: string) => {
-  if (typeof document === 'undefined') return '';
-  return document.cookie.split('; ').reduce((result, value) => {
-    const parts = value.split('=');
-    return parts[0]?.trim() === name ? decodeURIComponent(parts[1] || '') : result;
-  }, '');
-};
+import { getAuthState } from '../src/utils/auth';
 
 const getLibraryPopupStorageKey = () => {
-  const userNIM = getCookie('userNIM') || 'guest';
+  const { nim } = getAuthState();
+  const userNIM = nim || 'guest';
   return `library_popup_dismissed_${userNIM}`;
 };
 

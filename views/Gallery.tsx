@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '../contexts/ToastContext';
 import ParticleBackground from '../components/ParticleBackground';
 import { useTheme } from '../contexts/ThemeContext';
+import { getAuthState } from '../src/utils/auth';
 
 interface GalleryItem {
     id: number;
@@ -15,13 +16,6 @@ interface GalleryItem {
     user_nim: string;
     created_at: string;
 }
-
-const getCookie = (name: string) => {
-    return document.cookie.split('; ').reduce((r, v) => {
-        const parts = v.split('=');
-        return parts[0].trim() === name ? decodeURIComponent(parts[1]) : r;
-    }, '');
-};
 
 const ScrollingTitle: React.FC<{ title: string }> = ({ title }) => {
     const containerRef = useRef<HTMLDivElement>(null);
@@ -84,8 +78,7 @@ const Gallery: React.FC = () => {
     const [title, setTitle] = useState('');
     const [link, setLink] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
-
-    const currentUserNIM = getCookie('userNIM');
+    const { nim: currentUserNIM } = getAuthState();
     const API_BASE_URL = 'https://api.sith-s25.my.id/api';
     const API_URL = `${API_BASE_URL}/gallery`;
 
@@ -115,7 +108,6 @@ const Gallery: React.FC = () => {
     const handleSubmit = async (e?: React.FormEvent | React.MouseEvent) => {
         if (e) e.preventDefault();
         setIsSubmitting(true);
-        const token = getCookie('userToken');
 
         try {
             const res = await fetchWithAuth(API_URL, {
@@ -144,8 +136,6 @@ const Gallery: React.FC = () => {
         e.stopPropagation();
 
         if (!confirm("Apakah Anda yakin ingin menghapus folder ini?")) return;
-
-        const token = getCookie('userToken');
         try {
             const res = await fetchWithAuth(`${API_URL}/${id}`, {
                 method: 'DELETE'

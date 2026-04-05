@@ -5,6 +5,7 @@ import { fetchWithAuth } from '../src/utils/api';
 import { useToast } from '../contexts/ToastContext';
 import ParticleBackground from '../components/ParticleBackground';
 import { useTheme } from '../contexts/ThemeContext';
+import { getAuthState } from '../src/utils/auth';
 
 interface Transaction {
     id: number;
@@ -35,13 +36,6 @@ interface UnpaidUser {
     paid_amount: number;
     remaining: number;
 }
-
-const getCookie = (name: string) => {
-    return document.cookie.split('; ').reduce((r, v) => {
-        const parts = v.split('=');
-        return parts[0].trim() === name ? decodeURIComponent(parts[1]) : r;
-    }, '');
-};
 
 const formatRupiah = (num: number) => {
     return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num);
@@ -99,7 +93,7 @@ const Finance: React.FC = () => {
     const [searchUser, setSearchUser] = useState('');
     const financeAbortControllerRef = useRef<AbortController | null>(null);
 
-    const currentUserRole = getCookie('userRole');
+    const { role: currentUserRole } = getAuthState();
     const API_BASE_URL = 'https://api.sith-s25.my.id/api';
     const canAdd = ['bendahara', 'admin', 'dev'].includes(currentUserRole);
 

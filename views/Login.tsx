@@ -5,22 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '../contexts/ToastContext';
 import ParticleBackground from '../components/ParticleBackground';
 import { useTheme } from '../contexts/ThemeContext';
-
-const setCookie = (name: string, value: string, days: number = 7) => {
-    const expires = new Date(Date.now() + days * 864e5).toUTCString();
-    document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax`;
-};
-
-const getCookie = (name: string) => {
-    return document.cookie.split('; ').reduce((r, v) => {
-        const parts = v.split('=');
-        return parts[0].trim() === name ? decodeURIComponent(parts[1]) : r;
-    }, '');
-};
-
-const deleteCookie = (name: string) => {
-    document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
-};
+import { clearAuthSession, getCookie, setAuthSession, deleteCookie, setCookie } from '../src/utils/auth';
 
 const Login: React.FC = () => {
     const { theme } = useTheme();
@@ -44,9 +29,7 @@ const Login: React.FC = () => {
     const API_URL = `${API_BASE_URL}/login`;
 
     useEffect(() => {
-        deleteCookie('userToken');
-        deleteCookie('userRole');
-        deleteCookie('userNIM');
+        clearAuthSession();
 
         const savedNim = getCookie('rememberedNIM');
         if (savedNim) {
@@ -81,8 +64,7 @@ const Login: React.FC = () => {
                     deleteCookie('rememberedNIM');
                 }
 
-                setCookie('userNIM', data.user.nim);
-                setCookie('userRole', data.user.role || 'mahasiswa');
+                setAuthSession(data.user.nim, data.user.role || 'mahasiswa');
 
                 navigate('/');
             } else {

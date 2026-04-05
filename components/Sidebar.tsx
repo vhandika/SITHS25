@@ -9,19 +9,9 @@ import { Moon, SunMedium } from 'lucide-react';
 import ProfileModal from '../components/ProfileModal';
 import ReportModal from '../components/ReportModal';
 import { ThemeMode, useTheme } from '../contexts/ThemeContext';
+import { clearAuthSession, getAuthState, getCookie } from '../src/utils/auth';
 
 const API_BASE_URL = 'https://api.sith-s25.my.id/api';
-
-const getCookie = (name: string) => {
-    return document.cookie.split('; ').reduce((r, v) => {
-        const parts = v.split('=');
-        return parts[0].trim() === name ? decodeURIComponent(parts[1]) : r;
-    }, '');
-};
-
-const deleteCookie = (name: string) => {
-    document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
-};
 
 const staticNavItems = [
     { path: '/', name: 'Home', icon: Home },
@@ -116,13 +106,12 @@ const Sidebar: React.FC = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        const storedNIM = getCookie('userNIM');
-        const storedRole = getCookie('userRole');
-        setUserNIM(storedNIM || null);
-        setUserRole(storedRole || null);
+        const authState = getAuthState();
+        setUserNIM(authState.nim);
+        setUserRole(authState.role);
 
-        if (storedNIM) {
-            fetchUserAvatar(storedNIM);
+        if (authState.nim) {
+            fetchUserAvatar(authState.nim);
         }
     }, [location]);
 
@@ -148,9 +137,7 @@ const Sidebar: React.FC = () => {
                 });
             } catch (e) { }
 
-            deleteCookie('userToken');
-            deleteCookie('userNIM');
-            deleteCookie('userRole');
+            clearAuthSession();
 
             setUserNIM(null);
             setUserRole(null);

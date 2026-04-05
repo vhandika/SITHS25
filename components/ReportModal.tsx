@@ -4,13 +4,6 @@ import { useToast } from '../contexts/ToastContext';
 
 const API_BASE_URL = 'https://api.sith-s25.my.id/api';
 
-const getCookie = (name: string) => {
-    return document.cookie.split('; ').reduce((r, v) => {
-        const parts = v.split('=');
-        return parts[0].trim() === name ? decodeURIComponent(parts[1]) : r;
-    }, '');
-};
-
 interface ReportModalProps {
     onClose: () => void;
 }
@@ -30,7 +23,6 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
         }
 
         setIsSubmitting(true);
-        const token = getCookie('userToken');
 
         try {
             const res = await fetch(`${API_BASE_URL}/report`, {

@@ -3,18 +3,12 @@ import { Search, Plus, Music2, Lock, Globe, Play, Loader, X, Trash2, Edit2, Chec
 import { useMusicPlayer } from '../contexts/MusicContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { fetchWithAuth } from '../src/utils/api';
+import { getAuthState } from '../src/utils/auth';
 import { useToast } from '../contexts/ToastContext';
 import ParticleBackground from '../components/ParticleBackground';
 import { useTheme } from '../contexts/ThemeContext';
 
 const API_BASE_URL = 'https://api.sith-s25.my.id/api';
-
-const getCookie = (name: string) => {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop()?.split(';').shift();
-    return null;
-};
 
 interface Track {
     id: string;
@@ -83,19 +77,29 @@ const Music: React.FC = () => {
 
     useEffect(() => {
         const initUserAndGuest = async () => {
-            let isLoggedIn = false;
+            const localAuth = getAuthState();
+            let resolvedNim = localAuth.nim;
+            let resolvedRole = localAuth.role;
+            let isLoggedIn = localAuth.isLoggedIn;
 
             try {
                 const res = await fetchWithAuth(`${API_BASE_URL}/validate-token`);
                 if (res.ok) {
                     const data = await res.json();
                     if (data.user && data.user.nim) {
-                        setCurrentUserNim(data.user.nim);
-                        setIsGuest(data.user.role === 'guest');
+                        resolvedNim = data.user.nim;
+                        resolvedRole = data.user.role;
                         isLoggedIn = true;
                     }
                 }
             } catch (error) {
+            }
+
+            if (isLoggedIn && resolvedNim) {
+                setCurrentUserNim(resolvedNim);
+                setIsGuest(resolvedRole === 'guest');
+                fetchPlaylists();
+                return;
             }
 
             if (!isLoggedIn) {
@@ -198,7 +202,10 @@ const Music: React.FC = () => {
         const timer = setTimeout(async () => {
             if (searchQuery.length > 2 && isTyping.current) {
                 try {
-                    const res = await fetch(`${API_BASE_URL}/music/suggest?q=${encodeURIComponent(searchQuery)}`);
+                    const res = await fetch(`${API_BASE_URL}/music/suggest?q=${encodeURIComponent(searchQuery)}`, {
+                        headers: getHeaders(),
+                        credentials: 'include'
+                    });
                     const data = await res.json();
                     setSuggestions(data || []);
                     setShowSuggestions(true);
@@ -234,7 +241,10 @@ const Music: React.FC = () => {
         if (queryOverride) setSearchQuery(queryOverride);
 
         try {
-            const res = await fetch(`${API_BASE_URL}/music/search?q=${encodeURIComponent(query)}`, { credentials: 'include' });
+            const res = await fetch(`${API_BASE_URL}/music/search?q=${encodeURIComponent(query)}`, {
+                headers: getHeaders(),
+                credentials: 'include'
+            });
             const data = await res.json();
             if (res.ok) setSearchResults(data.data || []);
         } catch (error) {

@@ -4,13 +4,6 @@ import { useToast } from '../contexts/ToastContext';
 
 const API_BASE_URL = 'https://api.sith-s25.my.id/api';
 
-const getCookie = (name: string) => {
-    return document.cookie.split('; ').reduce((r, v) => {
-        const parts = v.split('=');
-        return parts[0].trim() === name ? decodeURIComponent(parts[1]) : r;
-    }, '');
-};
-
 interface ProfileModalProps {
     targetNim: string;
     currentUserNim: string | null;
@@ -59,7 +52,6 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, 
         setLoading(true);
         setErrorMsg(null);
         try {
-            const token = getCookie('userToken');
             const res = await fetch(`${API_BASE_URL}/user/${targetNim}`, {
                 headers: {}, credentials: 'include'
             });
@@ -88,7 +80,6 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, 
 
     const handleSave = async () => {
         setIsSaving(true);
-        const token = getCookie('userToken');
         const data = new FormData();
 
         Object.keys(formData).forEach(key => data.append(key, (formData as any)[key]));

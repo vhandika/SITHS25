@@ -1,12 +1,6 @@
 import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
-
-const getCookie = (name: string) => {
-    return document.cookie.split('; ').reduce((result, part) => {
-        const pieces = part.split('=');
-        return pieces[0]?.trim() === name ? decodeURIComponent(pieces[1] || '') : result;
-    }, '');
-};
+import { getAuthState } from '../src/utils/auth';
 
 interface ProtectedRouteProps {
     redirectTo?: string;
@@ -18,9 +12,9 @@ interface RoleRouteProps extends ProtectedRouteProps {
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ redirectTo = '/login' }) => {
-    const userNIM = getCookie('userNIM');
+    const { isLoggedIn } = getAuthState();
 
-    if (!userNIM) {
+    if (!isLoggedIn) {
         return <Navigate to={redirectTo} replace />;
     }
 
@@ -32,14 +26,13 @@ export const RoleRoute: React.FC<RoleRouteProps> = ({
     redirectTo = '/login',
     unauthorizedRedirectTo = '/'
 }) => {
-    const userNIM = getCookie('userNIM');
-    const userRole = getCookie('userRole');
+    const { isLoggedIn, role } = getAuthState();
 
-    if (!userNIM) {
+    if (!isLoggedIn) {
         return <Navigate to={redirectTo} replace />;
     }
 
-    if (!allowedRoles.includes(userRole)) {
+    if (!role || !allowedRoles.includes(role)) {
         return <Navigate to={unauthorizedRedirectTo} replace />;
     }
 

@@ -3,6 +3,7 @@ import { Users, Lock, RefreshCw, Smartphone, Monitor, Shield, AlertTriangle, XCi
 import { fetchWithAuth } from '../src/utils/api';
 import ParticleBackground from '../components/ParticleBackground';
 import { useTheme } from '../contexts/ThemeContext';
+import { getAuthState } from '../src/utils/auth';
 
 const API_BASE_URL = 'https://api.sith-s25.my.id/api';
 
@@ -41,8 +42,13 @@ const DevDashboard: React.FC = () => {
     const [resetStatus, setResetStatus] = useState('');
     const [errorMsg, setErrorMsg] = useState('');
     const [logsError, setLogsError] = useState('');
+    const { isLoggedIn, isDev } = getAuthState();
 
     useEffect(() => {
+        if (!isLoggedIn || !isDev) {
+            return;
+        }
+
         loadActiveUsers();
         loadSecurityLogs();
         const interval = setInterval(loadActiveUsers, 30000);
@@ -51,7 +57,7 @@ const DevDashboard: React.FC = () => {
             clearInterval(interval);
             clearInterval(logsInterval);
         };
-    }, []);
+    }, [isLoggedIn, isDev]);
 
     const loadActiveUsers = async () => {
         setLoading(true);

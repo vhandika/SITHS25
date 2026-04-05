@@ -5,15 +5,9 @@ import { fetchWithAuth } from '../src/utils/api';
 import { useToast } from '../contexts/ToastContext';
 import ParticleBackground from '../components/ParticleBackground';
 import { useTheme } from '../contexts/ThemeContext';
+import { getAuthState } from '../src/utils/auth';
 
 const API_BASE_URL = 'https://api.sith-s25.my.id/api';
-
-const getCookie = (name: string) => {
-    return document.cookie.split('; ').reduce((r, v) => {
-        const parts = v.split('=');
-        return parts[0].trim() === name ? decodeURIComponent(parts[1]) : r;
-    }, '');
-};
 
 const LinkifiedContent: React.FC<{ text: string }> = ({ text }) => {
     if (!text) return null;
@@ -139,7 +133,7 @@ const News: React.FC = () => {
     const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(null);
     const [loading, setLoading] = useState(true);
     const [userRole, setUserRole] = useState<string | null>(null);
-    const [userToken, setUserToken] = useState<string | null>(null);
+    const [userNIM, setUserNIM] = useState<string | null>(null);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [editId, setEditId] = useState<number | null>(null);
@@ -156,11 +150,12 @@ const News: React.FC = () => {
     });
 
     useEffect(() => {
-        setUserRole(getCookie('userRole') || null);
-        setUserToken(getCookie('userNIM') || null);
+        const authState = getAuthState();
+        setUserRole(authState.role);
+        setUserNIM(authState.nim);
     }, []);
 
-    const isLoggedIn = !!userToken;
+    const isLoggedIn = !!userNIM;
     const canManageNews = isLoggedIn && (userRole === 'admin' || userRole === 'humas' || userRole === 'dev');
 
     const fetchNews = async () => {
@@ -179,7 +174,7 @@ const News: React.FC = () => {
         }
     };
 
-    useEffect(() => { fetchNews(); }, [userToken]);
+    useEffect(() => { fetchNews(); }, []);
 
     const handlePrev = () => setCurrentIndex((prev) => (prev === 0 ? newsData.length - 1 : prev - 1));
     const handleNext = () => setCurrentIndex((prev) => (prev === newsData.length - 1 ? 0 : prev + 1));
@@ -234,7 +229,7 @@ const News: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!userToken) { showToast('Sesi habis, login ulang.', 'error'); return; }
+        if (!isLoggedIn) { showToast('Sesi habis, login ulang.', 'error'); return; }
         setIsUploading(true);
 
         try {

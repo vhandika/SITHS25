@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '../contexts/ToastContext';
 import ParticleBackground from '../components/ParticleBackground';
 import { useTheme } from '../contexts/ThemeContext';
+import { getAuthState, getCookie } from '../src/utils/auth';
 
 const API_BASE_URL = 'https://api.sith-s25.my.id/api';
 const API_INTERNAL_GANJIL = 'https://ganjil.sith-s25.my.id/api';
@@ -24,13 +25,6 @@ const getAttendanceApiUrl = (nim: string): string => {
 const isNimGanjil = (nim: string): boolean => {
     const lastDigit = parseInt(nim.slice(-1));
     return lastDigit % 2 !== 0;
-};
-
-const getCookie = (name: string) => {
-    return document.cookie.split('; ').reduce((r, v) => {
-        const parts = v.split('=');
-        return parts[0].trim() === name ? decodeURIComponent(parts[1]) : r;
-    }, '');
 };
 
 const Attendance: React.FC = () => {
@@ -69,8 +63,9 @@ const Attendance: React.FC = () => {
     }, [previewUrl]);
 
     useEffect(() => {
-        const role = getCookie('userRole');
-        const nim = getCookie('userNIM');
+        const authState = getAuthState();
+        const role = authState.role;
+        const nim = authState.nim;
 
         if (!nim) {
             navigate('/login');
@@ -110,7 +105,6 @@ const Attendance: React.FC = () => {
 
     const fetchAllUsers = async () => {
         try {
-            const token = getCookie('userToken');
             const res = await fetch(`${API_BASE_URL}/users`, {
                 headers: {}, credentials: 'include'
             });
@@ -292,7 +286,6 @@ const Attendance: React.FC = () => {
         if (isSubmitting || isCompressing) return;
 
         setIsSubmitting(true);
-        const token = getCookie('userToken');
         const formData = new FormData();
         formData.append('session_id', selectedSession.id);
         formData.append('user_name_input', 'Mahasiswa ' + userNIM);
@@ -326,7 +319,6 @@ const Attendance: React.FC = () => {
         if (isSubmitting || isCompressing) return;
 
         setIsSubmitting(true);
-        const token = getCookie('userToken');
         const formData = new FormData();
         formData.append('session_id', selectedSessionPermission.id);
         formData.append('user_name_input', 'Mahasiswa ' + userNIM);

@@ -1,5 +1,5 @@
 import React, { Suspense, lazy } from 'react';
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { MusicProvider } from './contexts/MusicContext';
@@ -9,12 +9,13 @@ import Sidebar from './components/Sidebar';
 import ActivityTracker from './components/ActivityTracker';
 import ToastContainer from './components/Toast';
 import { ProtectedRoute, RoleRoute } from './components/RouteGuards';
+import { clearAuthSession, getAuthState } from './src/utils/auth';
 import axios from 'axios';
 axios.interceptors.response.use(
     (response) => response,
     (error) => {
         if (error.response && error.response.status === 401) {
-            document.cookie = "userNIM=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            clearAuthSession();
             if (window.location.pathname !== '/login') {
                 window.location.href = '/login';
             }
@@ -22,6 +23,12 @@ axios.interceptors.response.use(
         return Promise.reject(error);
     }
 );
+
+const UnknownRouteRedirect: React.FC = () => {
+    const { isLoggedIn } = getAuthState();
+
+    return <Navigate to={isLoggedIn ? '/' : '/login'} replace />;
+};
 
 const Home = lazy(() => import('./views/Home'));
 const Library = lazy(() => import('./views/Library'));
@@ -66,12 +73,12 @@ const AppContent: React.FC = () => {
                         <Route path="/about" element={<AboutUs />} />
                         <Route path="/contact" element={<ContactUs />} />
                         <Route path="/login" element={<Login />} />
+                        <Route path="/PDFTools" element={<PDFTools />} />
                         <Route element={<ProtectedRoute />}>
                             <Route path="/change-password" element={<ChangePassword />} />
                             <Route path="/find-nim" element={<FindNim />} />
                             <Route path="/attendance" element={<Attendance />} />
                             <Route path="/gallery" element={<Gallery />} />
-                            <Route path="/PDFTools" element={<PDFTools />} />
                             <Route path="/finance" element={<Finance />} />
                         </Route>
                         <Route path="/music" element={<Music />} />
@@ -80,6 +87,7 @@ const AppContent: React.FC = () => {
                         </Route>
                         <Route path="/Calc" element={<Calc />} />
                         <Route path="/reset-password" element={<ResetPassword />} />
+                        <Route path="*" element={<UnknownRouteRedirect />} />
                     </Routes>
                 </Suspense>
             </main>

@@ -4,13 +4,7 @@ import { KeyRound, Save, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ParticleBackground from '../components/ParticleBackground';
 import { useTheme } from '../contexts/ThemeContext';
-
-const getCookie = (name: string) => {
-    return document.cookie.split('; ').reduce((r, v) => {
-        const parts = v.split('=');
-        return parts[0].trim() === name ? decodeURIComponent(parts[1]) : r;
-    }, '');
-};
+import { getAuthState, getCookie } from '../src/utils/auth';
 
 const ChangePassword: React.FC = () => {
     const { theme } = useTheme();
@@ -35,9 +29,9 @@ const ChangePassword: React.FC = () => {
     const API_URL = `${API_BASE_URL}/change-password`;
 
     useEffect(() => {
-        const token = getCookie('userNIM');
+        const { nim } = getAuthState();
 
-        if (!token) {
+        if (!nim) {
             navigate('/login');
         }
     }, [navigate]);
@@ -61,8 +55,6 @@ const ChangePassword: React.FC = () => {
         setIsLoading(true);
 
         try {
-            const token = getCookie('userToken');
-
             const response = await fetch(API_URL, {
                 method: 'POST',
                 headers: {

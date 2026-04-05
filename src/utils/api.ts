@@ -1,3 +1,5 @@
+import { clearAuthSession } from './auth';
+
 const API_BASE_URL = 'https://api.sith-s25.my.id';
 
 export const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
@@ -25,8 +27,7 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
 
         if (response.status === 401 || response.status === 403) {
             if (!guestId) {
-                localStorage.removeItem('userRole');
-                document.cookie = 'userNIM=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+                clearAuthSession();
                 window.location.href = '/login';
             }
             return response;
