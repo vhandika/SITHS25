@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Maintenance</title>
+  <style>
+    :root {
+      --bg: #000000;
+      --fg: #facc15;
+      --panel: rgba(0, 0, 0, 0.55);
+      --line: rgba(250, 204, 21, 0.25);
+      --glow: rgba(250, 204, 21, 0.2);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--bg);
+      color: var(--fg);
+      overflow: hidden;
+      font-family: Rajdhani, Segoe UI, Tahoma, sans-serif;
+    }
+
+    #particles {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+    }
+
+    .vignette {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      background: radial-gradient(circle at center, rgba(250, 204, 21, 0.08) 0%, rgba(0, 0, 0, 0.9) 60%, #000 100%);
+    }
+
+    .center-wrap {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      text-align: center;
+      flex-direction: column;
+    }
+
+    .gif-card {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      border-radius: 16px;
+      padding: 14px;
+      box-shadow: 0 0 60px var(--glow);
+      backdrop-filter: blur(6px);
+    }
+
+    .gif-card img {
+      width: 256px;
+      height: 256px;
+      max-width: 65vw;
+      max-height: 65vw;
+      border-radius: 12px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .label {
+      margin-top: 18px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      font-weight: 700;
+      font-size: clamp(22px, 4vw, 32px);
+      color: #fde047;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="particles"></canvas>
+  <div class="vignette" aria-hidden="true"></div>
+
+  <main class="center-wrap">
+    <div class="gif-card">
+      <img
+        src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExdG0ya3gwajVlZXNmazV0Nnd6OGRsaGQ3Y20ycm9wZDBnNzEyNTl6NSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/QtZSl6mcqfmvCBI2cb/giphy.gif"
+        alt="Maintenance"
+      />
+    </div>
+    <p class="label">sedang maintenance</p>
+  </main>
+
+  <script>
+    const canvas = document.getElementById('particles');
+    const ctx = canvas.getContext('2d');
+
+    const particleColor = 'rgba(250, 204, 21, 0.88)';
+    const lineColor = 'rgba(250, 204, 21, 0.35)';
+    const particles = [];
+    const maxParticles = 130;
+    const linkDistance = 150;
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+
+    function random(min, max) {
+      return Math.random() * (max - min) + min;
+    }
+
+    function createParticles() {
+      particles.length = 0;
+      for (let i = 0; i < maxParticles; i += 1) {
+        particles.push({
+          x: random(0, canvas.width),
+          y: random(0, canvas.height),
+          vx: random(-0.5, 0.5),
+          vy: random(-0.5, 0.5),
+          r: random(1.2, 2.4)
+        });
+      }
+    }
+
+    function tick() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      for (let i = 0; i < particles.length; i += 1) {
+        const p = particles[i];
+
+        p.x += p.vx;
+        p.y += p.vy;
+
+        if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+        if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+
+        ctx.beginPath();
+        ctx.fillStyle = particleColor;
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fill();
+
+        for (let j = i + 1; j < particles.length; j += 1) {
+          const q = particles[j];
+          const dx = p.x - q.x;
+          const dy = p.y - q.y;
+          const d = Math.hypot(dx, dy);
+
+          if (d < linkDistance) {
+            const alpha = 1 - d / linkDistance;
+            ctx.strokeStyle = lineColor.replace('0.35', (alpha * 0.45).toFixed(3));
+            ctx.lineWidth = 1.2;
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(q.x, q.y);
+            ctx.stroke();
+          }
+        }
+      }
+
+      requestAnimationFrame(tick);
+    }
+
+    resizeCanvas();
+    createParticles();
+    tick();
+
+    window.addEventListener('resize', () => {
+      resizeCanvas();
+      createParticles();
+    });
+  </script>
+</body>
+</html>

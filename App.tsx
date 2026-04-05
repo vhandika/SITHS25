@@ -1,16 +1,20 @@
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, useEffect } from 'react';
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { MusicProvider } from './contexts/MusicContext';
 import { ToastProvider } from './contexts/ToastContext';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
+import ParticleBackground from './components/ParticleBackground';
 import Sidebar from './components/Sidebar';
 import ActivityTracker from './components/ActivityTracker';
 import ToastContainer from './components/Toast';
 import { ProtectedRoute, RoleRoute } from './components/RouteGuards';
 import { getAuthState } from './src/utils/auth';
 import { useMusicPlayer } from './contexts/MusicContext';
+
+const maintenanceModeRaw = (import.meta.env.VITE_MAINTENANCE_MODE ?? '').toString().trim().toLowerCase();
+const MAINTENANCE_MODE = ['1', 'true', 'yes', 'on'].includes(maintenanceModeRaw);
 
 const UnknownRouteRedirect: React.FC = () => {
     const { isLoggedIn } = getAuthState();
@@ -46,10 +50,50 @@ const LoadingFallback: React.FC = () => {
     );
 };
 
+const MaintenanceScreen: React.FC = () => {
+    const { setTheme } = useTheme();
+
+    useEffect(() => {
+        setTheme('dark');
+    }, [setTheme]);
+
+    return (
+        <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-black px-6 text-yellow-300">
+            <ParticleBackground
+                particleColor="250, 204, 21"
+                particleOpacity={0.88}
+                connectionOpacity={0.45}
+                lineWidth={1.2}
+                maxParticles={130}
+                connectionDistance={150}
+            />
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(250,204,21,0.08)_0%,rgba(0,0,0,0.9)_60%,#000_100%)]" />
+
+            <main className="relative z-10 flex flex-col items-center text-center">
+                <div className="rounded-2xl border border-yellow-300/30 bg-black/55 p-3 shadow-[0_0_60px_rgba(250,204,21,0.2)] backdrop-blur-[6px]">
+                    <img
+                        src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExdG0ya3gwajVlZXNmazV0Nnd6OGRsaGQ3Y20ycm9wZDBnNzEyNTl6NSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/QtZSl6mcqfmvCBI2cb/giphy.gif"
+                        alt="Maintenance"
+                        className="h-64 w-64 max-h-[65vw] max-w-[65vw] rounded-xl object-cover"
+                    />
+                </div>
+                <p className="mt-4 text-[clamp(22px,4vw,32px)] font-bold uppercase tracking-[0.2em] text-yellow-300">
+                    sedang maintenance
+                </p>
+            </main>
+        </div>
+    );
+};
+
 const AppContent: React.FC = () => {
     const { theme } = useTheme();
     const { queue, isPlaying } = useMusicPlayer();
     const location = useLocation();
+
+    if (MAINTENANCE_MODE) {
+        return <MaintenanceScreen />;
+    }
+
     const shouldRenderMusicPlayer = queue.length > 0 || isPlaying || location.pathname === '/music';
 
     return (
