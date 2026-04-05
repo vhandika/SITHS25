@@ -73,7 +73,20 @@ const LibraryViewer: React.FC<LibraryViewerProps> = ({ isOpen, onClose, currentI
             const fileId = link.split('/file/d/')[1].split('/')[0];
             return `https://drive.google.com/file/d/${fileId}/preview`;
         }
-        return link.replace('/view', '/preview');
+
+        const docsLinkMatch = link.match(/https?:\/\/docs\.google\.com\/(document|presentation|spreadsheets)\/d\/([^/?#]+)/i);
+        if (docsLinkMatch) {
+            const docType = docsLinkMatch[1].toLowerCase();
+            const docId = docsLinkMatch[2];
+
+            if (docType === 'presentation') {
+                return `https://docs.google.com/presentation/d/${docId}/embed?start=false&loop=false&delayms=3000`;
+            }
+
+            return `https://docs.google.com/${docType}/d/${docId}/preview`;
+        }
+
+        return link.replace('/view', '/preview').replace('/edit', '/preview');
     };
 
     const handleItemClick = (item: LibraryItem) => {
