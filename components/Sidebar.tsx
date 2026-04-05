@@ -3,7 +3,7 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
     Home, Library, Newspaper, Users, Mail, X, Menu,
     LogIn, LogOut, KeyRound, UserCircle, CameraIcon, Search,
-    CalendarCheck, FileText, Flag, Music, Monitor, Wallet, CalculatorIcon
+    CalendarCheck, FileText, Flag, Music, Monitor, Wallet, CalculatorIcon, MessageCircle
 } from 'lucide-react'
 import { Moon, SunMedium } from 'lucide-react';
 import ProfileModal from '../components/ProfileModal';

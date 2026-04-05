@@ -34,6 +34,7 @@ const Attendance = lazy(() => import('./views/Attendance'));
 const Gallery = lazy(() => import('./views/Gallery'));
 const PDFTools = lazy(() => import('./views/PDFTools'));
 const Music = lazy(() => import('./views/Music'));
+const AnonChat = lazy(() => import('./views/AnonChat'));
 const DevDashboard = lazy(() => import('./views/DevDashboard'));
 const Finance = lazy(() => import('./views/Finance'));
 const Calc = lazy(() => import('./views/IndexCalculator'));
@@ -71,6 +72,7 @@ const AppContent: React.FC = () => {
                         <Route path="/gallery" element={<Gallery />} />
                         <Route path="/PDFTools" element={<PDFTools />} />
                         <Route path="/music" element={<Music />} />
+                        <Route path="/anon-chat" element={<AnonChat />} />
                         <Route path="/dev" element={<DevDashboard />} />
                         <Route path="/finance" element={<Finance />} />
                         <Route path="/Calc" element={<Calc />} />
