@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import SkewedButton from '../components/SkewedButton';
 import { KeyRound, LogIn, AlertCircle, Eye, EyeOff, X, Mail } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useToast } from '../contexts/ToastContext';
 import ParticleBackground from '../components/ParticleBackground';
 import { useTheme } from '../contexts/ThemeContext';
@@ -23,20 +23,51 @@ const Login: React.FC = () => {
     const [forgotError, setForgotError] = useState('');
 
     const navigate = useNavigate();
+    const location = useLocation();
     const { showToast } = useToast();
 
     const API_BASE_URL = 'https://api.sith-s25.my.id/api';
     const API_URL = `${API_BASE_URL}/login`;
+    const MICROSOFT_LOGIN_URL = `${API_BASE_URL}/auth/microsoft`;
 
     useEffect(() => {
         clearAuthSession();
+
+        const params = new URLSearchParams(location.search);
+        const msStatus = params.get('ms');
+        const msError = params.get('ms_error');
+
+        if (msStatus === 'success') {
+            const msNim = params.get('nim');
+            const msRole = params.get('role') || 'mahasiswa';
+
+            if (msNim) {
+                setAuthSession(msNim, msRole);
+                navigate('/', { replace: true });
+                return;
+            }
+        }
+
+        if (msError) {
+            const microsoftErrors: Record<string, string> = {
+                config_missing: 'Konfigurasi login Microsoft belum lengkap di server.',
+                state_invalid: 'Sesi login Microsoft tidak valid. Coba lagi.',
+                oauth_failed: 'Login Microsoft gagal diproses.',
+                email_invalid: 'Email akun Microsoft tidak dapat dibaca.',
+                domain_not_allowed: 'Gunakan akun Microsoft kampus yang sesuai NIM.',
+                nim_not_found: 'NIM tidak ditemukan dari akun Microsoft Anda.',
+                nim_unregistered: 'NIM dari akun Microsoft belum terdaftar di sistem.'
+            };
+
+            setError(microsoftErrors[msError] || 'Login Microsoft gagal.');
+        }
 
         const savedNim = getCookie('rememberedNIM');
         if (savedNim) {
             setNim(savedNim);
             setRememberMe(true);
         }
-    }, []);
+    }, [location.search, navigate]);
 
     const handleLogin = async (e?: React.FormEvent | React.MouseEvent) => {
         if (e) e.preventDefault();
@@ -83,6 +114,10 @@ const Login: React.FC = () => {
         setForgotNim('');
         setForgotSent(false);
         setForgotError('');
+    };
+
+    const handleMicrosoftLogin = () => {
+        window.location.href = MICROSOFT_LOGIN_URL;
     };
 
     const handleForgotSubmit = async () => {
@@ -217,6 +252,16 @@ const Login: React.FC = () => {
                         >
                             {isLoading ? 'Wait...' : 'Login'}
                         </SkewedButton>
+                    </div>
+
+                    <div className="text-center">
+                        <button
+                            type="button"
+                            onClick={handleMicrosoftLogin}
+                            className="text-xs text-gray-500 transition-colors hover:text-gray-300"
+                        >
+                            Login dengan Microsoft
+                        </button>
                     </div>
                 </div>
             </div>
