@@ -15,10 +15,16 @@ const LibraryViewer: React.FC<LibraryViewerProps> = ({ isOpen, onClose, currentI
     const [navHistory, setNavHistory] = useState<LibraryItem[]>([]);
     const [viewingItem, setViewingItem] = useState<LibraryItem | null>(null);
     const [rootItem, setRootItem] = useState<LibraryItem | null>(null);
-    const [mobileNavHeight, setMobileNavHeight] = useState(40); // Percentage for sidebar height on mobile
+    const [mobileNavHeight, setMobileNavHeight] = useState(32); // Percentage for sidebar height on mobile
     const [isDragging, setIsDragging] = useState(false);
+    const [isMobile, setIsMobile] = useState(() => {
+        if (typeof window === 'undefined') return false;
+        return window.matchMedia('(max-width: 767px)').matches;
+    });
+    const [previewPaneWidth, setPreviewPaneWidth] = useState(0);
     const dragStartYRef = useRef<number | null>(null);
-    const dragStartHeightRef = useRef(40);
+    const dragStartHeightRef = useRef(32);
+    const previewPaneRef = useRef<HTMLDivElement | null>(null);
 
     useEffect(() => {
         if (isOpen) {
@@ -27,16 +33,45 @@ const LibraryViewer: React.FC<LibraryViewerProps> = ({ isOpen, onClose, currentI
             setViewingItem(currentItem);
             setNavHistory([]);
             setRootItem(currentItem);
+            setMobileNavHeight(32);
         } else {
             document.body.style.overflow = 'auto';
             setTimeout(() => setIsAnimating(false), 300);
         }
     }, [isOpen]);
 
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+
+        const mediaQuery = window.matchMedia('(max-width: 767px)');
+        const handleViewportChange = (event: MediaQueryListEvent) => {
+            setIsMobile(event.matches);
+        };
+
+        setIsMobile(mediaQuery.matches);
+        mediaQuery.addEventListener('change', handleViewportChange);
+
+        return () => {
+            mediaQuery.removeEventListener('change', handleViewportChange);
+        };
+    }, []);
+
+    useEffect(() => {
+        if (typeof window === 'undefined' || !previewPaneRef.current) return;
+
+        const element = previewPaneRef.current;
+        const updateWidth = () => setPreviewPaneWidth(element.clientWidth);
+        updateWidth();
+
+        const observer = new ResizeObserver(updateWidth);
+        observer.observe(element);
+
+        return () => observer.disconnect();
+    }, [isOpen, isMobile, mobileNavHeight]);
+
     const handleTouchMove = (e: React.TouchEvent) => {
         if (!isDragging || dragStartYRef.current === null) return;
 
-        // Prevent page/container scroll while dragging the split handle.
         e.preventDefault();
 
         const touch = e.touches[0];
@@ -45,7 +80,7 @@ const LibraryViewer: React.FC<LibraryViewerProps> = ({ isOpen, onClose, currentI
             const rect = container.getBoundingClientRect();
             const deltaY = touch.clientY - dragStartYRef.current;
             const deltaPercent = (deltaY / rect.height) * 100;
-            const nextHeight = Math.max(15, Math.min(85, dragStartHeightRef.current + deltaPercent));
+            const nextHeight = Math.max(20, Math.min(60, dragStartHeightRef.current + deltaPercent));
             setMobileNavHeight(nextHeight);
         }
     };
@@ -109,6 +144,12 @@ const LibraryViewer: React.FC<LibraryViewerProps> = ({ isOpen, onClose, currentI
 
     const currentFolderItems = viewingItem ? (viewingItem.children ?? []) : relatedItems;
     const isRoot = navHistory.length === 0;
+    const isGoogleDocsLink = !!currentItem?.driveLink && /https?:\/\/docs\.google\.com\/(document|presentation|spreadsheets)\//i.test(currentItem.driveLink);
+    const desktopCanvasWidth = 1280;
+    const desktopScale = isMobile && isGoogleDocsLink && previewPaneWidth > 0
+        ? Math.min(1, previewPaneWidth / desktopCanvasWidth)
+        : 1;
+    const desktopScaledHeight = desktopScale > 0 ? `${100 / desktopScale}%` : '100%';
 
     return (
         <div className={`fixed inset-0 z-[110] flex items-end justify-center transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
@@ -162,8 +203,8 @@ const LibraryViewer: React.FC<LibraryViewerProps> = ({ isOpen, onClose, currentI
                     <div
                         className={`bg-black/30 border-b md:border-b-0 md:border-r border-white/5 flex flex-col shrink-0 overflow-hidden ${isDragging ? 'transition-none' : 'transition-all duration-300 ease-out'}`}
                         style={{
-                            height: typeof window !== 'undefined' && window.innerWidth < 768 ? `${mobileNavHeight}%` : 'auto',
-                            width: typeof window !== 'undefined' && window.innerWidth >= 768 ? '20rem' : '100%'
+                            height: isMobile ? `${mobileNavHeight}%` : 'auto',
+                            width: isMobile ? '100%' : '20rem'
                         }}
                     >
                         <div className="p-4 border-b border-white/5 bg-white/5 flex items-center justify-between shrink-0">
@@ -249,14 +290,39 @@ const LibraryViewer: React.FC<LibraryViewerProps> = ({ isOpen, onClose, currentI
                         <div className="w-12 h-1 bg-white/20 rounded-full" />
                     </div>
 
-                    <div className="flex-1 bg-gray-950 relative overflow-hidden flex flex-col">
+                    <div ref={previewPaneRef} className="flex-1 min-w-0 bg-gray-950 relative overflow-hidden flex flex-col">
                         {currentItem?.type === 'file' ? (
-                            <iframe
-                                src={getEmbedLink(currentItem.driveLink)}
-                                className="w-full h-full border-none"
-                                allow="autoplay"
-                                title="File Preview"
-                            />
+                            isMobile && isGoogleDocsLink ? (
+                                <div className="w-full h-full overflow-auto">
+                                    <div
+                                        style={{
+                                            width: `${desktopCanvasWidth}px`,
+                                            height: desktopScaledHeight,
+                                            transform: `scale(${desktopScale})`,
+                                            transformOrigin: 'top left'
+                                        }}
+                                    >
+                                        <iframe
+                                            key={`${currentItem.id}-mobile-desktop-canvas`}
+                                            src={getEmbedLink(currentItem.driveLink)}
+                                            className="border-none"
+                                            style={{ width: `${desktopCanvasWidth}px`, height: '100%' }}
+                                            allow="autoplay"
+                                            title="File Preview"
+                                            loading="lazy"
+                                        />
+                                    </div>
+                                </div>
+                            ) : (
+                                <iframe
+                                    key={`${currentItem.id}-${isMobile ? 'mobile' : 'desktop'}`}
+                                    src={getEmbedLink(currentItem.driveLink)}
+                                    className="w-full h-full min-h-0 border-none"
+                                    allow="autoplay"
+                                    title="File Preview"
+                                    loading="lazy"
+                                />
+                            )
                         ) : viewingItem && (viewingItem.children?.length ?? 0) === 0 ? (
                             <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-6">
                                 <div className="w-24 h-24 bg-yellow-400/5 rounded-full flex items-center justify-center animate-pulse">

@@ -16,7 +16,7 @@ interface Track {
     title: string;
     artist?: string;
     thumbnail?: string;
-    duration?: number | string;
+    duration?: number;
 }
 
 interface Playlist {
