@@ -9,6 +9,59 @@ import ParticleBackground from '../components/ParticleBackground';
 import { useTheme } from '../contexts/ThemeContext';
 
 const API_BASE_URL = 'https://api.sith-s25.my.id/api';
+const TURNSTILE_SITE_KEY = (import.meta.env.VITE_TURNSTILE_SITE_KEY ?? '').toString().trim();
+const TURNSTILE_SCRIPT_SRC = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+
+let turnstileScriptPromise: Promise<void> | null = null;
+
+declare global {
+    interface Window {
+        turnstile?: {
+            render: (container: string | HTMLElement, options: {
+                sitekey: string;
+                callback?: (token: string) => void;
+                'expired-callback'?: () => void;
+                'error-callback'?: () => void;
+                theme?: 'light' | 'dark';
+                appearance?: 'always' | 'execute' | 'interaction-only';
+            }) => string;
+            reset?: (widgetId?: string) => void;
+            remove?: (widgetId: string) => void;
+        };
+    }
+}
+
+const loadTurnstileScript = () => {
+    if (window.turnstile) {
+        return Promise.resolve();
+    }
+
+    if (!turnstileScriptPromise) {
+        turnstileScriptPromise = new Promise<void>((resolve, reject) => {
+            const existingScript = document.querySelector<HTMLScriptElement>(`script[src="${TURNSTILE_SCRIPT_SRC}"]`);
+
+            if (existingScript) {
+                if (window.turnstile) {
+                    resolve();
+                    return;
+                }
+                existingScript.addEventListener('load', () => resolve(), { once: true });
+                existingScript.addEventListener('error', () => reject(new Error('Gagal memuat Turnstile.')), { once: true });
+                return;
+            }
+
+            const script = document.createElement('script');
+            script.src = TURNSTILE_SCRIPT_SRC;
+            script.async = true;
+            script.defer = true;
+            script.onload = () => resolve();
+            script.onerror = () => reject(new Error('Gagal memuat Turnstile.'));
+            document.head.appendChild(script);
+        });
+    }
+
+    return turnstileScriptPromise;
+};
 
 interface Track {
     id: string;
@@ -70,10 +123,98 @@ const Music: React.FC = () => {
 
     const [currentUserNim, setCurrentUserNim] = useState<string | null>(null);
     const [isGuest, setIsGuest] = useState(false);
+    const [guestPlaylistCaptchaToken, setGuestPlaylistCaptchaToken] = useState('');
+    const [guestPlaylistCaptchaStatus, setGuestPlaylistCaptchaStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
+    const guestPlaylistTurnstileRef = useRef<HTMLDivElement | null>(null);
+    const guestPlaylistTurnstileWidgetIdRef = useRef<string | null>(null);
 
     const showPlaylistDetail = selectedPlaylist !== null;
     const isSearchMode = searchResults.length > 0;
     const myPlaylists = playlists.filter(p => p.creator_nim === currentUserNim && p.source !== 'spotify' && !p.spotify_playlist_id);
+
+    const resetGuestPlaylistCaptcha = () => {
+        setGuestPlaylistCaptchaToken('');
+        if (guestPlaylistTurnstileWidgetIdRef.current && window.turnstile?.reset) {
+            window.turnstile.reset(guestPlaylistTurnstileWidgetIdRef.current);
+        }
+    };
+
+    const closeCreateModal = () => {
+        setShowCreateModal(false);
+        setNewPlaylistTitle('');
+        setNewPlaylistIsPublic(false);
+        resetGuestPlaylistCaptcha();
+    };
+
+    const closeImportModal = () => {
+        setShowImportModal(false);
+        setImportUrl('');
+        setImportIsPublic(false);
+        setImportProgress(null);
+        resetGuestPlaylistCaptcha();
+    };
+
+    useEffect(() => {
+        let isMounted = true;
+
+        if ((!showCreateModal && !showImportModal) || !isGuest || !TURNSTILE_SITE_KEY) {
+            setGuestPlaylistCaptchaStatus('idle');
+            return () => {
+                isMounted = false;
+            };
+        }
+
+        const renderTurnstile = async () => {
+            try {
+                setGuestPlaylistCaptchaStatus('loading');
+                await loadTurnstileScript();
+
+                if (!isMounted || !guestPlaylistTurnstileRef.current || !window.turnstile) {
+                    return;
+                }
+
+                if (guestPlaylistTurnstileWidgetIdRef.current && window.turnstile.remove) {
+                    window.turnstile.remove(guestPlaylistTurnstileWidgetIdRef.current);
+                    guestPlaylistTurnstileWidgetIdRef.current = null;
+                }
+
+                guestPlaylistTurnstileRef.current.innerHTML = '';
+                guestPlaylistTurnstileWidgetIdRef.current = window.turnstile.render(guestPlaylistTurnstileRef.current, {
+                    sitekey: TURNSTILE_SITE_KEY,
+                    theme: theme === 'light' ? 'light' : 'dark',
+                    appearance: 'always',
+                    callback: (token: string) => {
+                        setGuestPlaylistCaptchaToken(token);
+                        setGuestPlaylistCaptchaStatus('ready');
+                    },
+                    'expired-callback': () => {
+                        setGuestPlaylistCaptchaToken('');
+                        setGuestPlaylistCaptchaStatus('ready');
+                    },
+                    'error-callback': () => {
+                        setGuestPlaylistCaptchaToken('');
+                        setGuestPlaylistCaptchaStatus('error');
+                    }
+                });
+
+                setGuestPlaylistCaptchaStatus('ready');
+            } catch (error) {
+                if (isMounted) {
+                    setGuestPlaylistCaptchaStatus('error');
+                }
+            }
+        };
+
+        renderTurnstile();
+
+        return () => {
+            isMounted = false;
+            if (guestPlaylistTurnstileWidgetIdRef.current && window.turnstile?.remove) {
+                window.turnstile.remove(guestPlaylistTurnstileWidgetIdRef.current);
+            }
+            guestPlaylistTurnstileWidgetIdRef.current = null;
+        };
+    }, [showCreateModal, showImportModal, isGuest, theme]);
 
     useEffect(() => {
         const initUserAndGuest = async () => {
@@ -244,6 +385,11 @@ const Music: React.FC = () => {
     const handleCreatePlaylist = async () => {
         if (!newPlaylistTitle.trim() || isCreatingPlaylist) return;
 
+        if (isGuest && TURNSTILE_SITE_KEY && !guestPlaylistCaptchaToken) {
+            showToast('Selesaikan CAPTCHA sebelum membuat playlist guest.', 'error');
+            return;
+        }
+
         const playlistBlockedUntil = localStorage.getItem('playlistBlockedUntil');
         if (playlistBlockedUntil && Date.now() < parseInt(playlistBlockedUntil)) {
             const remaining = Math.ceil((parseInt(playlistBlockedUntil) - Date.now()) / 1000);
@@ -257,14 +403,16 @@ const Music: React.FC = () => {
         try {
             const res = await fetchWithAuth(`${API_BASE_URL}/music/playlists`, {
                 method: 'POST',
-                body: JSON.stringify({ title: newPlaylistTitle, is_public: newPlaylistIsPublic })
+                body: JSON.stringify({
+                    title: newPlaylistTitle,
+                    is_public: newPlaylistIsPublic,
+                    ...(guestPlaylistCaptchaToken ? { captcha_token: guestPlaylistCaptchaToken } : {})
+                })
             });
             const data = await res.json();
             if (res.ok) {
                 localStorage.removeItem('playlistBlockedUntil');
-                setShowCreateModal(false);
-                setNewPlaylistTitle('');
-                setNewPlaylistIsPublic(false);
+                closeCreateModal();
                 fetchPlaylists();
             } else {
                 if (res.status === 429 && data.retryAfter) {
@@ -272,9 +420,15 @@ const Music: React.FC = () => {
                     localStorage.setItem('playlistBlockedUntil', blockedUntilTime.toString());
                 }
                 showToast(data.message || 'Gagal membuat playlist', 'error');
+                if (isGuest) {
+                    resetGuestPlaylistCaptcha();
+                }
             }
         } catch (error) {
             showToast('Gagal membuat playlist', 'error');
+            if (isGuest) {
+                resetGuestPlaylistCaptcha();
+            }
         } finally {
             setIsCreatingPlaylist(false);
         }
@@ -574,6 +728,11 @@ const Music: React.FC = () => {
             return;
         }
 
+        if (isGuest && TURNSTILE_SITE_KEY && !guestPlaylistCaptchaToken) {
+            showToast('Selesaikan CAPTCHA sebelum membuat playlist guest.', 'error');
+            return;
+        }
+
         setIsImporting(true);
         setImportProgress(null);
 
@@ -581,7 +740,11 @@ const Music: React.FC = () => {
             if (source === 'spotify') {
                 const res = await fetchWithAuth(`${API_BASE_URL}/music/import/spotify`, {
                     method: 'POST',
-                    body: JSON.stringify({ spotifyUrl: importUrl, isPublic: importIsPublic })
+                    body: JSON.stringify({
+                        spotifyUrl: importUrl,
+                        isPublic: importIsPublic,
+                        ...(guestPlaylistCaptchaToken ? { captcha_token: guestPlaylistCaptchaToken } : {})
+                    })
                 });
 
                 const data = await res.json();
@@ -606,7 +769,11 @@ const Music: React.FC = () => {
 
                 const createRes = await fetchWithAuth(`${API_BASE_URL}/music/playlists`, {
                     method: 'POST',
-                    body: JSON.stringify({ title: playlistName, is_public: importIsPublic })
+                    body: JSON.stringify({
+                        title: playlistName,
+                        is_public: importIsPublic,
+                        ...(guestPlaylistCaptchaToken ? { captcha_token: guestPlaylistCaptchaToken } : {})
+                    })
                 });
 
                 if (!createRes.ok) {
@@ -659,14 +826,14 @@ const Music: React.FC = () => {
                 showToast(`Import selesai! ${totalAdded} lagu ditambahkan, ${totalFailed} gagal.`, 'success');
             }
 
-            setShowImportModal(false);
-            setImportUrl('');
-            setImportIsPublic(false);
-            setImportProgress(null);
+            closeImportModal();
             fetchPlaylists();
         } catch (error: any) {
             showToast(error.message || 'Gagal import playlist', 'error');
             setImportProgress(null);
+            if (isGuest) {
+                resetGuestPlaylistCaptcha();
+            }
         } finally {
             setIsImporting(false);
         }
@@ -1043,17 +1210,28 @@ const Music: React.FC = () => {
                         {isGuest && (
                             <p className="text-xs text-gray-500 mb-4">* Guest playlists are always public.</p>
                         )}
+                        {isGuest && TURNSTILE_SITE_KEY && (
+                            <div className="mb-4">
+                                <p className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">Verifikasi Guest</p>
+                                <div ref={guestPlaylistTurnstileRef} className="min-h-[65px]" />
+                                {guestPlaylistCaptchaStatus === 'error' ? (
+                                    <p className="text-[11px] text-red-400 mt-2">CAPTCHA gagal dimuat. Tutup lalu buka modal lagi.</p>
+                                ) : (
+                                    <p className="text-[11px] text-gray-500 mt-2">Wajib untuk mencegah spam playlist dari guest.</p>
+                                )}
+                            </div>
+                        )}
                         <div className="flex gap-2">
                             <button
-                                onClick={() => setShowCreateModal(false)}
+                                onClick={closeCreateModal}
                                 className="flex-1 bg-gray-800 hover:bg-gray-700 py-2 rounded"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={handleCreatePlaylist}
-                                disabled={isCreatingPlaylist || !newPlaylistTitle.trim()}
-                                className={`flex-1 font-bold py-2 rounded flex items-center justify-center gap-2 ${isCreatingPlaylist || !newPlaylistTitle.trim() ? 'bg-gray-700 text-gray-500 cursor-not-allowed' : 'bg-yellow-400 hover:bg-yellow-300 text-black'}`}
+                                disabled={isCreatingPlaylist || !newPlaylistTitle.trim() || (isGuest && TURNSTILE_SITE_KEY ? !guestPlaylistCaptchaToken : false)}
+                                className={`flex-1 font-bold py-2 rounded flex items-center justify-center gap-2 ${isCreatingPlaylist || !newPlaylistTitle.trim() || (isGuest && TURNSTILE_SITE_KEY ? !guestPlaylistCaptchaToken : false) ? 'bg-gray-700 text-gray-500 cursor-not-allowed' : 'bg-yellow-400 hover:bg-yellow-300 text-black'}`}
                             >
                                 {isCreatingPlaylist ? <><Loader className="animate-spin" size={16} /> Creating...</> : 'Create'}
                             </button>
@@ -1256,7 +1434,7 @@ const Music: React.FC = () => {
                                     Import Playlist
                                 </h2>
                                 {!isImporting && (
-                                    <button onClick={() => setShowImportModal(false)} className="text-gray-400 hover:text-white">
+                                    <button onClick={closeImportModal} className="text-gray-400 hover:text-white">
                                         <X size={24} />
                                     </button>
                                 )}
@@ -1307,10 +1485,21 @@ const Music: React.FC = () => {
                                     {isGuest && (
                                         <p className="text-xs text-gray-500 mb-4">* Guest playlists are always public.</p>
                                     )}
+                                    {isGuest && TURNSTILE_SITE_KEY && (
+                                        <div className="mb-4">
+                                            <p className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">Verifikasi Guest</p>
+                                            <div ref={guestPlaylistTurnstileRef} className="min-h-[65px]" />
+                                            {guestPlaylistCaptchaStatus === 'error' ? (
+                                                <p className="text-[11px] text-red-400 mt-2">CAPTCHA gagal dimuat. Tutup lalu buka modal lagi.</p>
+                                            ) : (
+                                                <p className="text-[11px] text-gray-500 mt-2">Wajib untuk mencegah spam playlist dari guest.</p>
+                                            )}
+                                        </div>
+                                    )}
                                     <p className="text-xs text-gray-500 mb-4">Supports Spotify & YouTube playlist URLs.</p>
                                     <div className="flex gap-2">
                                         <button
-                                            onClick={() => setShowImportModal(false)}
+                                            onClick={closeImportModal}
                                             className="flex-1 bg-gray-800 hover:bg-gray-700 py-2 rounded"
                                             disabled={isImporting}
                                         >
@@ -1318,7 +1507,7 @@ const Music: React.FC = () => {
                                         </button>
                                         <button
                                             onClick={handleImport}
-                                            disabled={!importUrl.trim() || isImporting}
+                                            disabled={!importUrl.trim() || isImporting || (isGuest && TURNSTILE_SITE_KEY ? !guestPlaylistCaptchaToken : false)}
                                             className="flex-1 bg-yellow-400 hover:bg-yellow-300 text-black font-bold py-2 rounded disabled:opacity-50"
                                         >
                                             {isImporting ? <Loader className="animate-spin mx-auto" size={20} /> : 'Import'}
