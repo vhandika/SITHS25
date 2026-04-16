@@ -279,7 +279,7 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
                                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Verifikasi Keamanan</label>
                                     <div ref={turnstileContainerRef} className="min-h-[76px] flex items-center justify-center rounded-lg border border-gray-700 bg-black/40 p-2" />
                                     {captchaStatus === 'error' ? (
-                                        <p className="text-[11px] text-red-400 mt-2">CAPTCHA gagal dimuat. Coba muat ulang modal.</p>
+                                        <p className="text-[11px] text-red-400 mt-2">CAPTCHA gagal dimuat. Coba muat ulang refresh.</p>
                                     ) : (
                                         <p className="text-[11px] text-gray-500 mt-2">Verifikasi ini membantu mencegah spam.</p>
                                     )}
