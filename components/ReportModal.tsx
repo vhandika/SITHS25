@@ -276,7 +276,7 @@ const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
 
                             {TURNSTILE_SITE_KEY ? (
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Verifikasi Keamanan</label>
+                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1"></label>
                                     <div ref={turnstileContainerRef} className="min-h-[65px]" />
                                     {captchaStatus === 'error' ? (
                                         <p className="text-[11px] text-red-400 mt-2">CAPTCHA gagal dimuat. Coba muat ulang refresh.</p>
