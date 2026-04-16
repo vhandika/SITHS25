@@ -1487,12 +1487,12 @@ const Music: React.FC = () => {
                                     )}
                                     {isGuest && TURNSTILE_SITE_KEY && (
                                         <div className="mb-4">
-                                            <p className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">Verifikasi Guest</p>
+                                            <p className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-2"></p>
                                             <div ref={guestPlaylistTurnstileRef} className="min-h-[65px]" />
                                             {guestPlaylistCaptchaStatus === 'error' ? (
-                                                <p className="text-[11px] text-red-400 mt-2">CAPTCHA gagal dimuat. Tutup lalu buka modal lagi.</p>
+                                                <p className="text-[11px] text-red-400 mt-2">CAPTCHA gagal dimuat. Silahkan refresh</p>
                                             ) : (
-                                                <p className="text-[11px] text-gray-500 mt-2">Wajib untuk mencegah spam playlist dari guest.</p>
+                                                <p className="text-[11px] text-gray-500 mt-2"></p>
                                             )}
                                         </div>
                                     )}
