@@ -95,7 +95,7 @@ const Finance: React.FC = () => {
 
     const { role: currentUserRole } = getAuthState();
     const API_BASE_URL = 'https://api.sith-s25.my.id/api';
-    const canAdd = ['bendahara', 'admin', 'dev'].includes(currentUserRole);
+    const canAdd = currentUserRole ? ['bendahara', 'admin', 'dev'].includes(currentUserRole) : false;
 
     const fetchFinance = async () => {
         try {

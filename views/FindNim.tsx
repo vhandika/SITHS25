@@ -167,10 +167,6 @@ const FindNim: React.FC = () => {
                         targetNim={selectedNimProfile}
                         currentUserNim={currentUserNIM}
                         onClose={() => setSelectedNimProfile(null)}
-                        onChatClick={(nim) => {
-                            setSelectedNimProfile(null);
-                            navigate('/chat');
-                        }}
                     />
                 )}
             </div>

@@ -85,7 +85,7 @@ const ChangePassword: React.FC = () => {
         }
     };
 
-    const handleKeyDown = (e: React.KeyboardEvent, nextRef?: React.RefObject<HTMLInputElement>) => {
+    const handleKeyDown = (e: React.KeyboardEvent, nextRef?: React.RefObject<HTMLInputElement | null>) => {
         if (e.key === 'Enter') {
             e.preventDefault();
             if (nextRef && nextRef.current) {

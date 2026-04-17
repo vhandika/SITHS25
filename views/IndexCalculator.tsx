@@ -81,7 +81,7 @@ const AssessmentEditor: React.FC<AssessmentEditorProps> = ({ title, assessments,
                     
                     <input 
                         type="number" 
-                        value={ass.weight === 0 && ass.weight !== "0" ? "" : ass.weight} 
+                        value={ass.weight === 0 ? "" : ass.weight} 
                         onChange={e => {
                             const val = e.target.value;
                             const newArr = [...assessments]; 
