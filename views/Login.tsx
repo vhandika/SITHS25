@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import SkewedButton from '../components/SkewedButton';
 import { KeyRound, LogIn, AlertCircle, Eye, EyeOff, X, Mail } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -6,6 +6,61 @@ import { useToast } from '../contexts/ToastContext';
 import ParticleBackground from '../components/ParticleBackground';
 import { useTheme } from '../contexts/ThemeContext';
 import { clearAuthSession, getCookie, setAuthSession, deleteCookie, setCookie } from '../src/utils/auth';
+
+const TURNSTILE_SITE_KEY = (import.meta.env.VITE_TURNSTILE_SITE_KEY ?? '').toString().trim();
+const TURNSTILE_SCRIPT_SRC = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+
+let turnstileScriptPromise: Promise<void> | null = null;
+
+declare global {
+    interface Window {
+        turnstile?: {
+            render: (container: string | HTMLElement, options: {
+                sitekey: string;
+                callback?: (token: string) => void;
+                'expired-callback'?: () => void;
+                'error-callback'?: () => void;
+                theme?: 'light' | 'dark';
+                appearance?: 'always' | 'execute' | 'interaction-only';
+            }) => string;
+            reset?: (widgetId?: string) => void;
+            remove?: (widgetId: string) => void;
+        };
+    }
+}
+
+const loadTurnstileScript = () => {
+    if (window.turnstile) {
+        return Promise.resolve();
+    }
+
+    if (!turnstileScriptPromise) {
+        turnstileScriptPromise = new Promise<void>((resolve, reject) => {
+            const existingScript = document.querySelector<HTMLScriptElement>(`script[src="${TURNSTILE_SCRIPT_SRC}"]`);
+
+            if (existingScript) {
+                if (window.turnstile) {
+                    resolve();
+                    return;
+                }
+
+                existingScript.addEventListener('load', () => resolve(), { once: true });
+                existingScript.addEventListener('error', () => reject(new Error('Gagal memuat Turnstile.')), { once: true });
+                return;
+            }
+
+            const script = document.createElement('script');
+            script.src = TURNSTILE_SCRIPT_SRC;
+            script.async = true;
+            script.defer = true;
+            script.onload = () => resolve();
+            script.onerror = () => reject(new Error('Gagal memuat Turnstile.'));
+            document.head.appendChild(script);
+        });
+    }
+
+    return turnstileScriptPromise;
+};
 
 const Login: React.FC = () => {
     const { theme } = useTheme();
@@ -21,6 +76,11 @@ const Login: React.FC = () => {
     const [forgotLoading, setForgotLoading] = useState(false);
     const [forgotSent, setForgotSent] = useState(false);
     const [forgotError, setForgotError] = useState('');
+
+    const [captchaToken, setCaptchaToken] = useState('');
+    const [loginSessionId, setLoginSessionId] = useState<string | null>(null);
+    const turnstileContainerRef = useRef<HTMLDivElement | null>(null);
+    const turnstileWidgetIdRef = useRef<string | null>(null);
 
     const navigate = useNavigate();
     const location = useLocation();
@@ -69,6 +129,66 @@ const Login: React.FC = () => {
         }
     }, [location.search, navigate]);
 
+    useEffect(() => {
+        let isMounted = true;
+
+        if (!TURNSTILE_SITE_KEY) {
+            return () => {
+                isMounted = false;
+            };
+        }
+
+        const renderTurnstile = async () => {
+            try {
+                await loadTurnstileScript();
+
+                if (!isMounted || !turnstileContainerRef.current || !window.turnstile) {
+                    return;
+                }
+
+                if (turnstileWidgetIdRef.current && window.turnstile.remove) {
+                    window.turnstile.remove(turnstileWidgetIdRef.current);
+                    turnstileWidgetIdRef.current = null;
+                }
+
+                turnstileContainerRef.current.innerHTML = '';
+                turnstileWidgetIdRef.current = window.turnstile.render(turnstileContainerRef.current, {
+                    sitekey: TURNSTILE_SITE_KEY,
+                    theme: 'dark',
+                    appearance: 'interaction-only', // Invisible mode
+                    callback: (token: string) => {
+                        setCaptchaToken(token);
+                    },
+                    'expired-callback': () => {
+                        setCaptchaToken('');
+                    },
+                    'error-callback': () => {
+                        setCaptchaToken('');
+                    }
+                });
+            } catch (error) {
+                console.error('Turnstile error:', error);
+            }
+        };
+
+        renderTurnstile();
+
+        return () => {
+            isMounted = false;
+            if (turnstileWidgetIdRef.current && window.turnstile?.remove) {
+                window.turnstile.remove(turnstileWidgetIdRef.current);
+            }
+            turnstileWidgetIdRef.current = null;
+        };
+    }, []);
+
+    useEffect(() => {
+        const stored = sessionStorage.getItem('login_session_id');
+        if (stored) {
+            setLoginSessionId(stored);
+        }
+    }, []);
+
     const handleLogin = async (e?: React.FormEvent | React.MouseEvent) => {
         if (e) e.preventDefault();
 
@@ -76,13 +196,24 @@ const Login: React.FC = () => {
         setIsLoading(true);
 
         try {
+            const payload: any = { nim, password };
+
+            if (captchaToken || loginSessionId) {
+                if (captchaToken) {
+                    payload.captcha_token = captchaToken;
+                }
+                if (loginSessionId) {
+                    payload.login_session_id = loginSessionId;
+                }
+            }
+
             const response = await fetch(API_URL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest'
                 },
-                body: JSON.stringify({ nim, password }),
+                body: JSON.stringify(payload),
                 credentials: 'include'
             });
 
@@ -95,11 +226,20 @@ const Login: React.FC = () => {
                     deleteCookie('rememberedNIM');
                 }
 
+                if (data.login_session_id) {
+                    sessionStorage.setItem('login_session_id', data.login_session_id);
+                    setLoginSessionId(data.login_session_id);
+                }
+
                 setAuthSession(data.user.nim, data.user.role || 'mahasiswa');
 
                 navigate('/');
             } else {
                 setError(data.message || 'Login gagal, cek NIM/Password');
+                if (turnstileWidgetIdRef.current && window.turnstile?.reset) {
+                    window.turnstile.reset(turnstileWidgetIdRef.current);
+                    setCaptchaToken('');
+                }
             }
         } catch (err) {
             setError('Gagal menghubungi server.');
@@ -242,6 +382,11 @@ const Login: React.FC = () => {
                             </button>
                         </div>
                     </div>
+
+                    {/* Hidden Turnstile container untuk invisible CAPTCHA */}
+                    {TURNSTILE_SITE_KEY && (
+                        <div ref={turnstileContainerRef} style={{ display: 'none' }} />
+                    )}
 
                     <div>
                         <SkewedButton
