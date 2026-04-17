@@ -82,6 +82,7 @@ const Finance: React.FC = () => {
     const [showUnpaid, setShowUnpaid] = useState(false);
 
     const [formType, setFormType] = useState<'pemasukan' | 'pengeluaran'>('pemasukan');
+    const [formIncomeMode, setFormIncomeMode] = useState<'kas' | 'lain'>('kas');
     const [formAmount, setFormAmount] = useState('');
     const [formDescription, setFormDescription] = useState('');
     const [formReceipt, setFormReceipt] = useState<File | null>(null);
@@ -152,11 +153,11 @@ const Finance: React.FC = () => {
     }, [dashboardMonth]);
 
     useEffect(() => {
-        if (canAdd && isModalOpen && formType === 'pemasukan') {
+        if (canAdd && isModalOpen && formType === 'pemasukan' && formIncomeMode === 'kas') {
             fetchModalUnpaid(formTargetMonth);
             setSelectedNims([]);
         }
-    }, [formTargetMonth, isModalOpen, formType, canAdd]);
+    }, [formTargetMonth, isModalOpen, formType, formIncomeMode, canAdd]);
 
     const handleSubmit = async (e?: React.FormEvent) => {
         if (e) e.preventDefault();
@@ -185,6 +186,43 @@ const Finance: React.FC = () => {
                 formData.append('type', 'pengeluaran');
                 formData.append('amount', amount.toString());
                 formData.append('description', formDescription);
+                formData.append('receipt', formReceipt);
+
+                const res = await fetchWithAuth(`${API_BASE_URL}/finance`, {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                    handleSuccessSubmit();
+                } else {
+                    showToast(data.message || 'Gagal menambah transaksi', 'error');
+                }
+            } else if (formIncomeMode === 'lain') {
+                const amount = parseInt(formAmount);
+                if (!amount || amount <= 0) {
+                    showToast('Nominal pemasukkan tidak valid', 'error');
+                    setIsSubmitting(false);
+                    return;
+                }
+
+                if (formDescription.trim().length < 3) {
+                    showToast('Deskripsi minimal 3 karakter', 'error');
+                    setIsSubmitting(false);
+                    return;
+                }
+
+                if (!formReceipt) {
+                    showToast('Harus ada buktinya', 'error');
+                    setIsSubmitting(false);
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('type', 'pemasukan');
+                formData.append('amount', amount.toString());
+                formData.append('description', formDescription.trim());
                 formData.append('receipt', formReceipt);
 
                 const res = await fetchWithAuth(`${API_BASE_URL}/finance`, {
@@ -253,6 +291,7 @@ const Finance: React.FC = () => {
         setFormReceipt(null);
         setSelectedNims([]);
         setSearchUser('');
+        setFormIncomeMode('kas');
         setIsModalOpen(false);
         fetchFinance();
         fetchDashboardUnpaid(dashboardMonth);
@@ -614,95 +653,171 @@ const Finance: React.FC = () => {
 
                                 {formType === 'pemasukan' ? (
                                     <>
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <div>
-                                                <label className="block text-sm text-gray-400 mb-1">Kas Untuk Bulan</label>
-                                                <select
-                                                    value={formTargetMonth}
-                                                    onChange={(e) => setFormTargetMonth(e.target.value)}
-                                                    className="w-full bg-black/50 border border-gray-700 rounded p-2 text-white text-sm focus:border-yellow-400 focus:outline-none transition-colors"
-                                                >
-                                                    {availableMonths.map(m => (
-                                                        <option key={m.value} value={m.value} className="bg-gray-900 text-white">{m.label}</option>
-                                                    ))}
-                                                </select>
-                                            </div>
-                                            <div>
-                                                <label className="block text-sm text-gray-400 mb-1">Nominal Bayar</label>
-                                                <select
-                                                    value={amountPreset}
-                                                    onChange={(e) => setAmountPreset(e.target.value)}
-                                                    className="w-full bg-black/50 border border-gray-700 rounded p-2 text-white text-sm focus:border-yellow-400 focus:outline-none transition-colors"
-                                                >
-                                                    <option value="5000" className="bg-gray-900 text-white">Rp 5.000 (1 Mg)</option>
-                                                    <option value="10000" className="bg-gray-900 text-white">Rp 10.000 (2 Mg)</option>
-                                                    <option value="15000" className="bg-gray-900 text-white">Rp 15.000 (3 Mg)</option>
-                                                    <option value="20000" className="bg-gray-900 text-white">Rp 20.000 (Lunas)</option>
-                                                    <option value="custom" className="bg-gray-900 text-white">Nominal Lain...</option>
-                                                </select>
-                                            </div>
-                                        </div>
-
-                                        {amountPreset === 'custom' && (
-                                            <div>
-                                                <label className="block text-sm text-gray-400 mb-1">Jumlah Custom (Rp)</label>
-                                                <input
-                                                    type="number"
-                                                    value={formAmount}
-                                                    onChange={(e) => setFormAmount(e.target.value)}
-                                                    className="w-full bg-black/50 border border-gray-700 rounded p-2 text-white focus:border-yellow-400 focus:outline-none transition-colors"
-                                                    placeholder="Contoh: 30000"
-                                                    min="1"
-                                                    required
-                                                />
-                                            </div>
-                                        )}
-
                                         <div>
-                                            <div className="flex items-center justify-between mb-2">
-                                                <label className="block text-sm text-gray-400">
-                                                    Pilih Mahasiswa ({selectedNims.length} dipilih)
-                                                </label>
-                                            </div>
-
-                                            <div className="relative mb-2">
-                                                <input
-                                                    type="text"
-                                                    placeholder="Cari Nama / NIM yg blm lunas..."
-                                                    value={searchUser}
-                                                    onChange={(e) => setSearchUser(e.target.value)}
-                                                    className="w-full bg-black/50 border border-gray-700 rounded p-2 pl-9 text-sm text-white focus:border-yellow-400 focus:outline-none transition-colors"
-                                                />
-                                                <Search size={14} className="absolute left-3 top-2.5 text-gray-500" />
-                                            </div>
-
-                                            <div className="border border-gray-700 rounded-lg bg-black/30 overflow-hidden">
-                                                <div className="max-h-48 overflow-y-auto p-2 space-y-1">
-                                                    {filteredModalUsers.length === 0 ? (
-                                                        <div className="text-gray-500 text-xs text-center py-4 flex flex-col items-center">
-                                                            <span className="mt-1">Tidak ada / Semua orang sudah lunas</span>
-                                                        </div>
-                                                    ) : (
-                                                        filteredModalUsers.map(user => (
-                                                            <label key={user.nim} className="flex items-center gap-3 p-2 hover:bg-gray-800/50 rounded cursor-pointer transition-colors border border-transparent hover:border-gray-700">
-                                                                <input
-                                                                    type="checkbox"
-                                                                    checked={selectedNims.includes(user.nim)}
-                                                                    onChange={() => toggleUserSelection(user.nim)}
-                                                                    className="w-4 h-4 rounded text-yellow-400 bg-gray-900 border-gray-600 focus:ring-yellow-500 cursor-pointer"
-                                                                />
-                                                                <div className="flex-1 min-w-0">
-                                                                    <p className="text-white text-sm truncate">{user.name}</p>
-                                                                </div>
-                                                                <p className="text-orange-400 text-[10px] font-bold">
-                                                                    SISA: {formatRupiah(user.remaining)}
-                                                                </p>
-                                                            </label>
-                                                        ))
-                                                    )}
-                                                </div>
+                                            <label className="block text-sm text-gray-400 mb-2">Jenis Pemasukkan</label>
+                                            <div className="grid grid-cols-2 gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setFormIncomeMode('kas');
+                                                        setFormDescription('');
+                                                        setFormReceipt(null);
+                                                    }}
+                                                    className={`py-2.5 rounded-lg text-sm font-bold transition-all ${formIncomeMode === 'kas'
+                                                        ? 'bg-green-400/20 text-green-300 border border-green-400/30'
+                                                        : 'bg-gray-800 text-gray-500 border border-gray-700 hover:text-gray-300'
+                                                        }`}
+                                                >
+                                                    Kas
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setFormIncomeMode('lain');
+                                                        setSelectedNims([]);
+                                                        setSearchUser('');
+                                                    }}
+                                                    className={`py-2.5 rounded-lg text-sm font-bold transition-all ${formIncomeMode === 'lain'
+                                                        ? 'bg-green-400/20 text-green-300 border border-green-400/30'
+                                                        : 'bg-gray-800 text-gray-500 border border-gray-700 hover:text-gray-300'
+                                                        }`}
+                                                >
+                                                    Pemasukkan Lain
+                                                </button>
                                             </div>
                                         </div>
+
+                                        {formIncomeMode === 'lain' ? (
+                                            <>
+                                                <div>
+                                                    <label className="block text-sm text-gray-400 mb-1">Jumlah (Rp)</label>
+                                                    <input
+                                                        type="number"
+                                                        value={formAmount}
+                                                        onChange={(e) => setFormAmount(e.target.value)}
+                                                        className="w-full bg-black/50 border border-gray-700 rounded p-2 text-white focus:border-yellow-400 focus:outline-none transition-colors"
+                                                        placeholder="Contoh: 50000"
+                                                        min="1"
+                                                        required
+                                                    />
+                                                </div>
+
+                                                <div>
+                                                    <label className="block text-sm text-gray-400 mb-1">Deskripsi</label>
+                                                    <input
+                                                        type="text"
+                                                        value={formDescription}
+                                                        onChange={(e) => setFormDescription(e.target.value)}
+                                                        className="w-full bg-black/50 border border-gray-700 rounded p-2 text-white focus:border-yellow-400 focus:outline-none transition-colors"
+                                                        placeholder=""
+                                                        required
+                                                    />
+                                                </div>
+
+                                                <div>
+                                                    <label className="block text-sm text-gray-400 mb-1">Bukti Transaksi</label>
+                                                    <input
+                                                        type="file"
+                                                        accept="image/*"
+                                                        onChange={(e) => setFormReceipt(e.target.files ? e.target.files[0] : null)}
+                                                        className="w-full bg-black/50 border border-gray-700 rounded p-2 text-white focus:border-yellow-400 focus:outline-none transition-colors text-sm file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-yellow-400 file:text-black hover:file:bg-yellow-300 cursor-pointer"
+                                                        required
+                                                    />
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    <div>
+                                                        <label className="block text-sm text-gray-400 mb-1">Kas Untuk Bulan</label>
+                                                        <select
+                                                            value={formTargetMonth}
+                                                            onChange={(e) => setFormTargetMonth(e.target.value)}
+                                                            className="w-full bg-black/50 border border-gray-700 rounded p-2 text-white text-sm focus:border-yellow-400 focus:outline-none transition-colors"
+                                                        >
+                                                            {availableMonths.map(m => (
+                                                                <option key={m.value} value={m.value} className="bg-gray-900 text-white">{m.label}</option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-sm text-gray-400 mb-1">Nominal Bayar</label>
+                                                        <select
+                                                            value={amountPreset}
+                                                            onChange={(e) => setAmountPreset(e.target.value)}
+                                                            className="w-full bg-black/50 border border-gray-700 rounded p-2 text-white text-sm focus:border-yellow-400 focus:outline-none transition-colors"
+                                                        >
+                                                            <option value="5000" className="bg-gray-900 text-white">Rp 5.000 (1 Mg)</option>
+                                                            <option value="10000" className="bg-gray-900 text-white">Rp 10.000 (2 Mg)</option>
+                                                            <option value="15000" className="bg-gray-900 text-white">Rp 15.000 (3 Mg)</option>
+                                                            <option value="20000" className="bg-gray-900 text-white">Rp 20.000 (Lunas)</option>
+                                                            <option value="custom" className="bg-gray-900 text-white">Nominal Lain...</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+
+                                                {amountPreset === 'custom' && (
+                                                    <div>
+                                                        <label className="block text-sm text-gray-400 mb-1">Jumlah Custom (Rp)</label>
+                                                        <input
+                                                            type="number"
+                                                            value={formAmount}
+                                                            onChange={(e) => setFormAmount(e.target.value)}
+                                                            className="w-full bg-black/50 border border-gray-700 rounded p-2 text-white focus:border-yellow-400 focus:outline-none transition-colors"
+                                                            placeholder="Contoh: 30000"
+                                                            min="1"
+                                                            required
+                                                        />
+                                                    </div>
+                                                )}
+
+                                                <div>
+                                                    <div className="flex items-center justify-between mb-2">
+                                                        <label className="block text-sm text-gray-400">
+                                                            Pilih Mahasiswa ({selectedNims.length} dipilih)
+                                                        </label>
+                                                    </div>
+
+                                                    <div className="relative mb-2">
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Cari Nama / NIM yg blm lunas..."
+                                                            value={searchUser}
+                                                            onChange={(e) => setSearchUser(e.target.value)}
+                                                            className="w-full bg-black/50 border border-gray-700 rounded p-2 pl-9 text-sm text-white focus:border-yellow-400 focus:outline-none transition-colors"
+                                                        />
+                                                        <Search size={14} className="absolute left-3 top-2.5 text-gray-500" />
+                                                    </div>
+
+                                                    <div className="border border-gray-700 rounded-lg bg-black/30 overflow-hidden">
+                                                        <div className="max-h-48 overflow-y-auto p-2 space-y-1">
+                                                            {filteredModalUsers.length === 0 ? (
+                                                                <div className="text-gray-500 text-xs text-center py-4 flex flex-col items-center">
+                                                                    <span className="mt-1">Tidak ada / Semua orang sudah lunas</span>
+                                                                </div>
+                                                            ) : (
+                                                                filteredModalUsers.map(user => (
+                                                                    <label key={user.nim} className="flex items-center gap-3 p-2 hover:bg-gray-800/50 rounded cursor-pointer transition-colors border border-transparent hover:border-gray-700">
+                                                                        <input
+                                                                            type="checkbox"
+                                                                            checked={selectedNims.includes(user.nim)}
+                                                                            onChange={() => toggleUserSelection(user.nim)}
+                                                                            className="w-4 h-4 rounded text-yellow-400 bg-gray-900 border-gray-600 focus:ring-yellow-500 cursor-pointer"
+                                                                        />
+                                                                        <div className="flex-1 min-w-0">
+                                                                            <p className="text-white text-sm truncate">{user.name}</p>
+                                                                        </div>
+                                                                        <p className="text-orange-400 text-[10px] font-bold">
+                                                                            SISA: {formatRupiah(user.remaining)}
+                                                                        </p>
+                                                                    </label>
+                                                                ))
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </>
+                                        )}
                                     </>
                                 ) : (
                                     <>
