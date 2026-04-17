@@ -203,12 +203,10 @@ const Login: React.FC = () => {
         try {
             const payload: Record<string, string> = { nim, password };
 
-            if (captchaToken) {
-                payload.captcha_token = captchaToken;
-            }
-
             if (loginSessionId) {
                 payload.login_session_id = loginSessionId;
+            } else if (captchaToken) {
+                payload.captcha_token = captchaToken;
             }
 
             const response = await fetch(API_URL, {
@@ -226,6 +224,7 @@ const Login: React.FC = () => {
             if (data.login_session_id) {
                 sessionStorage.setItem('login_session_id', data.login_session_id);
                 setLoginSessionId(data.login_session_id);
+                setCaptchaToken('');
             }
 
             if (response.ok) {
