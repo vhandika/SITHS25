@@ -276,25 +276,56 @@ const Login: React.FC = () => {
             return;
         }
 
+        if (!captchaToken && !loginSessionId) {
+            setForgotError('Selesaikan CAPTCHA terlebih dahulu.');
+            return;
+        }
+
         setForgotLoading(true);
         setForgotError('');
 
         try {
+            const payload: Record<string, string> = { nim: forgotNim };
+
+            if (loginSessionId) {
+                payload.login_session_id = loginSessionId;
+            }
+
+            if (captchaToken) {
+                payload.captcha_token = captchaToken;
+            }
+
             const response = await fetch(`${API_BASE_URL}/forgot-password`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest'
                 },
-                body: JSON.stringify({ nim: forgotNim })
+                body: JSON.stringify(payload)
             });
 
             const data = await response.json();
+
+            if (data.login_session_id) {
+                sessionStorage.setItem('login_session_id', data.login_session_id);
+                setLoginSessionId(data.login_session_id);
+                setCaptchaToken('');
+            }
 
             if (response.ok) {
                 setForgotSent(true);
             } else {
                 setForgotError(data.message || 'Terjadi kesalahan. Coba lagi nanti.');
+
+                if (!data.login_session_id && loginSessionId) {
+                    sessionStorage.removeItem('login_session_id');
+                    setLoginSessionId(null);
+                }
+
+                if (!data.login_session_id && turnstileWidgetIdRef.current && window.turnstile?.reset) {
+                    window.turnstile.reset(turnstileWidgetIdRef.current);
+                    setCaptchaToken('');
+                }
             }
         } catch (err) {
             setForgotError('Gagal menghubungi server.');
