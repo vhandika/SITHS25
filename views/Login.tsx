@@ -223,6 +223,11 @@ const Login: React.FC = () => {
 
             const data = await response.json();
 
+            if (data.login_session_id) {
+                sessionStorage.setItem('login_session_id', data.login_session_id);
+                setLoginSessionId(data.login_session_id);
+            }
+
             if (response.ok) {
                 if (rememberMe) {
                     setCookie('rememberedNIM', nim, 30);
@@ -230,16 +235,12 @@ const Login: React.FC = () => {
                     deleteCookie('rememberedNIM');
                 }
 
-                if (data.login_session_id) {
-                    sessionStorage.setItem('login_session_id', data.login_session_id);
-                    setLoginSessionId(data.login_session_id);
-                }
-
                 setAuthSession(data.user.nim, data.user.role || 'mahasiswa');
                 navigate('/');
             } else {
                 setError(data.message || 'Login gagal, cek NIM/Password');
-                if (turnstileWidgetIdRef.current && window.turnstile?.reset) {
+
+                if (!data.login_session_id && turnstileWidgetIdRef.current && window.turnstile?.reset) {
                     window.turnstile.reset(turnstileWidgetIdRef.current);
                     setCaptchaToken('');
                 }
