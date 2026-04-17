@@ -205,7 +205,9 @@ const Login: React.FC = () => {
 
             if (loginSessionId) {
                 payload.login_session_id = loginSessionId;
-            } else if (captchaToken) {
+            }
+
+            if (captchaToken) {
                 payload.captcha_token = captchaToken;
             }
 
@@ -238,6 +240,11 @@ const Login: React.FC = () => {
                 navigate('/');
             } else {
                 setError(data.message || 'Login gagal, cek NIM/Password');
+
+                if (!data.login_session_id && loginSessionId) {
+                    sessionStorage.removeItem('login_session_id');
+                    setLoginSessionId(null);
+                }
 
                 if (!data.login_session_id && turnstileWidgetIdRef.current && window.turnstile?.reset) {
                     window.turnstile.reset(turnstileWidgetIdRef.current);
