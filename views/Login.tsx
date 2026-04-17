@@ -155,7 +155,7 @@ const Login: React.FC = () => {
                 turnstileWidgetIdRef.current = window.turnstile.render(turnstileContainerRef.current, {
                     sitekey: TURNSTILE_SITE_KEY,
                     theme: 'dark',
-                    appearance: 'interaction-only', // Invisible mode
+                    appearance: 'always',
                     callback: (token: string) => {
                         setCaptchaToken(token);
                     },
@@ -182,12 +182,13 @@ const Login: React.FC = () => {
         };
     }, []);
 
-    useEffect(() => {
-        const stored = sessionStorage.getItem('login_session_id');
-        if (stored) {
-            setLoginSessionId(stored);
-        }
-    }, []);
+        // Load stored login session ID
+        useEffect(() => {
+            const stored = sessionStorage.getItem('login_session_id');
+            if (stored) {
+                setLoginSessionId(stored);
+            }
+        }, []);
 
     const handleLogin = async (e?: React.FormEvent | React.MouseEvent) => {
         if (e) e.preventDefault();
@@ -197,14 +198,11 @@ const Login: React.FC = () => {
 
         try {
             const payload: any = { nim, password };
-
-            if (captchaToken || loginSessionId) {
-                if (captchaToken) {
-                    payload.captcha_token = captchaToken;
-                }
-                if (loginSessionId) {
-                    payload.login_session_id = loginSessionId;
-                }
+            if (captchaToken) {
+                payload.captcha_token = captchaToken;
+            }
+            if (loginSessionId) {
+                payload.login_session_id = loginSessionId;
             }
 
             const response = await fetch(API_URL, {
@@ -226,14 +224,15 @@ const Login: React.FC = () => {
                     deleteCookie('rememberedNIM');
                 }
 
-                if (data.login_session_id) {
-                    sessionStorage.setItem('login_session_id', data.login_session_id);
-                    setLoginSessionId(data.login_session_id);
-                }
-
                 setAuthSession(data.user.nim, data.user.role || 'mahasiswa');
 
                 navigate('/');
+                            // Store session ID untuk next login bypass
+                            if (data.login_session_id) {
+                                sessionStorage.setItem('login_session_id', data.login_session_id);
+                                setLoginSessionId(data.login_session_id);
+                            }
+
             } else {
                 setError(data.message || 'Login gagal, cek NIM/Password');
                 if (turnstileWidgetIdRef.current && window.turnstile?.reset) {
@@ -383,9 +382,15 @@ const Login: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Hidden Turnstile container untuk invisible CAPTCHA */}
-                    {TURNSTILE_SITE_KEY && (
-                        <div ref={turnstileContainerRef} style={{ display: 'none' }} />
+                    {/* Turnstile CAPTCHA container */}
+                    {TURNSTILE_SITE_KEY ? (
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 uppercase mb-2"></label>
+                            <div ref={turnstileContainerRef} className="min-h-[65px]" />
+                        </div>
+                    ) : (
+                        <div className="rounded-lg border border-amber-700/50 bg-amber-950/20 p-3 text-[11px] text-amber-200">
+                        </div>
                     )}
 
                     <div>
