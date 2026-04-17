@@ -130,6 +130,13 @@ const Login: React.FC = () => {
     }, [location.search, navigate]);
 
     useEffect(() => {
+        const stored = sessionStorage.getItem('login_session_id');
+        if (stored) {
+            setLoginSessionId(stored);
+        }
+    }, []);
+
+    useEffect(() => {
         let isMounted = true;
 
         if (!TURNSTILE_SITE_KEY) {
@@ -182,25 +189,24 @@ const Login: React.FC = () => {
         };
     }, []);
 
-        // Load stored login session ID
-        useEffect(() => {
-            const stored = sessionStorage.getItem('login_session_id');
-            if (stored) {
-                setLoginSessionId(stored);
-            }
-        }, []);
-
     const handleLogin = async (e?: React.FormEvent | React.MouseEvent) => {
         if (e) e.preventDefault();
 
         setError('');
+        if (!captchaToken && !loginSessionId) {
+            setError('Selesaikan CAPTCHA terlebih dahulu.');
+            return;
+        }
+
         setIsLoading(true);
 
         try {
-            const payload: any = { nim, password };
+            const payload: Record<string, string> = { nim, password };
+
             if (captchaToken) {
                 payload.captcha_token = captchaToken;
             }
+
             if (loginSessionId) {
                 payload.login_session_id = loginSessionId;
             }
@@ -224,15 +230,13 @@ const Login: React.FC = () => {
                     deleteCookie('rememberedNIM');
                 }
 
+                if (data.login_session_id) {
+                    sessionStorage.setItem('login_session_id', data.login_session_id);
+                    setLoginSessionId(data.login_session_id);
+                }
+
                 setAuthSession(data.user.nim, data.user.role || 'mahasiswa');
-
                 navigate('/');
-                            // Store session ID untuk next login bypass
-                            if (data.login_session_id) {
-                                sessionStorage.setItem('login_session_id', data.login_session_id);
-                                setLoginSessionId(data.login_session_id);
-                            }
-
             } else {
                 setError(data.message || 'Login gagal, cek NIM/Password');
                 if (turnstileWidgetIdRef.current && window.turnstile?.reset) {
@@ -300,7 +304,6 @@ const Login: React.FC = () => {
 
     return (
         <div className={`relative flex min-h-screen w-full items-center justify-center py-16 px-4 mt-16 lg:mt-0 selection:bg-yellow-400 selection:text-black ${theme === 'light' ? 'bg-white' : 'bg-black'}`}>
-
             <ParticleBackground />
 
             <div className="relative z-10 w-full max-w-md space-y-8 rounded-lg border border-gray-800 bg-black/80 p-8 shadow-2xl shadow-yellow-500/5 backdrop-blur-md">
@@ -339,7 +342,7 @@ const Login: React.FC = () => {
                             <label htmlFor="password-input" className="sr-only">Password</label>
                             <input
                                 id="password-input"
-                                type={showPassword ? "text" : "password"}
+                                type={showPassword ? 'text' : 'password'}
                                 required
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
@@ -382,16 +385,17 @@ const Login: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Turnstile CAPTCHA container */}
-                    {TURNSTILE_SITE_KEY ? (
-                        <div>
-                            <label className="block text-xs font-bold text-gray-500 uppercase mb-2"></label>
-                            <div ref={turnstileContainerRef} className="min-h-[65px]" />
-                        </div>
-                    ) : (
-                        <div className="rounded-lg border border-amber-700/50 bg-amber-950/20 p-3 text-[11px] text-amber-200">
-                        </div>
-                    )}
+                    <div>
+                        {TURNSTILE_SITE_KEY ? (
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2"></label>
+                                <div ref={turnstileContainerRef} className="min-h-[65px]" />
+                            </div>
+                        ) : (
+                            <div className="rounded-lg border border-amber-700/50 bg-amber-950/20 p-3 text-[11px] text-amber-200">
+                            </div>
+                        )}
+                    </div>
 
                     <div>
                         <SkewedButton
