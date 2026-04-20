@@ -1318,7 +1318,7 @@ const Library: React.FC = () => {
               </div>
             </div>
 
-            <div className={`flex items-center gap-4 ${theme === 'light' ? 'bg-gray-100 border-gray-300' : 'bg-gray-900/50 border-gray-800'} p-1 rounded-full border relative w-64 h-12`}>
+            <div className={`flex items-center ${theme === 'light' ? 'bg-gray-100 border-gray-300' : 'bg-gray-900/50 border-gray-800'} p-1 rounded-full border relative w-64 h-12`}>
               <div
                 className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-yellow-400 rounded-full transition-all duration-500 ease-in-out z-0 ${selectedCategory === 'biologi' ? 'left-[calc(50%+2px)]' : 'left-1'
                   }`}
@@ -1326,7 +1326,7 @@ const Library: React.FC = () => {
 
               <button
                 onClick={() => setSelectedCategory('mikrobiologi')}
-                className={`flex-1 flex items-center justify-center gap-2 z-10 transition-colors duration-300 ${selectedCategory === 'mikrobiologi' ? 'text-black' : theme === 'light' ? 'text-gray-600 hover:text-gray-800' : 'text-gray-500 hover:text-gray-300'
+                className={`flex-1 flex items-center justify-center gap-2 z-10 h-full px-4 transition-colors duration-300 ${selectedCategory === 'mikrobiologi' ? 'text-black' : theme === 'light' ? 'text-gray-600 hover:text-gray-800' : 'text-gray-500 hover:text-gray-300'
                   }`}
               >
                 <span className="text-[10px] font-black uppercase tracking-tighter">Mikrobiologi</span>
@@ -1334,7 +1334,7 @@ const Library: React.FC = () => {
 
               <button
                 onClick={() => setSelectedCategory('biologi')}
-                className={`flex-1 flex items-center justify-center gap-2 z-10 transition-colors duration-300 ${selectedCategory === 'biologi' ? 'text-black' : theme === 'light' ? 'text-gray-600 hover:text-gray-800' : 'text-gray-500 hover:text-gray-300'
+                className={`flex-1 flex items-center justify-center gap-2 z-10 h-full px-4 transition-colors duration-300 ${selectedCategory === 'biologi' ? 'text-black' : theme === 'light' ? 'text-gray-600 hover:text-gray-800' : 'text-gray-500 hover:text-gray-300'
                   }`}
               >
                 <span className="text-[10px] font-black uppercase tracking-tighter">Biologi</span>
