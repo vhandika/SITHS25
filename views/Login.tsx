@@ -1,12 +1,11 @@
-import React, { useState, useEffect, useRef, Suspense, lazy } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import SkewedButton from '../components/SkewedButton';
 import { KeyRound, LogIn, AlertCircle, Eye, EyeOff, X, Mail } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useToast } from '../contexts/ToastContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { clearAuthSession, getCookie, setAuthSession, deleteCookie, setCookie } from '../src/utils/auth';
-
-const ParticleBackground = lazy(() => import('../components/ParticleBackground'));
+import ParticleBackground from '../components/ParticleBackground';
 
 const TURNSTILE_SITE_KEY = (import.meta.env.VITE_TURNSTILE_SITE_KEY ?? '').toString().trim();
 const TURNSTILE_SCRIPT_SRC = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
@@ -80,7 +79,6 @@ const Login: React.FC = () => {
 
     const [captchaToken, setCaptchaToken] = useState('');
     const [loginSessionId, setLoginSessionId] = useState<string | null>(null);
-    const [shouldRenderEffects, setShouldRenderEffects] = useState(false);
     const [shouldInitCaptcha, setShouldInitCaptcha] = useState(false);
     const turnstileContainerRef = useRef<HTMLDivElement | null>(null);
     const turnstileWidgetIdRef = useRef<string | null>(null);
@@ -137,11 +135,6 @@ const Login: React.FC = () => {
         if (stored) {
             setLoginSessionId(stored);
         }
-    }, []);
-
-    useEffect(() => {
-        const effectsTimer = window.setTimeout(() => setShouldRenderEffects(true), 350);
-        return () => window.clearTimeout(effectsTimer);
     }, []);
 
     useEffect(() => {
@@ -392,11 +385,7 @@ const Login: React.FC = () => {
 
     return (
         <div className={`relative flex min-h-screen w-full overflow-x-hidden items-center justify-center py-16 px-4 mt-16 lg:mt-0 selection:bg-yellow-400 selection:text-black ${theme === 'light' ? 'bg-white' : 'bg-black'}`}>
-            {shouldRenderEffects ? (
-                <Suspense fallback={null}>
-                    <ParticleBackground />
-                </Suspense>
-            ) : null}
+            <ParticleBackground />
 
             <div className="relative z-10 w-full max-w-md space-y-8 rounded-lg border border-gray-800 bg-black/80 p-5 sm:p-8 shadow-2xl shadow-yellow-500/5 backdrop-blur-md overflow-x-hidden">
                 <div className="text-center">

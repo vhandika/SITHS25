@@ -100,7 +100,7 @@ const AppContent: React.FC = () => {
     const { theme } = useTheme();
     const { queue, isPlaying } = useMusicPlayer();
     const location = useLocation();
-    const showSidebar = location.pathname !== '/login' && location.pathname !== '/reset-password';
+    const showSidebar = location.pathname !== '/reset-password';
     const renderDeferredShell = useDeferredMount(400);
 
     if (MAINTENANCE_MODE) {
