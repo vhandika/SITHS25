@@ -1,13 +1,8 @@
-import React, { Suspense, lazy, useEffect } from 'react';
+import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
-import { Analytics } from "@vercel/analytics/react";
-import { SpeedInsights } from "@vercel/speed-insights/react";
 import { MusicProvider } from './contexts/MusicContext';
 import { ToastProvider } from './contexts/ToastContext';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
-import ParticleBackground from './components/ParticleBackground';
-import Sidebar from './components/Sidebar';
-import ActivityTracker from './components/ActivityTracker';
 import ToastContainer from './components/Toast';
 import { ProtectedRoute, RoleRoute } from './components/RouteGuards';
 import { getAuthState } from './src/utils/auth';
@@ -39,6 +34,22 @@ const Finance = lazy(() => import('./views/Finance'));
 const Calc = lazy(() => import('./views/IndexCalculator'));
 const MusicPlayer = lazy(() => import('./components/MusicPlayer'));
 const ResetPassword = lazy(() => import('./views/ResetPassword'));
+const ParticleBackground = lazy(() => import('./components/ParticleBackground'));
+const Sidebar = lazy(() => import('./components/Sidebar'));
+const ActivityTracker = lazy(() => import('./components/ActivityTracker'));
+const Analytics = lazy(() => import('@vercel/analytics/react').then((module) => ({ default: module.Analytics })));
+const SpeedInsights = lazy(() => import('@vercel/speed-insights/react').then((module) => ({ default: module.SpeedInsights })));
+
+const useDeferredMount = (delayMs: number) => {
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        const timer = window.setTimeout(() => setMounted(true), delayMs);
+        return () => window.clearTimeout(timer);
+    }, [delayMs]);
+
+    return mounted;
+};
 
 const LoadingFallback: React.FC = () => {
     const { theme } = useTheme();
@@ -89,6 +100,8 @@ const AppContent: React.FC = () => {
     const { theme } = useTheme();
     const { queue, isPlaying } = useMusicPlayer();
     const location = useLocation();
+    const showSidebar = location.pathname !== '/login' && location.pathname !== '/reset-password';
+    const renderDeferredShell = useDeferredMount(400);
 
     if (MAINTENANCE_MODE) {
         return <MaintenanceScreen />;
@@ -98,8 +111,12 @@ const AppContent: React.FC = () => {
 
     return (
         <div className={`flex min-h-screen ${theme === 'light' ? 'bg-white' : 'bg-black'}`}>
-            <Sidebar />
-            <main className="flex-1 lg:ml-20">
+            {showSidebar && renderDeferredShell ? (
+                <Suspense fallback={null}>
+                    <Sidebar />
+                </Suspense>
+            ) : null}
+            <main className={`flex-1 ${showSidebar ? 'lg:ml-20' : ''}`}>
                 <Suspense fallback={<LoadingFallback />}>
                     <Routes>
                         <Route path="/" element={<Home />} />
@@ -136,16 +153,24 @@ const AppContent: React.FC = () => {
 };
 
 const App: React.FC = () => {
+    const renderDeferredTelemetry = useDeferredMount(1200);
+
     return (
         <BrowserRouter>
             <ThemeProvider>
                 <ToastProvider>
                     <MusicProvider>
-                        <ActivityTracker />
+                        <Suspense fallback={null}>
+                            <ActivityTracker />
+                        </Suspense>
                         <ToastContainer />
                         <AppContent />
-                        <Analytics />
-                        <SpeedInsights />
+                        {renderDeferredTelemetry ? (
+                            <Suspense fallback={null}>
+                                <Analytics />
+                                <SpeedInsights />
+                            </Suspense>
+                        ) : null}
                     </MusicProvider>
                 </ToastProvider>
             </ThemeProvider>

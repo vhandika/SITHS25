@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, Suspense, lazy } from 'react';
 import SkewedButton from '../components/SkewedButton';
 import { KeyRound, LogIn, AlertCircle, Eye, EyeOff, X, Mail } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useToast } from '../contexts/ToastContext';
-import ParticleBackground from '../components/ParticleBackground';
 import { useTheme } from '../contexts/ThemeContext';
 import { clearAuthSession, getCookie, setAuthSession, deleteCookie, setCookie } from '../src/utils/auth';
+
+const ParticleBackground = lazy(() => import('../components/ParticleBackground'));
 
 const TURNSTILE_SITE_KEY = (import.meta.env.VITE_TURNSTILE_SITE_KEY ?? '').toString().trim();
 const TURNSTILE_SCRIPT_SRC = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
@@ -79,6 +80,8 @@ const Login: React.FC = () => {
 
     const [captchaToken, setCaptchaToken] = useState('');
     const [loginSessionId, setLoginSessionId] = useState<string | null>(null);
+    const [shouldRenderEffects, setShouldRenderEffects] = useState(false);
+    const [shouldInitCaptcha, setShouldInitCaptcha] = useState(false);
     const turnstileContainerRef = useRef<HTMLDivElement | null>(null);
     const turnstileWidgetIdRef = useRef<string | null>(null);
 
@@ -137,9 +140,23 @@ const Login: React.FC = () => {
     }, []);
 
     useEffect(() => {
+        const effectsTimer = window.setTimeout(() => setShouldRenderEffects(true), 350);
+        return () => window.clearTimeout(effectsTimer);
+    }, []);
+
+    useEffect(() => {
+        if (!TURNSTILE_SITE_KEY) {
+            return;
+        }
+
+        const captchaTimer = window.setTimeout(() => setShouldInitCaptcha(true), 1200);
+        return () => window.clearTimeout(captchaTimer);
+    }, []);
+
+    useEffect(() => {
         let isMounted = true;
 
-        if (!TURNSTILE_SITE_KEY) {
+        if (!TURNSTILE_SITE_KEY || !shouldInitCaptcha) {
             return () => {
                 isMounted = false;
             };
@@ -200,13 +217,26 @@ const Login: React.FC = () => {
             }
             turnstileWidgetIdRef.current = null;
         };
-    }, []);
+    }, [shouldInitCaptcha]);
+
+    const activateCaptcha = () => {
+        if (TURNSTILE_SITE_KEY) {
+            setShouldInitCaptcha(true);
+        }
+    };
 
     const handleLogin = async (e?: React.FormEvent | React.MouseEvent) => {
         if (e) e.preventDefault();
 
         setError('');
-        if (!captchaToken && !loginSessionId) {
+        activateCaptcha();
+
+        if (TURNSTILE_SITE_KEY && !shouldInitCaptcha && !loginSessionId) {
+            setError('Menyiapkan CAPTCHA, coba klik Login sekali lagi.');
+            return;
+        }
+
+        if (TURNSTILE_SITE_KEY && !captchaToken && !loginSessionId) {
             setError('Selesaikan CAPTCHA terlebih dahulu.');
             return;
         }
@@ -289,7 +319,14 @@ const Login: React.FC = () => {
             return;
         }
 
-        if (!captchaToken && !loginSessionId) {
+        activateCaptcha();
+
+        if (TURNSTILE_SITE_KEY && !shouldInitCaptcha && !loginSessionId) {
+            setForgotError('Menyiapkan CAPTCHA, coba kirim lagi dalam beberapa detik.');
+            return;
+        }
+
+        if (TURNSTILE_SITE_KEY && !captchaToken && !loginSessionId) {
             setForgotError('Selesaikan CAPTCHA terlebih dahulu.');
             return;
         }
@@ -355,7 +392,11 @@ const Login: React.FC = () => {
 
     return (
         <div className={`relative flex min-h-screen w-full overflow-x-hidden items-center justify-center py-16 px-4 mt-16 lg:mt-0 selection:bg-yellow-400 selection:text-black ${theme === 'light' ? 'bg-white' : 'bg-black'}`}>
-            <ParticleBackground />
+            {shouldRenderEffects ? (
+                <Suspense fallback={null}>
+                    <ParticleBackground />
+                </Suspense>
+            ) : null}
 
             <div className="relative z-10 w-full max-w-md space-y-8 rounded-lg border border-gray-800 bg-black/80 p-5 sm:p-8 shadow-2xl shadow-yellow-500/5 backdrop-blur-md overflow-x-hidden">
                 <div className="text-center">
@@ -385,6 +426,7 @@ const Login: React.FC = () => {
                                 value={nim}
                                 onChange={(e) => setNim(e.target.value)}
                                 onKeyDown={handleKeyDown}
+                                onFocus={activateCaptcha}
                                 className="relative block w-full border-0 bg-white/5 py-3 px-4 text-white ring-1 ring-inset ring-white/10 placeholder:text-gray-500 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-yellow-400 sm:text-sm sm:leading-6 transition-colors"
                                 placeholder="NIM"
                             />
@@ -398,6 +440,7 @@ const Login: React.FC = () => {
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 onKeyDown={handleKeyDown}
+                                onFocus={activateCaptcha}
                                 className="relative block w-full border-0 bg-white/5 py-3 px-4 pr-10 text-white ring-1 ring-inset ring-white/10 placeholder:text-gray-500 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-yellow-400 sm:text-sm sm:leading-6 transition-colors"
                                 placeholder="Password"
                             />
