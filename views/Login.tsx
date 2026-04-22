@@ -173,6 +173,19 @@ const Login: React.FC = () => {
                         setCaptchaToken('');
                     }
                 });
+
+                requestAnimationFrame(() => {
+                    const turnstileContainer = turnstileContainerRef.current;
+                    if (!turnstileContainer) {
+                        return;
+                    }
+
+                    const iframe = turnstileContainer.querySelector('iframe') as HTMLIFrameElement | null;
+                    if (iframe) {
+                        iframe.style.maxWidth = '100%';
+                        iframe.style.width = '100%';
+                    }
+                });
             } catch (error) {
                 console.error('Turnstile error:', error);
             }
@@ -341,10 +354,10 @@ const Login: React.FC = () => {
     };
 
     return (
-        <div className={`relative flex min-h-screen w-full items-center justify-center py-16 px-4 mt-16 lg:mt-0 selection:bg-yellow-400 selection:text-black ${theme === 'light' ? 'bg-white' : 'bg-black'}`}>
+        <div className={`relative flex min-h-screen w-full overflow-x-hidden items-center justify-center py-16 px-4 mt-16 lg:mt-0 selection:bg-yellow-400 selection:text-black ${theme === 'light' ? 'bg-white' : 'bg-black'}`}>
             <ParticleBackground />
 
-            <div className="relative z-10 w-full max-w-md space-y-8 rounded-lg border border-gray-800 bg-black/80 p-8 shadow-2xl shadow-yellow-500/5 backdrop-blur-md">
+            <div className="relative z-10 w-full max-w-md space-y-8 rounded-lg border border-gray-800 bg-black/80 p-5 sm:p-8 shadow-2xl shadow-yellow-500/5 backdrop-blur-md overflow-x-hidden">
                 <div className="text-center">
                     <div className="flex justify-center items-center gap-4 mb-4">
                         <div className="w-10 h-10 flex items-center justify-center bg-yellow-400 text-black transform -skew-x-12 shadow-lg">
@@ -425,9 +438,9 @@ const Login: React.FC = () => {
 
                     <div>
                         {TURNSTILE_SITE_KEY ? (
-                            <div>
+                            <div className="w-full max-w-full overflow-x-hidden">
                                 <label className="block text-xs font-bold text-gray-500 uppercase mb-2"></label>
-                                <div ref={turnstileContainerRef} className="min-h-[65px]" />
+                                <div ref={turnstileContainerRef} className="min-h-[65px] w-full max-w-full overflow-x-hidden" />
                             </div>
                         ) : (
                             <div className="rounded-lg border border-amber-700/50 bg-amber-950/20 p-3 text-[11px] text-amber-200">
