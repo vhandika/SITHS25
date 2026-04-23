@@ -112,7 +112,7 @@ const Login: React.FC = () => {
                 setAuthSession(userNim, userRole);
                 navigate('/', { replace: true });
             } catch {
-                setError('Login Microsoft gagal divalidasi. Silakan coba lagi.');
+                setError('Menunggu CAPTCHA');
             }
         };
 
