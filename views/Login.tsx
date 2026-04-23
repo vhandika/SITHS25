@@ -64,6 +64,7 @@ const loadTurnstileScript = () => {
 const Login: React.FC = () => {
     const { theme } = useTheme();
     const [error, setError] = useState('');
+    const [isMicrosoftLoading, setIsMicrosoftLoading] = useState(false);
     const [isLoginInfoOpen, setIsLoginInfoOpen] = useState(true);
     const [captchaToken, setCaptchaToken] = useState('');
     const [shouldInitCaptcha, setShouldInitCaptcha] = useState(false);
@@ -75,10 +76,10 @@ const Login: React.FC = () => {
     const location = useLocation();
 
     const API_BASE_URL = 'https://api.sith-s25.my.id/api';
-    const MICROSOFT_LOGIN_URL = `${API_BASE_URL}/auth/microsoft`;
+    const MICROSOFT_LOGIN_START_URL = `${API_BASE_URL}/auth/microsoft/start`;
     const VALIDATE_TOKEN_URL = `${API_BASE_URL}/validate-token`;
     const isCaptchaRequired = Boolean(TURNSTILE_SITE_KEY);
-    const isMicrosoftLoginDisabled = isCaptchaRequired && !captchaToken;
+    const isMicrosoftLoginDisabled = isMicrosoftLoading || (isCaptchaRequired && !captchaToken);
     const microsoftIcon = (
         <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
             <rect x="1" y="1" width="6" height="6" fill="#F25022" />
@@ -129,6 +130,7 @@ const Login: React.FC = () => {
                 oauth_failed: 'Login Microsoft gagal diproses.',
                 email_invalid: 'Email akun Microsoft tidak dapat dibaca.',
                 domain_not_allowed: 'Gunakan akun Microsoft Itebeh yang sesuai NIM.',
+                captcha_required: 'Selesaikan CAPTCHA terlebih dahulu sebelum login Microsoft.',
                 nim_not_found: 'NIM not found.',
                 nim_unregistered: 'Kamu mahasiswa mana njir, gak ada di databse.'
             };
@@ -255,7 +257,7 @@ const Login: React.FC = () => {
         return () => window.removeEventListener('resize', handleResize);
     }, [shouldInitCaptcha]);
 
-    const handleMicrosoftLogin = () => {
+    const handleMicrosoftLogin = async () => {
         setError('');
 
         if (isCaptchaRequired && !shouldInitCaptcha) {
@@ -269,7 +271,36 @@ const Login: React.FC = () => {
             return;
         }
 
-        window.location.href = MICROSOFT_LOGIN_URL;
+        setIsMicrosoftLoading(true);
+
+        try {
+            const response = await fetch(MICROSOFT_LOGIN_START_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ captcha_token: captchaToken }),
+                credentials: 'include'
+            });
+
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                setError(data?.message || 'Gagal memulai login Microsoft.');
+                return;
+            }
+
+            if (!data?.auth_url || typeof data.auth_url !== 'string') {
+                setError('URL login Microsoft tidak valid.');
+                return;
+            }
+
+            window.location.href = data.auth_url;
+        } catch {
+            setError('Gagal terhubung ke server login Microsoft.');
+        } finally {
+            setIsMicrosoftLoading(false);
+        }
     };
 
     return (
@@ -332,7 +363,7 @@ const Login: React.FC = () => {
                         onClick={handleMicrosoftLogin}
                         disabled={isMicrosoftLoginDisabled}
                     >
-                        Login dengan Microsoft
+                        {isMicrosoftLoading ? 'Memproses...' : 'Login dengan Microsoft'}
                     </SkewedButton>
                 </div>
             </div>
