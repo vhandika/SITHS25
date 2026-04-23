@@ -122,11 +122,6 @@ const Login: React.FC = () => {
         const msStatus = params.get('ms');
         const msError = params.get('ms_error');
 
-        if (msStatus === 'success') {
-            validateSessionFromServer();
-            return;
-        }
-
         if (msError) {
             const microsoftErrors: Record<string, string> = {
                 config_missing: 'Konfigurasi login Microsoft belum lengkap di server.',
@@ -139,6 +134,10 @@ const Login: React.FC = () => {
             };
 
             setError(microsoftErrors[msError] || 'Login Microsoft gagal.');
+            return;
+        }
+        if (!msStatus || msStatus === 'success') {
+            validateSessionFromServer();
         }
 
     }, [location.search, navigate, VALIDATE_TOKEN_URL]);
