@@ -64,7 +64,6 @@ const loadTurnstileScript = () => {
 const Login: React.FC = () => {
     const { theme } = useTheme();
     const [error, setError] = useState('');
-    const [isSessionChecking, setIsSessionChecking] = useState(false);
     const [isLoginInfoOpen, setIsLoginInfoOpen] = useState(true);
     const [captchaToken, setCaptchaToken] = useState('');
     const [shouldInitCaptcha, setShouldInitCaptcha] = useState(false);
@@ -91,20 +90,15 @@ const Login: React.FC = () => {
 
     useEffect(() => {
         const validateSessionFromServer = async () => {
-            setIsSessionChecking(true);
-            const controller = new AbortController();
-            const timeoutId = window.setTimeout(() => controller.abort(), 3000);
-
             try {
                 const response = await fetch(VALIDATE_TOKEN_URL, {
                     method: 'GET',
                     headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                    credentials: 'include',
-                    signal: controller.signal
+                    credentials: 'include'
                 });
 
                 if (!response.ok) {
-                    return;
+                    throw new Error('Token validation failed');
                 }
 
                 const data = await response.json();
@@ -112,16 +106,13 @@ const Login: React.FC = () => {
                 const userRole = data?.user?.role || 'mahasiswa';
 
                 if (!userNim) {
-                    return;
+                    throw new Error('User data missing');
                 }
 
                 setAuthSession(userNim, userRole);
                 navigate('/', { replace: true });
             } catch {
-                // Ignore timeout/network/token-missing here; user can continue manual login.
-            } finally {
-                window.clearTimeout(timeoutId);
-                setIsSessionChecking(false);
+                setError('Menunggu CAPTCHA');
             }
         };
 
@@ -143,15 +134,11 @@ const Login: React.FC = () => {
             };
 
             setError(microsoftErrors[msError] || 'Login Microsoft gagal.');
-            setIsSessionChecking(false);
             return;
         }
         if (!msStatus || msStatus === 'success') {
             validateSessionFromServer();
-            return;
         }
-
-        setIsSessionChecking(false);
 
     }, [location.search, navigate, VALIDATE_TOKEN_URL]);
 
@@ -297,9 +284,6 @@ const Login: React.FC = () => {
                         </div>
                         <h1 className="text-4xl font-bold tracking-wider uppercase text-white drop-shadow-md">Login</h1>
                     </div>
-                    {isSessionChecking && (
-                        <p className="text-xs text-gray-500">Mengecek sesi login...</p>
-                    )}
                 </div>
 
                 {error && (
