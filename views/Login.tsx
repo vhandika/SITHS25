@@ -76,6 +76,7 @@ const Login: React.FC = () => {
 
     const API_BASE_URL = 'https://api.sith-s25.my.id/api';
     const MICROSOFT_LOGIN_URL = `${API_BASE_URL}/auth/microsoft`;
+    const VALIDATE_TOKEN_URL = `${API_BASE_URL}/validate-token`;
     const isCaptchaRequired = Boolean(TURNSTILE_SITE_KEY);
     const isMicrosoftLoginDisabled = isCaptchaRequired && !captchaToken;
     const microsoftIcon = (
@@ -88,6 +89,33 @@ const Login: React.FC = () => {
     );
 
     useEffect(() => {
+        const validateSessionFromServer = async () => {
+            try {
+                const response = await fetch(VALIDATE_TOKEN_URL, {
+                    method: 'GET',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Token validation failed');
+                }
+
+                const data = await response.json();
+                const userNim = data?.user?.nim;
+                const userRole = data?.user?.role || 'mahasiswa';
+
+                if (!userNim) {
+                    throw new Error('User data missing');
+                }
+
+                setAuthSession(userNim, userRole);
+                navigate('/', { replace: true });
+            } catch {
+                setError('Login Microsoft gagal divalidasi. Silakan coba lagi.');
+            }
+        };
+
         clearAuthSession();
 
         const params = new URLSearchParams(location.search);
@@ -95,14 +123,8 @@ const Login: React.FC = () => {
         const msError = params.get('ms_error');
 
         if (msStatus === 'success') {
-            const msNim = params.get('nim');
-            const msRole = params.get('role') || 'mahasiswa';
-
-            if (msNim) {
-                setAuthSession(msNim, msRole);
-                navigate('/', { replace: true });
-                return;
-            }
+            validateSessionFromServer();
+            return;
         }
 
         if (msError) {
@@ -119,7 +141,7 @@ const Login: React.FC = () => {
             setError(microsoftErrors[msError] || 'Login Microsoft gagal.');
         }
 
-    }, [location.search, navigate]);
+    }, [location.search, navigate, VALIDATE_TOKEN_URL]);
 
     useEffect(() => {
         if (!TURNSTILE_SITE_KEY) {
