@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useMusicPlayer } from '../contexts/MusicContext';
-import { Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, Loader, X, FastForward, Rewind } from 'lucide-react';
+import { Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, Loader, X, FastForward, Rewind, Trash2 } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 
 const MusicPlayer: React.FC = () => {
-    const { queue, currentIndex, setCurrentIndex, isPlaying, setIsPlaying } = useMusicPlayer();
+    const { queue, currentIndex, setCurrentIndex, setQueue, isPlaying, setIsPlaying } = useMusicPlayer();
 
     const currentTrack = queue[currentIndex];
     const location = useLocation();
@@ -16,9 +16,12 @@ const MusicPlayer: React.FC = () => {
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
     const [isMinimized, setIsMinimized] = useState(false);
+    const [showTrashZone, setShowTrashZone] = useState(false);
+    const [isOverTrashZone, setIsOverTrashZone] = useState(false);
 
     const [position, setPosition] = useState({ x: window.innerWidth - 80, y: window.innerHeight - 150 });
     const isDragging = useRef(false);
+    const isOverTrashZoneRef = useRef(false);
     const dragStartParams = useRef({ x: 0, y: 0, startX: 0, startY: 0 });
     const hasMoved = useRef(false);
 
@@ -327,9 +330,57 @@ const MusicPlayer: React.FC = () => {
         }
     };
 
+    const getTrashZoneRect = () => {
+        const zoneWidth = Math.min(window.innerWidth - 32, 280);
+        const zoneHeight = 92;
+        const bottomGap = 16;
+        const left = (window.innerWidth - zoneWidth) / 2;
+        const top = window.innerHeight - zoneHeight - bottomGap;
+
+        return {
+            left,
+            top,
+            right: left + zoneWidth,
+            bottom: top + zoneHeight,
+        };
+    };
+
+    const updateTrashZoneHover = (nextX: number, nextY: number) => {
+        const iconSize = 56;
+        const centerX = nextX + (iconSize / 2);
+        const centerY = nextY + (iconSize / 2);
+        const zone = getTrashZoneRect();
+        const isInside = centerX >= zone.left && centerX <= zone.right && centerY >= zone.top && centerY <= zone.bottom;
+
+        isOverTrashZoneRef.current = isInside;
+        setIsOverTrashZone(isInside);
+    };
+
+    const stopAndDismissPlayer = () => {
+        if (playerRef.current) {
+            try {
+                playerRef.current.stopVideo?.();
+                playerRef.current.pauseVideo?.();
+            } catch (e) { }
+        }
+
+        stopProgressTracking();
+        setIsPlaying(false);
+        setCurrentTime(0);
+        setDuration(0);
+        setCurrentIndex(0);
+        setQueue([]);
+        setShowTrashZone(false);
+        isOverTrashZoneRef.current = false;
+        setIsOverTrashZone(false);
+    };
+
     const handleTouchStart = (e: React.TouchEvent) => {
         isDragging.current = true;
         hasMoved.current = false;
+        setShowTrashZone(true);
+        isOverTrashZoneRef.current = false;
+        setIsOverTrashZone(false);
         const touch = e.touches[0];
         dragStartParams.current = { x: touch.clientX, y: touch.clientY, startX: position.x, startY: position.y };
     };
@@ -340,11 +391,24 @@ const MusicPlayer: React.FC = () => {
         const dx = touch.clientX - dragStartParams.current.x;
         const dy = touch.clientY - dragStartParams.current.y;
         if (Math.abs(dx) > 5 || Math.abs(dy) > 5) hasMoved.current = true;
-        setPosition({ x: dragStartParams.current.startX + dx, y: dragStartParams.current.startY + dy });
+        const nextX = dragStartParams.current.startX + dx;
+        const nextY = dragStartParams.current.startY + dy;
+        setPosition({ x: nextX, y: nextY });
+        updateTrashZoneHover(nextX, nextY);
     };
 
     const handleTouchEnd = () => {
         isDragging.current = false;
+        const shouldDelete = isOverTrashZoneRef.current;
+        setShowTrashZone(false);
+        isOverTrashZoneRef.current = false;
+        setIsOverTrashZone(false);
+
+        if (shouldDelete) {
+            stopAndDismissPlayer();
+            return;
+        }
+
         snapToEdge();
     };
 
@@ -352,6 +416,9 @@ const MusicPlayer: React.FC = () => {
         e.preventDefault();
         isDragging.current = true;
         hasMoved.current = false;
+        setShowTrashZone(true);
+        isOverTrashZoneRef.current = false;
+        setIsOverTrashZone(false);
         dragStartParams.current = { x: e.clientX, y: e.clientY, startX: position.x, startY: position.y };
 
         document.addEventListener('mousemove', handleMouseMove);
@@ -363,13 +430,26 @@ const MusicPlayer: React.FC = () => {
         const dx = e.clientX - dragStartParams.current.x;
         const dy = e.clientY - dragStartParams.current.y;
         if (Math.abs(dx) > 5 || Math.abs(dy) > 5) hasMoved.current = true;
-        setPosition({ x: dragStartParams.current.startX + dx, y: dragStartParams.current.startY + dy });
+        const nextX = dragStartParams.current.startX + dx;
+        const nextY = dragStartParams.current.startY + dy;
+        setPosition({ x: nextX, y: nextY });
+        updateTrashZoneHover(nextX, nextY);
     };
 
     const handleMouseUp = () => {
         isDragging.current = false;
         document.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('mouseup', handleMouseUp);
+        const shouldDelete = isOverTrashZoneRef.current;
+        setShowTrashZone(false);
+        isOverTrashZoneRef.current = false;
+        setIsOverTrashZone(false);
+
+        if (shouldDelete) {
+            stopAndDismissPlayer();
+            return;
+        }
+
         snapToEdge();
     };
 
@@ -615,6 +695,18 @@ const MusicPlayer: React.FC = () => {
                         <div className="absolute inset-0 bg-black/30 flex items-center justify-center z-10">
                             {!isReady ? <Loader size={24} className="text-white animate-spin" /> : isPlaying ? <Pause size={24} className="text-white" /> : <Play size={24} className="text-white ml-0.5" />}
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {!isMusicPage && (
+                <div
+                    className={`lg:hidden fixed left-1/2 -translate-x-1/2 z-[95] transition-all duration-300 ${showTrashZone ? 'bottom-4 opacity-100' : '-bottom-32 opacity-0 pointer-events-none'}`}
+                >
+                    <div
+                        className={`w-14 h-14 rounded-full border-2 flex items-center justify-center backdrop-blur-md transition-all duration-200 ${isOverTrashZone ? 'bg-red-500/30 border-red-300 scale-110' : 'bg-black/60 border-white/20'}`}
+                    >
+                        <Trash2 size={20} className={isOverTrashZone ? 'text-red-200' : 'text-white'} />
                     </div>
                 </div>
             )}
