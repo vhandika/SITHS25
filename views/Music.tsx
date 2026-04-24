@@ -63,6 +63,22 @@ const loadTurnstileScript = () => {
     return turnstileScriptPromise;
 };
 
+const getMusicStateStorageKey = () => 'music-page-state';
+const getLegacyMusicStateStorageKey = (nim: string | null) => `music-page-state:${nim || 'anonymous'}`;
+
+const getPlaylistOrderStorageKey = (playlistId: string) => `music-playlist-order:${playlistId}`;
+const getLegacyPlaylistOrderStorageKey = (nim: string | null, playlistId: string) => `music-playlist-order:${nim || 'anonymous'}:${playlistId}`;
+
+const applyTrackOrder = (trackList: Track[], orderIds: string[]) => {
+    if (!orderIds.length) return trackList;
+
+    const trackMap = new Map(trackList.map(track => [track.id, track]));
+    const orderedTracks = orderIds.map(trackId => trackMap.get(trackId)).filter(Boolean) as Track[];
+    const remainingTracks = trackList.filter(track => !orderIds.includes(track.id));
+
+    return [...orderedTracks, ...remainingTracks];
+};
+
 interface Track {
     id: string;
     video_id: string;
@@ -95,8 +111,10 @@ const Music: React.FC = () => {
     const [playlists, setPlaylists] = useState<Playlist[]>([]);
     const [selectedPlaylist, setSelectedPlaylist] = useState<Playlist | null>(null);
     const [tracks, setTracks] = useState<Track[]>([]);
+    const [trackOrderIds, setTrackOrderIds] = useState<string[]>([]);
     const [searchResults, setSearchResults] = useState<any[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
+    const [playlistSearchQuery, setPlaylistSearchQuery] = useState('');
     const [isSearching, setIsSearching] = useState(false);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [isCreatingPlaylist, setIsCreatingPlaylist] = useState(false);
@@ -120,6 +138,7 @@ const Music: React.FC = () => {
     const [importProgress, setImportProgress] = useState<{ current: number; total: number; added: number; failed: number } | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
     const isTyping = useRef(false);
+    const hasRestoredMusicStateRef = useRef(false);
 
     const [currentUserNim, setCurrentUserNim] = useState<string | null>(null);
     const [isGuest, setIsGuest] = useState(false);
@@ -131,6 +150,20 @@ const Music: React.FC = () => {
     const showPlaylistDetail = selectedPlaylist !== null;
     const isSearchMode = searchResults.length > 0;
     const myPlaylists = playlists.filter(p => p.creator_nim === currentUserNim && p.source !== 'spotify' && !p.spotify_playlist_id);
+    const filteredPlaylists = playlists.filter(playlist => {
+        const query = playlistSearchQuery.trim().toLowerCase();
+        if (!query) return true;
+
+        return [
+            playlist.title,
+            playlist.description,
+            playlist.creator_nim,
+            playlist.share_code,
+            playlist.used_share_code,
+        ]
+            .filter(Boolean)
+            .some(value => String(value).toLowerCase().includes(query));
+    });
 
     const resetGuestPlaylistCaptcha = () => {
         setGuestPlaylistCaptchaToken('');
@@ -322,10 +355,61 @@ const Music: React.FC = () => {
                 credentials: 'include'
             });
             const data = await res.json();
-            if (res.ok) setTracks(data.data || []);
+            if (res.ok) {
+                const fetchedTracks = data.data || [];
+                
+                const savedOrderRaw = typeof window !== 'undefined'
+                    ? window.localStorage.getItem(getPlaylistOrderStorageKey(playlistId)) || window.localStorage.getItem(getLegacyPlaylistOrderStorageKey(currentUserNim, playlistId))
+                    : null;
+                let nextOrderIds = fetchedTracks.map((track: Track) => track.id);
+
+                if (savedOrderRaw) {
+                    try {
+                        const savedOrder = JSON.parse(savedOrderRaw);
+                        if (Array.isArray(savedOrder) && savedOrder.length > 0) {
+                            nextOrderIds = savedOrder;
+                        }
+                    } catch (error) {
+                    }
+                }
+
+                const orderedTracks = applyTrackOrder(fetchedTracks, nextOrderIds);
+                setTracks(orderedTracks);
+                setTrackOrderIds(nextOrderIds);
+            }
         } catch (error) {
         }
     };
+
+    useEffect(() => {
+        if (!currentUserNim || playlists.length === 0 || hasRestoredMusicStateRef.current) return;
+
+        const rawState = window.localStorage.getItem(getMusicStateStorageKey()) || window.localStorage.getItem(getLegacyMusicStateStorageKey(currentUserNim));
+        if (!rawState) {
+            hasRestoredMusicStateRef.current = true;
+            return;
+        }
+
+        try {
+            const savedState = JSON.parse(rawState) as { selectedPlaylistId?: string };
+            const savedPlaylist = savedState.selectedPlaylistId
+                ? playlists.find(playlist => playlist.id === savedState.selectedPlaylistId)
+                : null;
+
+            if (savedPlaylist) {
+                hasRestoredMusicStateRef.current = true;
+                handleSelectPlaylist(savedPlaylist);
+            } else {
+                hasRestoredMusicStateRef.current = true;
+                window.localStorage.removeItem(getMusicStateStorageKey());
+                window.localStorage.removeItem(getLegacyMusicStateStorageKey(currentUserNim));
+            }
+        } catch (error) {
+            hasRestoredMusicStateRef.current = true;
+            window.localStorage.removeItem(getMusicStateStorageKey());
+            window.localStorage.removeItem(getLegacyMusicStateStorageKey(currentUserNim));
+        }
+    }, [currentUserNim, playlists]);
 
     useEffect(() => {
         const timer = setTimeout(async () => {
@@ -527,6 +611,11 @@ const Music: React.FC = () => {
                 if (selectedPlaylist?.id === playlistId) {
                     setSelectedPlaylist(null);
                     setTracks([]);
+                    setTrackOrderIds([]);
+                    if (typeof window !== 'undefined') {
+                        window.localStorage.removeItem(getMusicStateStorageKey());
+                        window.localStorage.removeItem(getLegacyMusicStateStorageKey(currentUserNim));
+                    }
                 }
                 fetchPlaylists();
             } else {
@@ -567,7 +656,16 @@ const Music: React.FC = () => {
 
         const newTracks = [...tracks];
         [newTracks[index], newTracks[newIndex]] = [newTracks[newIndex], newTracks[index]];
+        const newOrderIds = newTracks.map(track => track.id);
+        
+        if (selectedPlaylist?.id) {
+            const orderPayload = JSON.stringify(newOrderIds);
+            window.localStorage.setItem(getPlaylistOrderStorageKey(selectedPlaylist.id), orderPayload);
+            window.localStorage.setItem(getLegacyPlaylistOrderStorageKey(currentUserNim, selectedPlaylist.id), orderPayload);
+        }
+        
         setTracks(newTracks);
+        setTrackOrderIds(newOrderIds);
 
         if (queue.length > 0) {
             const currentTrack = queue[currentIndex];
@@ -598,7 +696,16 @@ const Music: React.FC = () => {
         if (tracks.length < 2) return;
 
         const newTracks = [...tracks].sort(() => Math.random() - 0.5);
+        const newOrderIds = newTracks.map(track => track.id);
+        
+        if (selectedPlaylist?.id) {
+            const orderPayload = JSON.stringify(newOrderIds);
+            window.localStorage.setItem(getPlaylistOrderStorageKey(selectedPlaylist.id), orderPayload);
+            window.localStorage.setItem(getLegacyPlaylistOrderStorageKey(currentUserNim, selectedPlaylist.id), orderPayload);
+        }
+        
         setTracks(newTracks);
+        setTrackOrderIds(newOrderIds);
 
         if (queue.length > 0) {
             const currentTrack = queue[currentIndex];
@@ -890,8 +997,18 @@ const Music: React.FC = () => {
                             </button>
                         </div>
                     </div>
+                    <div className="relative mb-4">
+                        <Search size={16} className="absolute left-3 top-2.5 text-gray-500" />
+                        <input
+                            type="text"
+                            value={playlistSearchQuery}
+                            onChange={(e) => setPlaylistSearchQuery(e.target.value)}
+                            placeholder="Cari playlist..."
+                            className="w-full bg-gray-900 border border-gray-700 rounded-lg pl-9 pr-3 py-2 text-sm text-white placeholder:text-gray-500 focus:border-yellow-400 outline-none transition-colors"
+                        />
+                    </div>
                     <div className="space-y-2">
-                        {playlists.map(playlist => (
+                        {filteredPlaylists.map(playlist => (
                             <div
                                 key={playlist.id}
                                 onClick={() => handleSelectPlaylist(playlist)}
@@ -919,6 +1036,11 @@ const Music: React.FC = () => {
                                 </div>
                             </div>
                         ))}
+                        {filteredPlaylists.length === 0 && (
+                            <div className="p-3 rounded-lg border border-dashed border-gray-700 text-sm text-gray-500 text-center">
+                                {playlistSearchQuery.trim() ? 'Playlist tidak ditemukan.' : 'Belum ada playlist.'}
+                            </div>
+                        )}
                     </div>
                 </div>
 
