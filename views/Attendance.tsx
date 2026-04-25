@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import {
     CalendarCheck, Plus, Upload, Camera, Users,
     BarChart3, CheckCircle, XCircle, Search, UserCheck, UserX, Lock, Clock, Loader, FileText,
-    ArrowRightCircle, ImageIcon, X, ExternalLink
+    ArrowRightCircle, ImageIcon, X, ExternalLink, Info
 } from 'lucide-react';
 import SkewedButton from '../components/SkewedButton';
 import imageCompression from 'browser-image-compression';
@@ -81,6 +81,7 @@ const Attendance: React.FC = () => {
     const [locationRadiusInput, setLocationRadiusInput] = useState(String(DEFAULT_LOCATION_RADIUS_M));
     const [locationStatusText, setLocationStatusText] = useState('');
     const [showLocationPermissionModal, setShowLocationPermissionModal] = useState(false);
+    const [locationModalMessage, setLocationModalMessage] = useState('Jika anda tidak mengizinkan lokasi, sistem akan mencatat pending dengan catatan Lokasi tidak diizinkan.');
     const [viewStatsId, setViewStatsId] = useState<number | null>(null);
     const [viewStatsTitle, setViewStatsTitle] = useState<string>('');
     const [statsRecords, setStatsRecords] = useState<any[]>([]);
@@ -478,7 +479,14 @@ const Attendance: React.FC = () => {
                 showToast(json.message || 'Gagal absen', 'error');
             }
         } catch (error: any) {
-            if (error?.code === 1 && selectedSession.is_location_required && !locationDenied) {
+            if (selectedSession.is_location_required && !locationDenied && [1, 2, 3].includes(error?.code)) {
+                if (error?.code === 2) {
+                    setLocationModalMessage('Layanan lokasi di perangkat tidak aktif atau tidak tersedia. Silakan nyalakan GPS/lokasi lalu coba lagi.');
+                } else if (error?.code === 3) {
+                    setLocationModalMessage('Waktu pengambilan lokasi habis. Pastikan sinyal GPS baik, lalu coba lagi.');
+                } else {
+                    setLocationModalMessage('Jika anda tidak mengizinkan lokasi, sistem akan mencatat pending dengan catatan Lokasi tidak diizinkan.');
+                }
                 setShowLocationPermissionModal(true);
             } else {
                 showToast(`Terjadi kesalahan: ${error.message || 'Gagal mengambil lokasi.'}`, 'error');
@@ -540,6 +548,7 @@ const Attendance: React.FC = () => {
         setSelectedSession(null);
         setSelectedSessionPermission(null);
         setShowLocationPermissionModal(false);
+        setLocationModalMessage('Jika anda tidak mengizinkan lokasi, sistem akan mencatat pending dengan catatan Lokasi tidak diizinkan.');
         setPhotoFile(null);
         setPreviewUrl(null);
         setPermissionReason('');
@@ -1081,21 +1090,37 @@ const Attendance: React.FC = () => {
                 )}
 
                 {showLocationPermissionModal && selectedSession && (
-                    <div className="fixed inset-0 z-[55] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
-                        <div className="w-full max-w-md bg-gray-900 border border-yellow-700 rounded-lg p-6 shadow-2xl">
-                            <h3 className="text-lg font-bold text-yellow-300 mb-2">Izin Lokasi Ditolak</h3>
-                            <p className="text-sm text-gray-200 leading-relaxed">
-                                Jika anda tidak mengizinkan lokasi, sistem akan otomatis menganggap anda tidak hadir (syarat dan ketentuan berlaku).
-                            </p>
+                    <div className="fixed inset-0 z-[55] flex items-center justify-center px-4 bg-black/70 backdrop-blur-sm transition-opacity">
+                        <div className={`${theme === 'light' ? 'bg-white border-gray-200' : 'bg-gray-900 border-gray-800'} border rounded-2xl p-6 md:p-8 max-w-md w-full shadow-[0_0_30px_rgba(250,204,21,0.15)] relative animate-in fade-in zoom-in duration-300`}>
+                            <div className="flex justify-between items-start mb-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-full bg-yellow-400/10 flex items-center justify-center">
+                                        <Info className="text-yellow-400" size={24} />
+                                    </div>
+                                    <h3 className={`text-xl font-bold ${theme === 'light' ? 'text-black' : 'text-white'} tracking-wider`}>Pemberitahuan</h3>
+                                </div>
+                                <button
+                                    onClick={() => setShowLocationPermissionModal(false)}
+                                    className={`${theme === 'light' ? 'text-gray-500 hover:text-gray-700' : 'text-gray-500 hover:text-white'} transition-colors p-1`}
+                                >
+                                    <X size={24} />
+                                </button>
+                            </div>
 
-                            <div className="flex gap-2 mt-5">
+                            <div className="mb-6">
+                                <p className={`${theme === 'light' ? 'text-gray-700' : 'text-gray-300'} leading-relaxed text-sm`}>
+                                    {locationModalMessage}
+                                </p>
+                            </div>
+
+                            <div className="flex gap-2 mt-2">
                                 <button
                                     type="button"
                                     onClick={() => {
                                         setShowLocationPermissionModal(false);
                                         submitAttendance(true);
                                     }}
-                                    className="flex-1 py-2 bg-gray-800 text-white rounded hover:bg-gray-700 transition-colors"
+                                    className="flex-1 py-3 bg-gray-800 text-white font-semibold rounded-xl hover:bg-gray-700 transition-colors"
                                 >
                                     Lanjutkan
                                 </button>
@@ -1105,7 +1130,7 @@ const Attendance: React.FC = () => {
                                         setShowLocationPermissionModal(false);
                                         submitAttendance(false);
                                     }}
-                                    className="flex-1 py-2 bg-yellow-400 text-black font-bold rounded hover:bg-yellow-300 transition-colors"
+                                    className="flex-1 py-3 bg-yellow-400 hover:bg-yellow-500 text-black font-bold rounded-xl transition-colors"
                                 >
                                     Izinkan lokasi
                                 </button>
