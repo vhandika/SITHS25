@@ -330,18 +330,17 @@ const MusicPlayer: React.FC = () => {
         }
     };
 
-    const getTrashZoneRect = () => {
-        const zoneWidth = Math.min(window.innerWidth - 32, 280);
-        const zoneHeight = 92;
+    const getTrashZoneCircle = () => {
+        const zoneSize = 56;
+        const radius = zoneSize / 2;
         const bottomGap = 16;
-        const left = (window.innerWidth - zoneWidth) / 2;
-        const top = window.innerHeight - zoneHeight - bottomGap;
+        const centerX = window.innerWidth / 2;
+        const centerY = window.innerHeight - bottomGap - radius;
 
         return {
-            left,
-            top,
-            right: left + zoneWidth,
-            bottom: top + zoneHeight,
+            centerX,
+            centerY,
+            radius,
         };
     };
 
@@ -349,8 +348,10 @@ const MusicPlayer: React.FC = () => {
         const iconSize = 56;
         const centerX = nextX + (iconSize / 2);
         const centerY = nextY + (iconSize / 2);
-        const zone = getTrashZoneRect();
-        const isInside = centerX >= zone.left && centerX <= zone.right && centerY >= zone.top && centerY <= zone.bottom;
+        const zone = getTrashZoneCircle();
+        const dx = centerX - zone.centerX;
+        const dy = centerY - zone.centerY;
+        const isInside = (dx * dx) + (dy * dy) <= (zone.radius * zone.radius);
 
         isOverTrashZoneRef.current = isInside;
         setIsOverTrashZone(isInside);
