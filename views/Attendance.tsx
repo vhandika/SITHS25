@@ -485,7 +485,7 @@ const Attendance: React.FC = () => {
                 } else if (error?.code === 3) {
                     setLocationModalMessage('Waktu pengambilan lokasi habis. Pastikan sinyal GPS baik, lalu coba lagi.');
                 } else {
-                    setLocationModalMessage('Jika anda tidak mengizinkan lokasi, sistem akan mencatat pending dengan catatan Lokasi tidak diizinkan.');
+                    setLocationModalMessage('Jika anda tidak mengizinkan lokasi, sistem akan mencatat anda tidak hadir (syarat dan ketentuan berlaku).');
                 }
                 setShowLocationPermissionModal(true);
             } else {
@@ -548,7 +548,7 @@ const Attendance: React.FC = () => {
         setSelectedSession(null);
         setSelectedSessionPermission(null);
         setShowLocationPermissionModal(false);
-        setLocationModalMessage('Jika anda tidak mengizinkan lokasi, sistem akan mencatat pending dengan catatan Lokasi tidak diizinkan.');
+        setLocationModalMessage('Jika anda tidak mengizinkan lokasi, sistem akan mencatat anda tidak hadir (syarat dan ketentuan berlaku).');
         setPhotoFile(null);
         setPreviewUrl(null);
         setPermissionReason('');
