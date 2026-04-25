@@ -11,7 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '../contexts/ToastContext';
 import ParticleBackground from '../components/ParticleBackground';
 import { useTheme } from '../contexts/ThemeContext';
-import { getAuthState, getCookie } from '../src/utils/auth';
+import { getAuthState } from '../src/utils/auth';
 
 const API_BASE_URL = 'https://api.sith-s25.my.id/api';
 const API_INTERNAL_GANJIL = 'https://ganjil.sith-s25.my.id/api';
@@ -25,6 +25,37 @@ const getAttendanceApiUrl = (nim: string): string => {
 const isNimGanjil = (nim: string): boolean => {
     const lastDigit = parseInt(nim.slice(-1));
     return lastDigit % 2 !== 0;
+};
+
+const LOCATION_ACCURACY_THRESHOLD_M = 50;
+const DEFAULT_LOCATION_RADIUS_M = 500;
+
+type LocationPoint = {
+    lat: number;
+    lng: number;
+    accuracy: number;
+};
+
+type NewSessionForm = {
+    title: string;
+    description: string;
+    is_photo_required: boolean;
+    is_location_required: boolean;
+    location_radius_m: number;
+    location_lat: number | null;
+    location_lng: number | null;
+    location_accuracy_m: number | null;
+};
+
+const INITIAL_NEW_SESSION: NewSessionForm = {
+    title: '',
+    description: '',
+    is_photo_required: false,
+    is_location_required: false,
+    location_radius_m: DEFAULT_LOCATION_RADIUS_M,
+    location_lat: null,
+    location_lng: null,
+    location_accuracy_m: null
 };
 
 const Attendance: React.FC = () => {
@@ -44,8 +75,11 @@ const Attendance: React.FC = () => {
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isCompressing, setIsCompressing] = useState(false);
+    const [isLocating, setIsLocating] = useState(false);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-    const [newSessionData, setNewSessionData] = useState({ title: '', description: '', is_photo_required: false });
+    const [newSessionData, setNewSessionData] = useState<NewSessionForm>(INITIAL_NEW_SESSION);
+    const [locationStatusText, setLocationStatusText] = useState('');
+    const [showLocationPermissionModal, setShowLocationPermissionModal] = useState(false);
     const [viewStatsId, setViewStatsId] = useState<number | null>(null);
     const [viewStatsTitle, setViewStatsTitle] = useState<string>('');
     const [statsRecords, setStatsRecords] = useState<any[]>([]);
@@ -85,6 +119,95 @@ const Attendance: React.FC = () => {
 
     const isAdminOrSekretaris = userRole === 'admin' || userRole === 'sekretaris' || userRole === 'dev';
 
+    const getLocationOnce = (): Promise<LocationPoint> => {
+        return new Promise((resolve, reject) => {
+            if (!navigator.geolocation) {
+                reject(new Error('Browser ini tidak mendukung geolocation.'));
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    resolve({
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude,
+                        accuracy: position.coords.accuracy
+                    });
+                },
+                (error) => reject(error),
+                {
+                    enableHighAccuracy: true,
+                    timeout: 12000,
+                    maximumAge: 0
+                }
+            );
+        });
+    };
+
+    const getAccurateLocation = async (): Promise<LocationPoint> => {
+        let attempt = 0;
+        let latest: LocationPoint | null = null;
+
+        while (attempt < 6) {
+            attempt += 1;
+            setLocationStatusText(`Mengambil lokasi akurat... percobaan ${attempt}/6`);
+            const point = await getLocationOnce();
+            latest = point;
+
+            if (point.accuracy <= LOCATION_ACCURACY_THRESHOLD_M) {
+                setLocationStatusText(`Lokasi siap (akurasi ${Math.round(point.accuracy)}m)`);
+                return point;
+            }
+        }
+
+        const latestAcc = latest ? Math.round(latest.accuracy) : 999;
+        throw new Error(`Akurasi lokasi belum memenuhi syarat (${latestAcc}m). Coba ke area terbuka lalu ulangi.`);
+    };
+
+    const captureSessionLocation = async () => {
+        setIsLocating(true);
+        try {
+            const point = await getAccurateLocation();
+            setNewSessionData(prev => ({
+                ...prev,
+                is_location_required: true,
+                location_lat: point.lat,
+                location_lng: point.lng,
+                location_accuracy_m: point.accuracy
+            }));
+            showToast(`Lokasi tersimpan. Akurasi ${Math.round(point.accuracy)}m.`, 'success');
+        } catch (error: any) {
+            const denied = error?.code === 1;
+            showToast(denied ? 'Izin lokasi ditolak. Mode lokasi dimatikan.' : (error.message || 'Gagal mengambil lokasi sesi.'), 'error');
+            setNewSessionData(prev => ({
+                ...prev,
+                is_location_required: false,
+                location_lat: null,
+                location_lng: null,
+                location_accuracy_m: null
+            }));
+            setLocationStatusText('');
+        } finally {
+            setIsLocating(false);
+        }
+    };
+
+    const handleLocationToggleForSession = async (enabled: boolean) => {
+        if (!enabled) {
+            setNewSessionData(prev => ({
+                ...prev,
+                is_location_required: false,
+                location_lat: null,
+                location_lng: null,
+                location_accuracy_m: null
+            }));
+            setLocationStatusText('');
+            return;
+        }
+
+        await captureSessionLocation();
+    };
+
     const fetchSessions = async (currentNIM: string | null = userNIM) => {
         if (!currentNIM) return;
 
@@ -118,24 +241,43 @@ const Attendance: React.FC = () => {
     const handleCreateSession = async (e: React.FormEvent) => {
         e.preventDefault();
         if (isSubmitting) return;
+
+        if (newSessionData.is_location_required) {
+            if (newSessionData.location_lat === null || newSessionData.location_lng === null) {
+                showToast('Lokasi sesi belum tersimpan. Klik tombol ambil lokasi dulu.', 'error');
+                return;
+            }
+
+            if ((newSessionData.location_accuracy_m || 999) > LOCATION_ACCURACY_THRESHOLD_M) {
+                showToast(`Akurasi lokasi harus <= ${LOCATION_ACCURACY_THRESHOLD_M}m. Silakan ambil ulang lokasi.`, 'error');
+                return;
+            }
+        }
+
         setIsSubmitting(true);
+
+        const payload = {
+            ...newSessionData,
+            location_radius_m: Number(newSessionData.location_radius_m) || DEFAULT_LOCATION_RADIUS_M
+        };
 
         try {
             const [resGanjil, resGenap] = await Promise.all([
                 fetchWithAuth(`${API_INTERNAL_GANJIL}/attendance/sessions`, {
                     method: 'POST',
-                    body: JSON.stringify(newSessionData)
+                    body: JSON.stringify(payload)
                 }),
                 fetchWithAuth(`${API_INTERNAL_GENAP}/attendance/sessions`, {
                     method: 'POST',
-                    body: JSON.stringify(newSessionData)
+                    body: JSON.stringify(payload)
                 })
             ]);
 
             if (resGanjil.ok && resGenap.ok) {
                 showToast('Sesi berhasil dibuat!', 'success');
                 setIsCreateModalOpen(false);
-                setNewSessionData({ title: '', description: '', is_photo_required: false });
+                setNewSessionData(INITIAL_NEW_SESSION);
+                setLocationStatusText('');
                 fetchSessions();
             } else {
                 const errGanjil = !resGanjil.ok ? await resGanjil.json() : null;
@@ -281,11 +423,12 @@ const Attendance: React.FC = () => {
         }
     };
 
-    const handleSubmitAttendance = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (isSubmitting || isCompressing) return;
+    const submitAttendance = async (locationDenied: boolean) => {
+        if (!selectedSession || isSubmitting || isCompressing) return;
 
         setIsSubmitting(true);
+        setIsLocating(false);
+
         const formData = new FormData();
         formData.append('session_id', selectedSession.id);
         formData.append('user_name_input', 'Mahasiswa ' + userNIM);
@@ -293,6 +436,19 @@ const Attendance: React.FC = () => {
         if (photoFile) formData.append('image', photoFile);
 
         try {
+            if (selectedSession.is_location_required) {
+                if (locationDenied) {
+                    formData.append('location_permission_denied', 'true');
+                } else {
+                    setIsLocating(true);
+                    const point = await getAccurateLocation();
+                    formData.append('submit_lat', String(point.lat));
+                    formData.append('submit_lng', String(point.lng));
+                    formData.append('submit_accuracy_m', String(point.accuracy));
+                    formData.append('location_permission_denied', 'false');
+                }
+            }
+
             const attendanceApi = getAttendanceApiUrl(userNIM!);
             const res = await fetchWithAuth(`${attendanceApi}/attendance/submit`, {
                 method: 'POST',
@@ -310,8 +466,22 @@ const Attendance: React.FC = () => {
             } else {
                 showToast(json.message || 'Gagal absen', 'error');
             }
-        } catch (error: any) { showToast(`Terjadi kesalahan: ${error.message}`, 'error'); }
-        finally { setIsSubmitting(false); }
+        } catch (error: any) {
+            if (error?.code === 1 && selectedSession.is_location_required && !locationDenied) {
+                setShowLocationPermissionModal(true);
+            } else {
+                showToast(`Terjadi kesalahan: ${error.message || 'Gagal mengambil lokasi.'}`, 'error');
+            }
+        } finally {
+            setIsLocating(false);
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleSubmitAttendance = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!selectedSession) return;
+        await submitAttendance(false);
     };
 
     const handleSubmitPermission = async (e: React.FormEvent) => {
@@ -358,12 +528,15 @@ const Attendance: React.FC = () => {
     const closeModals = () => {
         setSelectedSession(null);
         setSelectedSessionPermission(null);
+        setShowLocationPermissionModal(false);
         setPhotoFile(null);
         setPreviewUrl(null);
         setPermissionReason('');
+        setLocationStatusText('');
         setIsMenyusul(false);
         setIsSubmitting(false);
         setIsCompressing(false);
+        setIsLocating(false);
     };
 
     const { presentUsers, permissionUsers, pendingUsers, absentUsers, presentPercentage } = useMemo(() => {
@@ -421,6 +594,11 @@ const Attendance: React.FC = () => {
     }, [allUsers, statsRecords, viewStatsId, searchFilter, sessions]);
 
     const GSHEET_URL = 'https://docs.google.com/spreadsheets/d/146MsEriqhrN2s-FzmgS9HAXZ2K5zWYYxuVLi-dcC4W8/edit';
+    const currentStatsSession = sessions.find(s => s.id === viewStatsId);
+
+    const getGoogleMapsLink = (lat: number, lng: number) => {
+        return `https://www.google.com/maps?q=${lat},${lng}`;
+    };
 
     return (
         <div className={`min-h-screen w-full py-16 lg:py-24 px-4 sm:px-6 lg:px-8 mt-16 lg:mt-0 font-sans text-white relative selection:bg-yellow-400 selection:text-black ${theme === 'light' ? 'bg-white' : 'bg-black'}`}>
@@ -664,7 +842,34 @@ const Attendance: React.FC = () => {
                                                 pendingUsers.length > 0 ? pendingUsers.map((rec, i) => (
                                                     <tr key={i} className="hover:bg-yellow-900/20 bg-yellow-900/10 transition-colors">
                                                         <td className="px-4 py-3 font-mono text-yellow-400">{rec.user_nim}</td>
-                                                        <td className="px-4 py-3 text-white font-bold">{rec.user_name}</td>
+                                                        <td className="px-4 py-3 text-white font-bold">
+                                                            <div>{rec.user_name}</div>
+                                                            {(rec.system_note || rec.reason) && (
+                                                                <div className="text-xs text-yellow-300/90 mt-0.5 font-normal">Catatan: {rec.system_note || rec.reason}</div>
+                                                            )}
+                                                            <div className="text-xs mt-1 font-normal flex flex-wrap gap-3">
+                                                                {rec.submit_lat !== null && rec.submit_lat !== undefined && rec.submit_lng !== null && rec.submit_lng !== undefined && (
+                                                                    <a
+                                                                        href={getGoogleMapsLink(rec.submit_lat, rec.submit_lng)}
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        className="text-blue-400 hover:underline inline-flex items-center gap-1"
+                                                                    >
+                                                                        <ExternalLink size={12} /> Lokasi Beliau
+                                                                    </a>
+                                                                )}
+                                                                {currentStatsSession?.location_lat !== null && currentStatsSession?.location_lat !== undefined && currentStatsSession?.location_lng !== null && currentStatsSession?.location_lng !== undefined && (
+                                                                    <a
+                                                                        href={getGoogleMapsLink(currentStatsSession.location_lat, currentStatsSession.location_lng)}
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        className="text-blue-400 hover:underline inline-flex items-center gap-1"
+                                                                    >
+                                                                        <ExternalLink size={12} /> Lokasi Seharusnya
+                                                                    </a>
+                                                                )}
+                                                            </div>
+                                                        </td>
                                                         <td className="px-4 py-3 text-right flex items-center justify-end gap-2">
                                                             {rec.photo_url ? (
                                                                 <button type="button" onClick={() => setPhotoPopupUrl(rec.photo_url)} className="text-blue-400 hover:text-blue-300 text-xs underline flex items-center gap-1 mr-2 transition-colors">
@@ -711,6 +916,14 @@ const Attendance: React.FC = () => {
 
                             <form onSubmit={handleSubmitAttendance} className="space-y-4 text-left">
                                 <div><label className="block text-gray-400 text-sm mb-1">NIM</label><input disabled value={userNIM || ''} className="w-full bg-black border border-gray-700 rounded p-2 text-gray-500 cursor-not-allowed" /></div>
+
+                                {selectedSession.is_location_required && (
+                                    <div className="bg-yellow-900/20 border border-yellow-700/50 rounded p-3 text-sm text-yellow-200">
+                                        <p className="font-semibold">Lokasi wajib untuk sesi ini.</p>
+                                        <p className="text-yellow-300/90 mt-1">Sistem akan meminta lokasi anda saat klik Kirim Hadir. Akurasi wajib {'<='} {LOCATION_ACCURACY_THRESHOLD_M}m.</p>
+                                        {locationStatusText && <p className="text-xs mt-2 text-yellow-300">{locationStatusText}</p>}
+                                    </div>
+                                )}
 
                                 {selectedSession.is_photo_required ? (
                                     <div>
@@ -797,10 +1010,10 @@ const Attendance: React.FC = () => {
                                     <button type="button" onClick={closeModals} className="flex-1 py-2 bg-gray-800 text-white rounded hover:bg-gray-700 transition-colors">Batal</button>
                                     <button
                                         type="submit"
-                                        disabled={isSubmitting || isCompressing}
+                                        disabled={isSubmitting || isCompressing || isLocating}
                                         className="flex-1 py-2 bg-yellow-400 text-black font-bold rounded hover:bg-yellow-300 disabled:opacity-50 transition-colors"
                                     >
-                                        {isSubmitting ? 'Mengirim...' : isCompressing ? 'Memproses...' : 'Kirim Hadir'}
+                                        {isLocating ? 'Mengambil Lokasi...' : isSubmitting ? 'Mengirim...' : isCompressing ? 'Memproses...' : 'Kirim Hadir'}
                                     </button>
                                 </div>
                             </form>
@@ -857,6 +1070,40 @@ const Attendance: React.FC = () => {
                     </div>
                 )}
 
+                {showLocationPermissionModal && selectedSession && (
+                    <div className="fixed inset-0 z-[55] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
+                        <div className="w-full max-w-md bg-gray-900 border border-yellow-700 rounded-lg p-6 shadow-2xl">
+                            <h3 className="text-lg font-bold text-yellow-300 mb-2">Izin Lokasi Ditolak</h3>
+                            <p className="text-sm text-gray-200 leading-relaxed">
+                                Jika anda tidak mengizinkan lokasi, sistem akan otomatis menganggap anda tidak hadir (syarat dan ketentuan berlaku).
+                            </p>
+
+                            <div className="flex gap-2 mt-5">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setShowLocationPermissionModal(false);
+                                        submitAttendance(true);
+                                    }}
+                                    className="flex-1 py-2 bg-gray-800 text-white rounded hover:bg-gray-700 transition-colors"
+                                >
+                                    Lanjutkan
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setShowLocationPermissionModal(false);
+                                        submitAttendance(false);
+                                    }}
+                                    className="flex-1 py-2 bg-yellow-400 text-black font-bold rounded hover:bg-yellow-300 transition-colors"
+                                >
+                                    Izinkan lokasi
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {isCreateModalOpen && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
                         <div className="w-full max-w-md bg-gray-900 border border-gray-700 rounded-lg p-6 shadow-2xl">
@@ -865,15 +1112,52 @@ const Attendance: React.FC = () => {
                                 <div><label className="block text-gray-400 text-sm mb-1">Judul</label><input required value={newSessionData.title} onChange={e => setNewSessionData({ ...newSessionData, title: e.target.value })} className="w-full bg-black border border-gray-700 rounded p-2 text-white focus:border-yellow-400 outline-none transition-colors" /></div>
                                 <div><label className="block text-gray-400 text-sm mb-1">Deskripsi</label><textarea value={newSessionData.description} onChange={e => setNewSessionData({ ...newSessionData, description: e.target.value })} className="w-full bg-black border border-gray-700 rounded p-2 text-white focus:border-yellow-400 outline-none transition-colors" rows={3} /></div>
                                 <div className="flex items-center gap-2"><input type="checkbox" id="reqPhoto" checked={newSessionData.is_photo_required} onChange={e => setNewSessionData({ ...newSessionData, is_photo_required: e.target.checked })} className="w-4 h-4 rounded text-yellow-400 bg-gray-800 border-gray-600" /><label htmlFor="reqPhoto" className="text-white text-sm cursor-pointer">Wajib Upload Foto?</label></div>
+                                <div className="flex items-center gap-2"><input type="checkbox" id="reqLocation" checked={newSessionData.is_location_required} onChange={e => handleLocationToggleForSession(e.target.checked)} className="w-4 h-4 rounded text-yellow-400 bg-gray-800 border-gray-600" /><label htmlFor="reqLocation" className="text-white text-sm cursor-pointer">On Location (Wajib Lokasi)</label></div>
+
+                                {newSessionData.is_location_required && (
+                                    <div className="space-y-3 p-3 border border-yellow-500/40 bg-yellow-500/10 rounded">
+                                        <div>
+                                            <label className="block text-gray-300 text-sm mb-1">Radius Lokasi (meter)</label>
+                                            <input
+                                                type="number"
+                                                min={50}
+                                                max={5000}
+                                                value={newSessionData.location_radius_m}
+                                                onChange={e => setNewSessionData({ ...newSessionData, location_radius_m: Number(e.target.value) || DEFAULT_LOCATION_RADIUS_M })}
+                                                className="w-full bg-black border border-gray-700 rounded p-2 text-white focus:border-yellow-400 outline-none transition-colors"
+                                            />
+                                        </div>
+
+                                        <button
+                                            type="button"
+                                            onClick={captureSessionLocation}
+                                            disabled={isLocating || isSubmitting}
+                                            className="w-full py-2 bg-yellow-500/80 text-black font-bold rounded hover:bg-yellow-400 disabled:opacity-60"
+                                        >
+                                            {isLocating ? 'Mengambil Lokasi...' : 'Ambil Ulang Lokasi Saat Ini'}
+                                        </button>
+
+                                        {newSessionData.location_lat !== null && newSessionData.location_lng !== null && (
+                                            <div className="text-xs text-yellow-100 space-y-1">
+                                                <p>Lat: {newSessionData.location_lat.toFixed(6)} | Lng: {newSessionData.location_lng.toFixed(6)}</p>
+                                                <p>Akurasi: {Math.round(newSessionData.location_accuracy_m || 0)}m</p>
+                                            </div>
+                                        )}
+
+                                        {locationStatusText && (
+                                            <p className="text-xs text-yellow-200">{locationStatusText}</p>
+                                        )}
+                                    </div>
+                                )}
 
                                 <div className="flex gap-2 pt-4">
                                     <button type="button" onClick={() => setIsCreateModalOpen(false)} className="flex-1 py-2 bg-gray-800 text-white rounded hover:bg-gray-700 transition-colors">Batal</button>
                                     <button
                                         type="submit"
-                                        disabled={isSubmitting}
+                                        disabled={isSubmitting || isLocating}
                                         className="flex-1 py-2 bg-yellow-400 text-black font-bold rounded hover:bg-yellow-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                     >
-                                        {isSubmitting ? 'Memproses...' : 'Buat Sesi'}
+                                        {isLocating ? 'Menunggu Lokasi...' : isSubmitting ? 'Memproses...' : 'Buat Sesi'}
                                     </button>
                                 </div>
                             </form>
