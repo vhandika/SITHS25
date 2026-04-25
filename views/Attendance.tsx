@@ -78,6 +78,7 @@ const Attendance: React.FC = () => {
     const [isLocating, setIsLocating] = useState(false);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [newSessionData, setNewSessionData] = useState<NewSessionForm>(INITIAL_NEW_SESSION);
+    const [locationRadiusInput, setLocationRadiusInput] = useState(String(DEFAULT_LOCATION_RADIUS_M));
     const [locationStatusText, setLocationStatusText] = useState('');
     const [showLocationPermissionModal, setShowLocationPermissionModal] = useState(false);
     const [viewStatsId, setViewStatsId] = useState<number | null>(null);
@@ -155,7 +156,7 @@ const Attendance: React.FC = () => {
             latest = point;
 
             if (point.accuracy <= LOCATION_ACCURACY_THRESHOLD_M) {
-                setLocationStatusText(`galat ${Math.round(point.accuracy)}m)`);
+                setLocationStatusText(`galat ${Math.round(point.accuracy)}m`);
                 return point;
             }
         }
@@ -201,6 +202,7 @@ const Attendance: React.FC = () => {
                 location_lng: null,
                 location_accuracy_m: null
             }));
+            setLocationRadiusInput(String(DEFAULT_LOCATION_RADIUS_M));
             setLocationStatusText('');
             return;
         }
@@ -256,9 +258,17 @@ const Attendance: React.FC = () => {
 
         setIsSubmitting(true);
 
+        const normalizedRadius = (() => {
+            const parsed = Number(locationRadiusInput);
+            if (Number.isFinite(parsed) && parsed > 0) {
+                return parsed;
+            }
+            return DEFAULT_LOCATION_RADIUS_M;
+        })();
+
         const payload = {
             ...newSessionData,
-            location_radius_m: Number(newSessionData.location_radius_m) || DEFAULT_LOCATION_RADIUS_M
+            location_radius_m: normalizedRadius
         };
 
         try {
@@ -277,6 +287,7 @@ const Attendance: React.FC = () => {
                 showToast('Sesi berhasil dibuat!', 'success');
                 setIsCreateModalOpen(false);
                 setNewSessionData(INITIAL_NEW_SESSION);
+                setLocationRadiusInput(String(DEFAULT_LOCATION_RADIUS_M));
                 setLocationStatusText('');
                 fetchSessions();
             } else {
@@ -918,10 +929,9 @@ const Attendance: React.FC = () => {
                                 <div><label className="block text-gray-400 text-sm mb-1">NIM</label><input disabled value={userNIM || ''} className="w-full bg-black border border-gray-700 rounded p-2 text-gray-500 cursor-not-allowed" /></div>
 
                                 {selectedSession.is_location_required && (
-                                    <div className="bg-yellow-900/20 border border-yellow-700/50 rounded p-3 text-sm text-yellow-200">
+                                    <div className="bg-gray-800/60 border border-gray-700 rounded p-3 text-sm text-gray-200">
                                         <p className="font-semibold">Lokasi wajib untuk sesi ini.</p>
-                                        <p className="text-yellow-300/90 mt-1">Sistem akan meminta lokasi anda saat klik Kirim Hadir. Akurasi wajib {'<='} {LOCATION_ACCURACY_THRESHOLD_M}m.</p>
-                                        {locationStatusText && <p className="text-xs mt-2 text-yellow-300">{locationStatusText}</p>}
+                                        {locationStatusText && <p className="text-xs mt-2 text-gray-300">{locationStatusText}</p>}
                                     </div>
                                 )}
 
@@ -1122,8 +1132,8 @@ const Attendance: React.FC = () => {
                                                 type="number"
                                                 min={50}
                                                 max={5000}
-                                                value={newSessionData.location_radius_m}
-                                                onChange={e => setNewSessionData({ ...newSessionData, location_radius_m: Number(e.target.value) || DEFAULT_LOCATION_RADIUS_M })}
+                                                value={locationRadiusInput}
+                                                onChange={e => setLocationRadiusInput(e.target.value)}
                                                 className="w-full bg-black border border-gray-700 rounded p-2 text-white focus:border-gray-500 outline-none transition-colors"
                                             />
                                         </div>
@@ -1151,7 +1161,18 @@ const Attendance: React.FC = () => {
                                 )}
 
                                 <div className="flex gap-2 pt-4">
-                                    <button type="button" onClick={() => setIsCreateModalOpen(false)} className="flex-1 py-2 bg-gray-800 text-white rounded hover:bg-gray-700 transition-colors">Batal</button>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setIsCreateModalOpen(false);
+                                            setNewSessionData(INITIAL_NEW_SESSION);
+                                            setLocationRadiusInput(String(DEFAULT_LOCATION_RADIUS_M));
+                                            setLocationStatusText('');
+                                        }}
+                                        className="flex-1 py-2 bg-gray-800 text-white rounded hover:bg-gray-700 transition-colors"
+                                    >
+                                        Batal
+                                    </button>
                                     <button
                                         type="submit"
                                         disabled={isSubmitting || isLocating}
