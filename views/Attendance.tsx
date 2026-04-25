@@ -155,7 +155,7 @@ const Attendance: React.FC = () => {
             latest = point;
 
             if (point.accuracy <= LOCATION_ACCURACY_THRESHOLD_M) {
-                setLocationStatusText(`Lokasi siap (akurasi ${Math.round(point.accuracy)}m)`);
+                setLocationStatusText(`galat ${Math.round(point.accuracy)}m)`);
                 return point;
             }
         }
@@ -1115,7 +1115,7 @@ const Attendance: React.FC = () => {
                                 <div className="flex items-center gap-2"><input type="checkbox" id="reqLocation" checked={newSessionData.is_location_required} onChange={e => handleLocationToggleForSession(e.target.checked)} className="w-4 h-4 rounded text-yellow-400 bg-gray-800 border-gray-600" /><label htmlFor="reqLocation" className="text-white text-sm cursor-pointer">On Location (Wajib Lokasi)</label></div>
 
                                 {newSessionData.is_location_required && (
-                                    <div className="space-y-3 p-3 border border-yellow-500/40 bg-yellow-500/10 rounded">
+                                    <div className="space-y-3 p-3 border border-gray-700 bg-gray-800/60 rounded">
                                         <div>
                                             <label className="block text-gray-300 text-sm mb-1">Radius Lokasi (meter)</label>
                                             <input
@@ -1124,7 +1124,7 @@ const Attendance: React.FC = () => {
                                                 max={5000}
                                                 value={newSessionData.location_radius_m}
                                                 onChange={e => setNewSessionData({ ...newSessionData, location_radius_m: Number(e.target.value) || DEFAULT_LOCATION_RADIUS_M })}
-                                                className="w-full bg-black border border-gray-700 rounded p-2 text-white focus:border-yellow-400 outline-none transition-colors"
+                                                className="w-full bg-black border border-gray-700 rounded p-2 text-white focus:border-gray-500 outline-none transition-colors"
                                             />
                                         </div>
 
@@ -1132,20 +1132,20 @@ const Attendance: React.FC = () => {
                                             type="button"
                                             onClick={captureSessionLocation}
                                             disabled={isLocating || isSubmitting}
-                                            className="w-full py-2 bg-yellow-500/80 text-black font-bold rounded hover:bg-yellow-400 disabled:opacity-60"
+                                            className="w-full py-2 bg-gray-700 text-white font-semibold rounded hover:bg-gray-600 disabled:opacity-60"
                                         >
                                             {isLocating ? 'Mengambil Lokasi...' : 'Ambil Ulang Lokasi Saat Ini'}
                                         </button>
 
                                         {newSessionData.location_lat !== null && newSessionData.location_lng !== null && (
-                                            <div className="text-xs text-yellow-100 space-y-1">
+                                            <div className="text-xs text-gray-300 space-y-1">
                                                 <p>Lat: {newSessionData.location_lat.toFixed(6)} | Lng: {newSessionData.location_lng.toFixed(6)}</p>
                                                 <p>Akurasi: {Math.round(newSessionData.location_accuracy_m || 0)}m</p>
                                             </div>
                                         )}
 
                                         {locationStatusText && (
-                                            <p className="text-xs text-yellow-200">{locationStatusText}</p>
+                                            <p className="text-xs text-gray-300">{locationStatusText}</p>
                                         )}
                                     </div>
                                 )}
