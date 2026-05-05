@@ -30,6 +30,44 @@ const normalizeHttpUrl = (value: string) => {
     }
 };
 
+const sanitizeInput = (value: unknown, maxLength: number) => {
+    if (typeof value !== 'string') return '';
+    return value.replace(/[\u0000-\u001F\u007F]/g, '').trim().slice(0, maxLength);
+};
+
+const sanitizeWhatsapp = (value: unknown) => {
+    const cleaned = sanitizeInput(value, 20).replace(/\s+/g, '');
+    if (!cleaned) return '';
+    return /^[0-9+]+$/.test(cleaned) ? cleaned : '';
+};
+
+const sanitizeSocialHandle = (value: unknown, maxLength: number) => {
+    const cleaned = sanitizeInput(value, maxLength).replace(/^@+/, '');
+    return cleaned;
+};
+
+const sanitizeOtherLinksInput = (value: unknown) => {
+    const cleaned = sanitizeInput(value, 400);
+    if (!cleaned) return '';
+
+    const normalized = cleaned
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean)
+        .map((item) => {
+            const parts = item.split(':');
+            if (parts.length < 2) return null;
+            const label = sanitizeInput(parts[0], 40);
+            const url = normalizeHttpUrl(parts.slice(1).join(':'));
+            if (!label || !url) return null;
+            return `${label}: ${url}`;
+        })
+        .filter((item): item is string => Boolean(item))
+        .join(', ');
+
+    return normalized.slice(0, 200);
+};
+
 const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, onClose }) => {
     const { showToast } = useToast();
     const [userData, setUserData] = useState<any>(null);
@@ -102,7 +140,22 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, 
         setIsSaving(true);
         const data = new FormData();
 
-        Object.keys(formData).forEach(key => data.append(key, (formData as any)[key]));
+        const cleanedFormData = {
+            bio: sanitizeInput(formData.bio, 500),
+            instagram: sanitizeSocialHandle(formData.instagram, 100),
+            whatsapp: sanitizeWhatsapp(formData.whatsapp),
+            line: sanitizeSocialHandle(formData.line, 50),
+            jurusan: sanitizeInput(formData.jurusan, 100),
+            other_links: sanitizeOtherLinksInput(formData.other_links),
+        };
+
+        if (formData.whatsapp && !cleanedFormData.whatsapp) {
+            showToast('Format WhatsApp tidak valid. Gunakan angka atau +', 'error');
+            setIsSaving(false);
+            return;
+        }
+
+        Object.entries(cleanedFormData).forEach(([key, value]) => data.append(key, value));
 
         if (avatarFile) data.append('avatar', avatarFile);
         if (bannerFile) data.append('banner', bannerFile);
@@ -341,7 +394,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, 
                                         <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">About Me</h3>
                                         {isEditing && (
                                             <span className={`text-[10px] ${formData.bio.length >= 100 ? 'text-red-500' : 'text-gray-500'}`}>
-                                                {formData.bio.length}/100
+                                                {formData.bio.length}/500
                                             </span>
                                         )}
                                     </div>
@@ -350,7 +403,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, 
                                         <textarea
                                             className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-sm focus:border-yellow-400 outline-none text-white resize-none"
                                             rows={3}
-                                            maxLength={100}
+                                            maxLength={500}
                                             placeholder="..."
                                             value={formData.bio}
                                             onChange={e => setFormData({ ...formData, bio: e.target.value })}
