@@ -10,6 +10,26 @@ interface ProfileModalProps {
     onClose: () => void;
 }
 
+const sanitizeDisplayText = (value: unknown, maxLength = 200) => {
+    if (typeof value !== 'string') return '';
+    return value.replace(/[\u0000-\u001F\u007F]/g, '').trim().slice(0, maxLength);
+};
+
+const toEncodedUrlParam = (value: unknown) => encodeURIComponent(sanitizeDisplayText(value, 120));
+
+const normalizeHttpUrl = (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+
+    try {
+        const parsed = new URL(trimmed);
+        if (!['http:', 'https:'].includes(parsed.protocol)) return null;
+        return parsed.toString();
+    } catch {
+        return null;
+    }
+};
+
 const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, onClose }) => {
     const { showToast } = useToast();
     const [userData, setUserData] = useState<any>(null);
@@ -162,6 +182,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, 
 
     const currentBannerUrl = previewBanner || (!deleteBanner ? userData?.banner_url : null);
     const currentAvatarUrl = previewAvatar || (!deleteAvatar ? userData?.avatar_url : null);
+    const avatarNameParam = toEncodedUrlParam(userData?.name || 'User');
 
     if (!targetNim) return null;
 
@@ -223,10 +244,10 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, 
                                 <div className="relative -mt-12 mb-3 w-24 h-24 mx-auto sm:mx-0 z-20">
                                     <div className="w-24 h-24 rounded-full border-4 border-gray-900 overflow-hidden bg-gray-800 shadow-xl relative">
                                         <img
-                                            src={currentAvatarUrl || `https://ui-avatars.com/api/?name=${userData.name}&background=random`}
+                                            src={currentAvatarUrl || `https://ui-avatars.com/api/?name=${avatarNameParam}&background=random`}
                                             className="w-full h-full object-cover"
                                             alt="Profile"
-                                            onError={(e) => { (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${userData.name}`; }}
+                                            onError={(e) => { (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${avatarNameParam}`; }}
                                         />
                                     </div>
                                     
@@ -292,21 +313,21 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, 
                                     ) : (
                                         <div className="flex justify-center sm:justify-start flex-wrap gap-4">
                                             <div className={`flex flex-col items-center gap-1 ${userData.whatsapp ? 'flex' : 'hidden'}`}>
-                                                <a href={`https://wa.me/+62${userData.whatsapp}`} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full border border-gray-700 bg-gray-800 flex items-center justify-center text-green-500 hover:border-green-500 transition-colors group">
+                                                <a href={`https://wa.me/+62${toEncodedUrlParam(userData.whatsapp)}`} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full border border-gray-700 bg-gray-800 flex items-center justify-center text-green-500 hover:border-green-500 transition-colors group">
                                                     <i className="fa-brands fa-whatsapp text-xl"></i>
                                                 </a>
                                                 <span className="text-[10px] text-gray-500">WhatsApp</span>
                                             </div>
 
                                             <div className={`flex flex-col items-center gap-1 ${userData.line ? 'flex' : 'hidden'}`}>
-                                                <a href={`https://line.me/ti/p/~${userData.line}`} target='_blank' rel="noreferrer" className="w-10 h-10 rounded-full border border-gray-700 bg-gray-800 flex items-center justify-center text-white hover:border-white transition-colors group">
+                                                <a href={`https://line.me/ti/p/~${toEncodedUrlParam(userData.line)}`} target='_blank' rel="noreferrer" className="w-10 h-10 rounded-full border border-gray-700 bg-gray-800 flex items-center justify-center text-white hover:border-white transition-colors group">
                                                     <i className="fa-brands fa-line text-xl"></i>
                                                 </a>
                                                 <span className="text-[10px] text-gray-500">Line</span>
                                             </div>
 
                                             <div className={`flex flex-col items-center gap-1 ${userData.instagram ? 'flex' : 'hidden'}`}>
-                                                <a href={`https://instagram.com/${userData.instagram}`} target='_blank' rel="noreferrer" className="w-10 h-10 rounded-full border border-gray-700 bg-gray-800 flex items-center justify-center text-pink-500 hover:border-pink-500 transition-colors group">
+                                                <a href={`https://instagram.com/${toEncodedUrlParam(userData.instagram)}`} target='_blank' rel="noreferrer" className="w-10 h-10 rounded-full border border-gray-700 bg-gray-800 flex items-center justify-center text-pink-500 hover:border-pink-500 transition-colors group">
                                                     <i className="fa-brands fa-instagram text-xl"></i>
                                                 </a>
                                                 <span className="text-[10px] text-gray-500">Instagram</span>
@@ -336,7 +357,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, 
                                         />
                                     ) : (
                                         <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-line">
-                                            {userData.bio || ""}
+                                            {sanitizeDisplayText(userData.bio, 1000)}
                                         </p>
                                     )}
                                     <div className="h-px bg-gray-800 w-full my-4"></div>
@@ -356,14 +377,14 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, 
                                             {userData.other_links ? userData.other_links.split(',').map((link: string, i: number) => {
                                                 const parts = link.split(':');
                                                 if (parts.length < 2) return null;
-                                                const label = parts[0];
-                                                const url = parts.slice(1).join(':');
+                                                const label = sanitizeDisplayText(parts[0], 80);
+                                                const url = normalizeHttpUrl(parts.slice(1).join(':'));
                                                 return url ? (
                                                     <li key={i} className="flex items-center gap-2 text-sm">
                                                         <Globe size={14} className="text-gray-500 shrink-0" />
                                                         <span className="text-gray-400 font-medium truncate max-w-[100px]">{label}</span>
                                                         <span className="mx-1 text-gray-600">:</span>
-                                                        <a href={url.trim()} target="_blank" rel="noreferrer" className="text-blue-400 hover:text-blue-300 hover:underline truncate flex-1 block">{url.trim()}</a>
+                                                        <a href={url} target="_blank" rel="noreferrer" className="text-blue-400 hover:text-blue-300 hover:underline truncate flex-1 block">{url}</a>
                                                     </li>
                                                 ) : null;
                                             }) : <span className="text-xs text-gray-600 italic">-</span>}
