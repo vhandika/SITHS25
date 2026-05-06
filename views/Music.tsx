@@ -257,9 +257,8 @@ const Music: React.FC = () => {
             let isLoggedIn = localAuth.isLoggedIn;
 
             try {
-                const res = await fetch(`${API_BASE_URL}/validate-token`, {
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                    credentials: 'include'
+                const res = await fetchWithAuth(`${API_BASE_URL}/validate-token`, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 });
                 if (res.ok) {
                     const data = await res.json();

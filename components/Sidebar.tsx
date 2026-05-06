@@ -10,6 +10,7 @@ import ProfileModal from '../components/ProfileModal';
 import ReportModal from '../components/ReportModal';
 import { ThemeMode, useTheme } from '../contexts/ThemeContext';
 import { clearAuthSession, getAuthState, getCookie } from '../src/utils/auth';
+import { fetchWithAuth } from '../src/utils/api';
 
 const API_BASE_URL = 'https://api.sith-s25.my.id/api';
 
@@ -116,8 +117,8 @@ const Sidebar: React.FC = () => {
 
     const fetchUserAvatar = async (nim: string) => {
         try {
-            const res = await fetch(`${API_BASE_URL}/user/${nim}`, {
-                headers: {}, credentials: 'include'
+            const res = await fetchWithAuth(`${API_BASE_URL}/user/${nim}`, {
+                headers: {}
             });
             const json = await res.json();
             if (res.ok && json.data) {

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Camera, Globe, Loader, AlertCircle, Save, Edit2, Palette, Trash2, Image as ImageIcon } from 'lucide-react';
 import { useToast } from '../contexts/ToastContext';
+import { fetchWithAuth } from '../src/utils/api';
 
 const API_BASE_URL = 'https://api.sith-s25.my.id/api';
 
@@ -110,8 +111,8 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, 
         setLoading(true);
         setErrorMsg(null);
         try {
-            const res = await fetch(`${API_BASE_URL}/user/${targetNim}`, {
-                headers: {}, credentials: 'include'
+            const res = await fetchWithAuth(`${API_BASE_URL}/user/${targetNim}`, {
+                headers: {}
             });
             const json = await res.json();
 
@@ -164,10 +165,9 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ targetNim, currentUserNim, 
         if (deleteBanner) data.append('delete_banner', 'true');
 
         try {
-            const res = await fetch(`${API_BASE_URL}/user/profile`, {
+            const res = await fetchWithAuth(`${API_BASE_URL}/user/profile`, {
                 method: 'PUT',
                 headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                credentials: 'include',
                 body: data
             });
             if (res.ok) {
