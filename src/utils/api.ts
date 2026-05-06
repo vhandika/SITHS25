@@ -28,6 +28,26 @@ const refreshAuthSessionSingleFlight = async () => {
     return refreshPromise;
 };
 
+const refreshAuthSessionCoordinated = async () => {
+    const webLocks = (navigator as Navigator & {
+        locks?: {
+            request: (name: string, callback: () => Promise<boolean>) => Promise<boolean>;
+        };
+    }).locks;
+
+    if (webLocks?.request) {
+        try {
+            return await webLocks.request('auth-refresh', async () => {
+                return refreshAuthSessionSingleFlight();
+            });
+        } catch {
+            return refreshAuthSessionSingleFlight();
+        }
+    }
+
+    return refreshAuthSessionSingleFlight();
+};
+
 export async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Response> {
     const alreadyRetried = (options as RequestInit & { _retry?: boolean })._retry === true;
     const isFormData = options.body instanceof FormData;
@@ -57,7 +77,7 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}): Pro
 
         if ((response.status === 401 || response.status === 403) && !guestToken) {
             if (!isRefreshRequest && response.status === 401 && !alreadyRetried) {
-                const refreshed = await refreshAuthSessionSingleFlight();
+                const refreshed = await refreshAuthSessionCoordinated();
 
                 if (refreshed) {
                     const retryOptions: RequestInit & { _retry?: boolean } = {
