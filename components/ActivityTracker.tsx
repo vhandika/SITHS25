@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { ensureGuestToken, isAuthenticated } from '../src/utils/auth';
+import { fetchWithAuth } from '../src/utils/api';
 
 const API_BASE_URL = 'https://api.sith-s25.my.id/api';
 
@@ -18,13 +19,12 @@ const ActivityTracker: React.FC = () => {
                 abortControllerRef.current = new AbortController();
                 
                 if (isAuthenticated()) {
-                    await fetch(`${API_BASE_URL}/activity`, {
+                    await fetchWithAuth(`${API_BASE_URL}/activity`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                             'X-Requested-With': 'XMLHttpRequest'
                         },
-                        credentials: 'include',
                         body: JSON.stringify({
                             path: location.pathname
                         }),

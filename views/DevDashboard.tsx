@@ -63,7 +63,7 @@ const DevDashboard: React.FC = () => {
         setLoading(true);
         setErrorMsg('');
         try {
-            const response = await fetch(`${API_BASE_URL}/dev/active-users`, { credentials: 'include' });
+            const response = await fetchWithAuth(`${API_BASE_URL}/dev/active-users`, { headers: {} });
             if (!response.ok) {
                 if (response.status === 401 || response.status === 403) {
                     throw new Error("Sesi habis atau tidak ada izin (Coba Login Ulang)");
@@ -83,7 +83,7 @@ const DevDashboard: React.FC = () => {
         setLogsLoading(true);
         setLogsError('');
         try {
-            const response = await fetch(`${API_BASE_URL}/dev/security-logs?limit=30`, { credentials: 'include' });
+            const response = await fetchWithAuth(`${API_BASE_URL}/dev/security-logs?limit=30`, { headers: {} });
             if (!response.ok) {
                 throw new Error(`Server Error: ${response.status}`);
             }

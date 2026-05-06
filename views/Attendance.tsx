@@ -231,8 +231,8 @@ const Attendance: React.FC = () => {
 
     const fetchAllUsers = async () => {
         try {
-            const res = await fetch(`${API_BASE_URL}/users`, {
-                headers: {}, credentials: 'include'
+            const res = await fetchWithAuth(`${API_BASE_URL}/users`, {
+                headers: {}
             });
             if (res.ok) {
                 const json = await res.json();

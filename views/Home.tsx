@@ -6,6 +6,7 @@ import confetti from 'canvas-confetti';
 import ParticleBackground from '../components/ParticleBackground';
 import { useTheme } from '../contexts/ThemeContext';
 import { isAuthenticated } from '../src/utils/auth';
+import { fetchWithAuth } from '../src/utils/api';
 
 interface User {
     name: string;

@@ -5,6 +5,7 @@ import ProfileModal from '../components/ProfileModal';
 import ParticleBackground from '../components/ParticleBackground';
 import { useTheme } from '../contexts/ThemeContext';
 import { getAuthState } from '../src/utils/auth';
+import { fetchWithAuth } from '../src/utils/api';
 
 interface Student {
     id: number;
@@ -49,8 +50,8 @@ const FindNim: React.FC = () => {
         setLoading(true);
         setError('');
         try {
-            const response = await fetch(`${API_BASE_URL}/users?search=${encodeURIComponent(query)}`, {
-                headers: {}, credentials: 'include'
+            const response = await fetchWithAuth(`${API_BASE_URL}/users?search=${encodeURIComponent(query)}`, {
+                headers: {}
             });
 
             if (!response.ok) throw new Error('Gagal mengambil data');

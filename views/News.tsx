@@ -161,7 +161,7 @@ const News: React.FC = () => {
     const fetchNews = async () => {
         setLoading(true);
         try {
-            const response = await fetch(`${API_BASE_URL}/news`, { headers: {}, credentials: 'include' });
+            const response = await fetchWithAuth(`${API_BASE_URL}/news`, { headers: {} });
             const result = await response.json();
 
             if (result.data) {
