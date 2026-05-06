@@ -2,6 +2,8 @@ import { clearAuthSession, getGuestToken } from './auth';
 
 const API_BASE_URL = 'https://api.sith-s25.my.id';
 
+let refreshPromise: Promise<boolean> | null = null;
+
 const refreshAuthSession = async () => {
     const response = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
         method: 'POST',
@@ -14,7 +16,20 @@ const refreshAuthSession = async () => {
     return response.ok;
 };
 
-export const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
+const refreshAuthSessionSingleFlight = async () => {
+    if (!refreshPromise) {
+        refreshPromise = refreshAuthSession()
+            .catch(() => false)
+            .finally(() => {
+                refreshPromise = null;
+            });
+    }
+
+    return refreshPromise;
+};
+
+export async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Response> {
+    const alreadyRetried = (options as RequestInit & { _retry?: boolean })._retry === true;
     const isFormData = options.body instanceof FormData;
 
     const headers: Record<string, string> = isFormData
@@ -41,15 +56,16 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
         const isRefreshRequest = requestUrl.pathname.endsWith('/api/auth/refresh');
 
         if ((response.status === 401 || response.status === 403) && !guestToken) {
-            if (!isRefreshRequest && response.status === 401) {
-                const refreshed = await refreshAuthSession();
+            if (!isRefreshRequest && response.status === 401 && !alreadyRetried) {
+                const refreshed = await refreshAuthSessionSingleFlight();
 
                 if (refreshed) {
-                    return fetch(url, {
+                    const retryOptions: RequestInit & { _retry?: boolean } = {
                         ...options,
-                        headers,
-                        credentials: 'include',
-                    });
+                        _retry: true,
+                    };
+
+                    return fetchWithAuth(url, retryOptions);
                 }
             }
 
@@ -66,4 +82,4 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
 
 export const authFetch = (url: string, options: RequestInit = {}) => {
     return fetchWithAuth(url, options);
-};
+}
