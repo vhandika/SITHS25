@@ -75,8 +75,8 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}): Pro
         const requestUrl = new URL(url, `${API_BASE_URL}/`);
         const isRefreshRequest = requestUrl.pathname.endsWith('/api/auth/refresh');
 
-        if ((response.status === 401 || response.status === 403) && !guestToken) {
-            if (!isRefreshRequest && response.status === 401 && !alreadyRetried) {
+        if (response.status === 401 && !guestToken) {
+            if (!isRefreshRequest && !alreadyRetried) {
                 const refreshed = await refreshAuthSessionCoordinated();
 
                 if (refreshed) {
@@ -91,6 +91,10 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}): Pro
 
             clearAuthSession();
             window.location.href = '/login';
+            return response;
+        }
+
+        if (response.status === 403) {
             return response;
         }
 
