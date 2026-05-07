@@ -28,6 +28,22 @@ const refreshAuthSessionSingleFlight = async () => {
     return refreshPromise;
 };
 
+const validateAuthSession = async () => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/validate-token`, {
+            method: 'GET',
+            credentials: 'include',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+        });
+
+        return response.ok;
+    } catch {
+        return false;
+    }
+};
+
 const refreshAuthSessionCoordinated = async () => {
     const webLocks = (navigator as Navigator & {
         locks?: {
@@ -86,6 +102,11 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}): Pro
                     };
 
                     return fetchWithAuth(url, retryOptions);
+                }
+
+                const stillValid = await validateAuthSession();
+                if (stillValid) {
+                    return response;
                 }
             }
 
