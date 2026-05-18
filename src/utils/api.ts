@@ -1,4 +1,4 @@
-import { clearAuthSession, getGuestToken } from './auth';
+import { clearAuthSession, getGuestToken, getAuthState, setAuthSession } from './auth';
 
 const API_BASE_URL = 'https://api.sith-s25.my.id';
 
@@ -12,6 +12,14 @@ const refreshAuthSession = async () => {
             'X-Requested-With': 'XMLHttpRequest',
         },
     });
+
+    if (response.ok) {
+        // Extend the frontend auth cookies to stay in sync with the new refresh token
+        const authState = getAuthState();
+        if (authState.nim && authState.role) {
+            setAuthSession(authState.nim, authState.role);
+        }
+    }
 
     return response.ok;
 };
@@ -91,7 +99,7 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}): Pro
         const requestUrl = new URL(url, `${API_BASE_URL}/`);
         const isRefreshRequest = requestUrl.pathname.endsWith('/api/auth/refresh');
 
-        if (response.status === 401 && !guestToken) {
+        if (response.status === 401) {
             if (!isRefreshRequest && !alreadyRetried) {
                 const refreshed = await refreshAuthSessionCoordinated();
 
@@ -110,8 +118,11 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}): Pro
                 }
             }
 
-            clearAuthSession();
-            window.location.href = '/login';
+            // Only redirect to login if user was actually logged in (not just a guest)
+            if (!guestToken) {
+                clearAuthSession();
+                window.location.href = '/login';
+            }
             return response;
         }
 

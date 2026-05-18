@@ -42,8 +42,8 @@ export const isAuthenticated = () => getAuthState().isLoggedIn;
 export const isDevUser = () => getAuthState().isDev;
 
 export const setAuthSession = (nim: string, role: string) => {
-    setCookie('userNIM', nim);
-    setCookie('userRole', role || 'mahasiswa');
+    setCookie('userNIM', nim, 30);
+    setCookie('userRole', role || 'mahasiswa', 30);
 };
 
 export const clearAuthSession = () => {
