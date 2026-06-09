@@ -2,31 +2,42 @@ import { clearAuthSession, getGuestToken, getAuthState, setAuthSession } from '.
 
 const API_BASE_URL = 'https://api.sith-s25.my.id';
 
-let refreshPromise: Promise<boolean> | null = null;
+type RefreshResult = 'success' | 'invalid' | 'error';
+type ValidateResult = 'valid' | 'invalid' | 'error';
 
-const refreshAuthSession = async () => {
-    const response = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-        },
-    });
+let refreshPromise: Promise<RefreshResult> | null = null;
 
-    if (response.ok) {
-        const authState = getAuthState();
-        if (authState.nim && authState.role) {
-            setAuthSession(authState.nim, authState.role);
+const refreshAuthSession = async (): Promise<RefreshResult> => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+        });
+
+        if (response.ok) {
+            const authState = getAuthState();
+            if (authState.nim && authState.role) {
+                setAuthSession(authState.nim, authState.role);
+            }
+            return 'success';
         }
-    }
 
-    return response.ok;
+        if (response.status === 401 || response.status === 403) {
+            return 'invalid';
+        }
+
+        return 'error';
+    } catch {
+        return 'error';
+    }
 };
 
 const refreshAuthSessionSingleFlight = async () => {
     if (!refreshPromise) {
         refreshPromise = refreshAuthSession()
-            .catch(() => false)
             .finally(() => {
                 refreshPromise = null;
             });
@@ -35,7 +46,7 @@ const refreshAuthSessionSingleFlight = async () => {
     return refreshPromise;
 };
 
-const validateAuthSession = async () => {
+const validateAuthSession = async (): Promise<ValidateResult> => {
     try {
         const response = await fetch(`${API_BASE_URL}/api/validate-token`, {
             method: 'GET',
@@ -45,9 +56,11 @@ const validateAuthSession = async () => {
             },
         });
 
-        return response.ok;
+        if (response.ok) return 'valid';
+        if (response.status === 401 || response.status === 403) return 'invalid';
+        return 'error';
     } catch {
-        return false;
+        return 'error';
     }
 };
 
@@ -102,7 +115,7 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}): Pro
             if (!isRefreshRequest && !alreadyRetried) {
                 const refreshed = await refreshAuthSessionCoordinated();
 
-                if (refreshed) {
+                if (refreshed === 'success') {
                     const retryOptions: RequestInit & { _retry?: boolean } = {
                         ...options,
                         _retry: true,
@@ -111,8 +124,12 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}): Pro
                     return fetchWithAuth(url, retryOptions);
                 }
 
+                if (refreshed === 'error') {
+                    return response;
+                }
+
                 const stillValid = await validateAuthSession();
-                if (stillValid) {
+                if (stillValid === 'valid' || stillValid === 'error') {
                     return response;
                 }
             }
