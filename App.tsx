@@ -22,6 +22,7 @@ const Library = lazy(() => import('./views/Library'));
 const AboutUs = lazy(() => import('./views/AboutUs'));
 const ContactUs = lazy(() => import('./views/ContactUs'));
 const Login = lazy(() => import('./views/Login'));
+const NimLogin = lazy(() => import('./views/NimLogin.tsx'));
 const News = lazy(() => import('./views/News'));
 const ChangePassword = lazy(() => import('./views/ChangePassword'));
 const FindNim = lazy(() => import('./views/FindNim'));
@@ -100,7 +101,7 @@ const AppContent: React.FC = () => {
     const { theme } = useTheme();
     const { queue, isPlaying } = useMusicPlayer();
     const location = useLocation();
-    const showSidebar = location.pathname !== '/reset-password';
+    const showSidebar = !['/reset-password', '/loging'].includes(location.pathname);
     const renderDeferredShell = useDeferredMount(400);
 
     if (MAINTENANCE_MODE) {
@@ -125,6 +126,7 @@ const AppContent: React.FC = () => {
                         <Route path="/about" element={<AboutUs />} />
                         <Route path="/contact" element={<ContactUs />} />
                         <Route path="/login" element={<Login />} />
+                        <Route path="/loging" element={<NimLogin />} />
                         <Route path="/PDFTools" element={<PDFTools />} />
                         <Route element={<ProtectedRoute />}>
                             <Route path="/change-password" element={<ChangePassword />} />

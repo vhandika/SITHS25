@@ -14,7 +14,6 @@ const refreshAuthSession = async () => {
     });
 
     if (response.ok) {
-        // Extend the frontend auth cookies to stay in sync with the new refresh token
         const authState = getAuthState();
         if (authState.nim && authState.role) {
             setAuthSession(authState.nim, authState.role);
@@ -118,7 +117,6 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}): Pro
                 }
             }
 
-            // Only redirect to login if user was actually logged in (not just a guest)
             if (!guestToken) {
                 clearAuthSession();
                 window.location.href = '/login';
