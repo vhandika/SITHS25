@@ -283,9 +283,9 @@ const NimLogin: React.FC = () => {
                         <div className="flex h-10 w-10 items-center justify-center bg-yellow-400 text-black shadow-lg transform -skew-x-12">
                             <span className="transform skew-x-12"><KeyRound size={24} /></span>
                         </div>
-                        <h1 className="text-3xl font-bold tracking-wider uppercase text-white drop-shadow-md">Login NIM</h1>
+                        <h1 className="text-3xl font-bold tracking-wider uppercase text-white drop-shadow-md">Loging</h1>
                     </div>
-                    <p className="text-sm text-gray-400">Masuk menggunakan NIM dan password akun kamu.</p>
+                    <p className="text-sm text-gray-400">Untuk yang gak bisa pake akun mikocok.</p>
                 </div>
 
                 {error && (
@@ -354,7 +354,7 @@ const NimLogin: React.FC = () => {
                         type="submit"
                         disabled={isLoginDisabled}
                     >
-                        {isLoading ? 'Memproses...' : 'Login dengan NIM'}
+                        {isLoading ? 'Memproses...' : 'Login'}
                     </SkewedButton>
                 </form>
 
