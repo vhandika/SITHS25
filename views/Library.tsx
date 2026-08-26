@@ -1162,10 +1162,10 @@ const semesterLibraryConfig: Record<number, SemesterLibraryConfig> = {
   1: {
     shared: semester1SharedData
   },
-  // Add future data here, e.g.:
+  // Halo Martin, nanti ini contoh pengisian srlanjutnya:
   // 2: {
-  //   mikrobiologi: semester2MikroData,
-  //   biologi: semester2BioData
+  //   mikrobiologi: ini,
+  //   biologi: itu
   // }
   2: {},
   3: {},
