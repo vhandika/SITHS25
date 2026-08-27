@@ -15,7 +15,7 @@ const LibraryViewer: React.FC<LibraryViewerProps> = ({ isOpen, onClose, currentI
     const [navHistory, setNavHistory] = useState<LibraryItem[]>([]);
     const [viewingItem, setViewingItem] = useState<LibraryItem | null>(null);
     const [rootItem, setRootItem] = useState<LibraryItem | null>(null);
-    const [mobileNavHeight, setMobileNavHeight] = useState(32); // Percentage for sidebar height on mobile
+    const [mobileNavHeight, setMobileNavHeight] = useState(32);
     const [isDragging, setIsDragging] = useState(false);
     const [isMobile, setIsMobile] = useState(() => {
         if (typeof window === 'undefined') return false;
