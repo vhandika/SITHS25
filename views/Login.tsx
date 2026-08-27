@@ -129,10 +129,10 @@ const Login: React.FC = () => {
                 state_invalid: 'Sesi login Microsoft tidak valid. Coba lagi.',
                 oauth_failed: 'Login Microsoft gagal diproses.',
                 email_invalid: 'Email akun Microsoft tidak dapat dibaca.',
-                domain_not_allowed: 'Gunakan akun Microsoft Itebeh yang sesuai NIM.',
+                domain_not_allowed: 'Gunakan akun Microsoft Itebeh dengan domain @mahasiswa.itb.ac.id.',
                 captcha_required: 'Selesaikan CAPTCHA terlebih dahulu sebelum login Microsoft.',
-                nim_not_found: 'NIM not found.',
-                nim_unregistered: 'Kamu mahasiswa mana njir, gak ada di databse.'
+                nim_not_found: 'Cuman Siths angkatan 2025 yang bisa login.',
+                nim_unregistered: 'Cuman Siths angkatan 2025 yang bisa login.'
             };
 
             setError(microsoftErrors[msError] || 'Login Microsoft gagal.');
